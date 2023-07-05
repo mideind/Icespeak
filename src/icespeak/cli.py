@@ -1,21 +1,8 @@
-#!/usr/bin/env python
 """
 
-    Greynir: Natural language processing for Icelandic
+    Icespeak - Icelandic TTS library
 
-    Copyright (C) 2023 Miðeind ehf.
-
-       This program is free software: you can redistribute it and/or modify
-       it under the terms of the GNU General Public License as published by
-       the Free Software Foundation, either version 3 of the License, or
-       (at your option) any later version.
-       This program is distributed in the hope that it will be useful,
-       but WITHOUT ANY WARRANTY; without even the implied warranty of
-       MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-       GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see http://www.gnu.org/licenses/.
+    Copyright (C) 2023 Miðeind ehf.  All rights reserved.
 
 
     Friendly command line interface for Icelandic speech synthesis.
@@ -23,7 +10,7 @@
 
     Run the following command for a list of options:
 
-        ./speak.py --help
+        speak-cli --help
 
 """
 
@@ -31,7 +18,8 @@ from typing import Optional, cast, List
 
 import sys
 import subprocess
-import logging
+from logging import getLogger
+_LOG = getLogger(__file__)
 from pathlib import Path
 from shutil import which
 from urllib.request import urlopen
@@ -39,7 +27,7 @@ import wave
 
 import requests
 
-from speech import (
+from . import (
     text_to_audio_url,
     DEFAULT_VOICE,
     SUPPORTED_VOICES,
@@ -48,8 +36,9 @@ from speech import (
     SUPPORTED_AUDIO_FORMATS,
     SUPPORTED_TEXT_FORMATS,
 )
-from speech.voices import suffix_for_audiofmt
-from utility import sanitize_filename
+from .voices import suffix_for_audiofmt
+
+# from .utility import sanitize_filename
 
 
 def _die(msg: str, exit_code: int = 1) -> None:
@@ -89,7 +78,7 @@ def _fetch_audio_bytes(url: str) -> Optional[bytes]:
             )
         return r.content
     except Exception as e:
-        logging.error(f"Error fetching audio file: {e}")
+        _LOG.error(f"Error fetching audio file: {e}")
 
 
 def _write_wav(
@@ -243,7 +232,7 @@ def main() -> None:
         fn = args.override
     else:
         # Generate file name
-        fn = sanitize_filename(text)
+        # fn = sanitize_filename(text)
         fn = f"{fn}.{suffix_for_audiofmt(args.audioformat)}"
 
     # Write audio data to file

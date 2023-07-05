@@ -1,21 +1,8 @@
-#!/usr/bin/env python
 """
 
-    Greynir: Natural language processing for Icelandic
+    Icespeak - Icelandic TTS library
 
-    Copyright (C) 2023 Miðeind ehf.
-
-       This program is free software: you can redistribute it and/or modify
-       it under the terms of the GNU General Public License as published by
-       the Free Software Foundation, either version 3 of the License, or
-       (at your option) any later version.
-       This program is distributed in the hope that it will be useful,
-       but WITHOUT ANY WARRANTY; without even the implied warranty of
-       MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-       GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see http://www.gnu.org/licenses/.
+    Copyright (C) 2023 Miðeind ehf.  All rights reserved.
 
 
     Icelandic-language text to speech via Amazon Polly.
@@ -25,7 +12,8 @@
 from typing import Optional, Any, cast
 
 import json
-import logging
+from logging import getLogger
+_LOG = getLogger(__file__)
 from threading import Lock
 
 import requests
@@ -70,7 +58,7 @@ def _initialize_aws_client() -> Optional[boto3.Session]:
                 with open(_AWS_API_KEYS_PATH) as json_file:
                     aws_config = json.load(json_file)
             except Exception as e:
-                logging.warning(f"Unable to read AWS Polly credentials: {e}")
+                _LOG.warning(f"Unable to read AWS Polly credentials: {e}")
                 return None
             _api_client = boto3.Session(**aws_config).client("polly")
         # Return client instance
@@ -101,11 +89,11 @@ def text_to_audio_url(
     # Set up client lazily
     client = _initialize_aws_client()
     if client is None:
-        logging.warning("Unable to instantiate AWS client")
+        _LOG.warning("Unable to instantiate AWS client")
         return None
 
     if audio_format not in AUDIO_FORMATS:
-        logging.warn(
+        _LOG.warn(
             f"Unsupported audio format for Amazon Polly speech synthesis: {audio_format}."
             " Falling back to mp3"
         )
@@ -146,7 +134,7 @@ def text_to_audio_url(
             HttpMethod="GET",
         )
     except ClientError as e:
-        logging.error(e)
+        _LOG.error(e)
         return None
 
     return url
@@ -167,5 +155,5 @@ def text_to_audio_data(
         r = requests.get(url, timeout=10)
         return r.content
     except Exception as e:
-        logging.error(f"Error fetching URL {url}: {e}")
+        _LOG.error(f"Error fetching URL {url}: {e}")
     return None

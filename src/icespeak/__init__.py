@@ -1,25 +1,10 @@
-#!/usr/bin/env python
 """
 
-    Greynir: Natural language processing for Icelandic
+    Icespeak - Icelandic TTS library
 
-    Copyright (C) 2023 Miðeind ehf.
+    Copyright (C) 2023 Miðeind ehf.  All rights reserved.
 
-       This program is free software: you can redistribute it and/or modify
-       it under the terms of the GNU General Public License as published by
-       the Free Software Foundation, either version 3 of the License, or
-       (at your option) any later version.
-       This program is distributed in the hope that it will be useful,
-       but WITHOUT ANY WARRANTY; without even the implied warranty of
-       MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-       GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see http://www.gnu.org/licenses/.
-
-
-    Icelandic speech synthesis via various Text-To-Speech services.
-
+    
 """
 
 from typing import (
@@ -34,16 +19,16 @@ from typing import (
 )
 from types import ModuleType
 
-import logging
+from logging import getLogger
+_LOG = getLogger(__file__)
 import importlib
 from pathlib import Path
 from inspect import isfunction, ismethod
 from html.parser import HTMLParser
 from collections import deque
-from speech.trans import TRANSCRIBER_CLASS, DefaultTranscriber, TranscriptionMethod
+from .trans import TRANSCRIBER_CLASS, DefaultTranscriber, TranscriptionMethod
 
 from utility import GREYNIR_ROOT_DIR, cap_first, modules_in_dir
-
 
 # Text formats
 # For details about SSML markup, see:
@@ -79,7 +64,7 @@ def _load_voice_modules() -> Dict[str, ModuleType]:
                 assert v not in v2m, f"Voice '{v}' already declared in module {v2m[v]}"
                 v2m[v] = m
         except Exception as e:
-            logging.error(f"Error importing voice module {modname}: {e}")
+            _LOG.error(f"Error importing voice module {modname}: {e}")
 
     return v2m
 
@@ -99,7 +84,7 @@ def _sanitize_args(args: Dict[str, Any]) -> Dict[str, Any]:
     # Make sure we have a valid voice ID
     voice_id = args["voice_id"].lower().capitalize()
     if voice_id not in SUPPORTED_VOICES:
-        logging.warning(
+        _LOG.warning(
             f"Voice '{voice_id}' not in supported voices, reverting to default ({DEFAULT_VOICE})"
         )
         args["voice_id"] = DEFAULT_VOICE
@@ -180,7 +165,7 @@ class GreynirSSMLParser(HTMLParser):
         """
         super().__init__()
         if voice_id not in SUPPORTED_VOICES:
-            logging.warning(
+            _LOG.warning(
                 f"Voice '{voice_id}' not in supported voices, reverting to default ({DEFAULT_VOICE})"
             )
             voice_id = DEFAULT_VOICE

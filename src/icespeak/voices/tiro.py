@@ -1,21 +1,8 @@
-#!/usr/bin/env python
 """
 
-    Greynir: Natural language processing for Icelandic
+    Icespeak - Icelandic TTS library
 
-    Copyright (C) 2023 Miðeind ehf.
-
-       This program is free software: you can redistribute it and/or modify
-       it under the terms of the GNU General Public License as published by
-       the Free Software Foundation, either version 3 of the License, or
-       (at your option) any later version.
-       This program is distributed in the hope that it will be useful,
-       but WITHOUT ANY WARRANTY; without even the implied warranty of
-       MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-       GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see http://www.gnu.org/licenses/.
+    Copyright (C) 2023 Miðeind ehf.  All rights reserved.
 
 
     Icelandic-language text to speech via Tiro's text to speech API.
@@ -24,7 +11,8 @@
 
 from typing import Optional
 
-import logging
+from logging import getLogger
+_LOG = getLogger(__file__)
 import uuid
 from pathlib import Path
 
@@ -57,7 +45,7 @@ def text_to_audio_data(
     text_format = "text"
 
     if audio_format not in AUDIO_FORMATS:
-        logging.warn(
+        _LOG.warn(
             f"Unsupported audio format for Tiro speech synthesis: {audio_format}."
             " Falling back to mp3"
         )
@@ -81,7 +69,7 @@ def text_to_audio_data(
             )
         return r.content
     except Exception as e:
-        logging.error(f"Error communicating with Tiro API at {_TIRO_TTS_URL}: {e}")
+        _LOG.error(f"Error communicating with Tiro API at {_TIRO_TTS_URL}: {e}")
 
 
 def text_to_audio_url(
@@ -103,7 +91,7 @@ def text_to_audio_url(
         with open(out_fn, "wb") as f:
             f.write(data)
     except Exception as e:
-        logging.error(f"Error writing audio file {out_fn}: {e}")
+        _LOG.error(f"Error writing audio file {out_fn}: {e}")
         return None
 
     # Generate and return file:// URL to audio file

@@ -1,21 +1,8 @@
-#!/usr/bin/env python
 """
 
-    Greynir: Natural language processing for Icelandic
+    Icespeak - Icelandic TTS library
 
-    Copyright (C) 2023 Miðeind ehf.
-
-       This program is free software: you can redistribute it and/or modify
-       it under the terms of the GNU General Public License as published by
-       the Free Software Foundation, either version 3 of the License, or
-       (at your option) any later version.
-       This program is distributed in the hope that it will be useful,
-       but WITHOUT ANY WARRANTY; without even the implied warranty of
-       MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-       GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see http://www.gnu.org/licenses/.
+    Copyright (C) 2023 Miðeind ehf.  All rights reserved.
 
 
     Icelandic-language text to speech via the MS Azure Speech API.
@@ -24,17 +11,18 @@
 
 from typing import Optional, Tuple
 
-import logging
+from logging import getLogger
+_LOG = getLogger(__file__)
 import json
 import uuid
 import pathlib
 
-import azure.cognitiveservices.speech as speechsdk
+import azure.cognitiveservices.speech as speechsdk # pyright: ignore[reportMissingTypeStubs]
 
 from . import AUDIO_SCRATCH_DIR
 from utility import RESOURCES_DIR
-from speech.trans import DefaultTranscriber, strip_markup
-from speech.voices import suffix_for_audiofmt
+from ..trans import DefaultTranscriber, strip_markup
+from . import suffix_for_audiofmt
 
 
 NAME = "Azure Cognitive Services"
@@ -105,7 +93,7 @@ def _azure_api_key() -> Tuple[str, str]:
             _AZURE_API_KEY = js["key"]
             _AZURE_API_REGION = js["region"]
     except Exception as e:
-        logging.warning(f"Unable to read Azure Speech API credentials: {e}")
+        _LOG.warning(f"Unable to read Azure Speech API credentials: {e}")
 
     return (_AZURE_API_KEY, _AZURE_API_REGION)
 
@@ -121,7 +109,7 @@ def _synthesize_text(
     """Synthesizes text via Azure and returns path to generated audio file."""
 
     if audio_format not in AUDIO_FORMATS:
-        logging.warn(
+        _LOG.warn(
             f"Unsupported audio format for Azure speech synthesis: {audio_format}."
             " Falling back to mp3"
         )
@@ -184,11 +172,11 @@ def _synthesize_text(
             return out_fn
         elif result.reason == speechsdk.ResultReason.Canceled:
             cancellation_details = result.cancellation_details
-            logging.error(f"Speech synthesis canceled: {cancellation_details.reason}")
+            _LOG.error(f"Speech synthesis canceled: {cancellation_details.reason}")
             if cancellation_details.reason == speechsdk.CancellationReason.Error:
-                logging.error(f"Azure TTS error: {cancellation_details.error_details}")
+                _LOG.error(f"Azure TTS error: {cancellation_details.error_details}")
     except Exception as e:
-        logging.error(f"Error communicating with Azure Speech API: {e}")
+        _LOG.error(f"Error communicating with Azure Speech API: {e}")
 
 
 def text_to_audio_data(
@@ -207,7 +195,7 @@ def text_to_audio_data(
                 audio_data = f.read()
             return audio_data
         except Exception as e:
-            logging.error(
+            _LOG.error(
                 f"Azure: Error reading synthesized audio file {audio_file_path}: {e}"
             )
     return None
