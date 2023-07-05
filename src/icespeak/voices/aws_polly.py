@@ -17,10 +17,10 @@ from logging import getLogger
 _LOG = getLogger(__file__)
 from threading import Lock
 
-import boto3  # type: ignore
+import boto3  # pyright: ignore[reportMissingTypeStubs]
 import cachetools
 import requests
-from botocore.exceptions import ClientError  # type: ignore
+from botocore.exceptions import ClientError  # pyright: ignore[reportMissingTypeStubs]
 from utility import RESOURCES_DIR
 
 NAME = "Amazon Polly"

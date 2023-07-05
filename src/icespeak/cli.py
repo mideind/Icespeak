@@ -85,7 +85,11 @@ def _fetch_audio_bytes(url: str) -> Optional[bytes]:
 
 
 def _write_wav(
-    fn: str, data: bytes, num_channels=1, sample_width=2, sample_rate=16000
+    fn: str,
+    data: bytes,
+    num_channels: int = 1,
+    sample_width: int = 2,
+    sample_rate: int = 16000,
 ) -> None:
     """Write audio data to WAV file. Defaults to 16-bit mono 16 kHz PCM."""
     with wave.open(fn, "wb") as wav:
@@ -99,20 +103,20 @@ def _play_audio_file(path: str) -> None:
     """Play audio file at path via command line player. This only works
     on systems with afplay (macOS), mpv, mpg123 or cmdmp3 installed."""
 
-    AFPLAY = "/usr/bin/afplay"  # afplay is only present on macOS systems
-    MPV = which("mpv")  # mpv is a cross-platform player
-    MPG123 = which("mpg123")  # mpg123 is a cross-platform player
-    CMDMP3 = which("cmdmp3")  # cmdmp3 is a Windows command line mp3 player
+    afplay = "/usr/bin/afplay"  # afplay is only present on macOS systems
+    mpv = which("mpv")  # mpv is a cross-platform player
+    mpg123 = which("mpg123")  # mpg123 is a cross-platform player
+    cmdmp3 = which("cmdmp3")  # cmdmp3 is a Windows command line mp3 player
 
     cmd: Optional[list[str]] = None
-    if Path(AFPLAY).is_file():
-        cmd = [AFPLAY, path]
-    elif MPV:
-        cmd = [MPV, path]
-    elif MPG123:
-        cmd = [MPG123, "--quiet", path]
-    elif CMDMP3:
-        cmd = [CMDMP3, path]
+    if Path(afplay).is_file():
+        cmd = [afplay, path]
+    elif mpv:
+        cmd = [mpv, path]
+    elif mpg123:
+        cmd = [mpg123, "--quiet", path]
+    elif cmdmp3:
+        cmd = [cmdmp3, path]
 
     if not cmd:
         _die("Couldn't find suitable command line audio player.")

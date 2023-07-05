@@ -16,10 +16,13 @@ requires-python = ">=3.9"
 dependencies = [
     # Async HTTP requests, with optimization extras
     # "aiohttp[speedups]>=3.8.4",
-    # Azure ASR
+    # Azure TTS
     "azure-cognitiveservices-speech>=1.25.0",
-    # Google ASR
+    # Google TTS
     "google-cloud-speech>=2.19.0",
+    # AWS Polly TTS
+    "botocore>=1.21.40",
+    "boto3>=1.18.40",
 ]
 
 [tool.pytest.ini_options]
