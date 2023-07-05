@@ -600,17 +600,19 @@ class DefaultTranscriber:
         If literal is set, also pronounce spaces and punctuation symbols.
         """
 
-        def pronounce(c: str) -> str:
+        def pronounce_nonliteral(c: str) -> str:
             return cls._CHAR_PRONUNCIATION.get(c.lower(), c) if not c.isspace() else ""
 
+        f = pronounce_nonliteral
         if literal:
 
-            def pronounce(c):
+            def pronounce_literal(c: str) -> str:
                 return cls._CHAR_PRONUNCIATION.get(
                     c.lower(), cls._PUNCT_PRONUNCIATION.get(c, c)
                 )
 
-        t = tuple(map(pronounce, txt))
+            f = pronounce_literal
+        t = tuple(map(f, txt))
         return (
             cls.vbreak(time="0.01s")
             + cls.vbreak(time=pause_length or "0.02s").join(t)

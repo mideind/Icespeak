@@ -8,19 +8,18 @@
     Icelandic-language text to speech via the Google Cloud API.
 
 """
-
+# pyright: reportUnknownMemberType=false
 from typing import Optional
 
-from logging import getLogger
-
-_LOG = getLogger(__file__)
 import uuid
+from logging import getLogger
 from pathlib import Path
 
-from google.cloud import texttospeech
+from google.cloud import texttospeech  # pyright: ignore[reportMissingTypeStubs]
 
 from . import AUDIO_SCRATCH_DIR, suffix_for_audiofmt
 
+_LOG = getLogger(__file__)
 NAME = "Google"
 VOICES = frozenset(("Anna",))
 AUDIO_FORMATS = frozenset("mp3")

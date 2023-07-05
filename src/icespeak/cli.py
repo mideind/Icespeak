@@ -20,10 +20,8 @@ from typing import Optional, cast
 
 import subprocess
 import sys
-from logging import getLogger
-
-_LOG = getLogger(__file__)
 import wave
+from logging import getLogger
 from pathlib import Path
 from shutil import which
 from urllib.request import urlopen
@@ -43,6 +41,7 @@ from .voices import suffix_for_audiofmt
 
 # from .utility import sanitize_filename
 
+_LOG = getLogger(__file__)
 
 def _die(msg: str, exit_code: int = 1) -> None:
     print(msg, file=sys.stderr)

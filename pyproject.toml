@@ -19,7 +19,7 @@ dependencies = [
     # Azure TTS
     "azure-cognitiveservices-speech>=1.25.0",
     # Google TTS
-    "google-cloud-speech>=2.19.0",
+    "google-cloud-texttospeech>=2.14.0",
     # AWS Polly TTS
     "botocore>=1.21.40",
     "boto3>=1.18.40",

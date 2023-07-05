@@ -8,12 +8,13 @@
 """
 
 from base64 import b64encode
+from pathlib import Path
 
-from utility import STATIC_DIR
-
+# TODO: Un-hardcode these
+# TTS API keys directory
+KEYS_DIR = Path("keys")
 # Directory for temporary audio files
-AUDIO_SCRATCH_DIR = STATIC_DIR / "audio" / "tmp"
-
+AUDIO_SCRATCH_DIR = Path("audio")
 
 # Mime types and suffixes
 BINARY_MIMETYPE = "application/octet-stream"

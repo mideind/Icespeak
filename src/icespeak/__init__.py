@@ -14,13 +14,11 @@ from typing import (
     Optional,
 )
 
-from logging import getLogger
-
-_LOG = getLogger(__file__)
 import importlib
 from collections import deque
 from html.parser import HTMLParser
 from inspect import isfunction, ismethod
+from logging import getLogger
 
 from utility import GREYNIR_ROOT_DIR, cap_first, modules_in_dir
 
@@ -29,6 +27,7 @@ from .trans import TRANSCRIBER_CLASS, DefaultTranscriber, TranscriptionMethod
 if TYPE_CHECKING:
     from collections.abc import Iterable
 
+_LOG = getLogger(__file__)
 # Text formats
 # For details about SSML markup, see:
 # https://developer.amazon.com/en-US/docs/alexa/custom-skills/speech-synthesis-markup-language-ssml-reference.html

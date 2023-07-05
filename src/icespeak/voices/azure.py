@@ -11,20 +11,18 @@
 
 from typing import Optional
 
-from logging import getLogger
-
-_LOG = getLogger(__file__)
 import json
 import pathlib
 import uuid
+from logging import getLogger
 
 import azure.cognitiveservices.speech as speechsdk  # pyright: ignore[reportMissingTypeStubs]
-from utility import RESOURCES_DIR
 
 from icespeak.trans import DefaultTranscriber, strip_markup
 
-from . import AUDIO_SCRATCH_DIR, suffix_for_audiofmt
+from . import AUDIO_SCRATCH_DIR, KEYS_DIR, suffix_for_audiofmt
 
+_LOG = getLogger(__file__)
 NAME = "Azure Cognitive Services"
 AUDIO_FORMATS = frozenset(("mp3", "pcm", "opus"))
 _VOICE_TO_ID = {
@@ -73,7 +71,7 @@ _DEFAULT_VOICE_ID = "is-IS-GudrunNeural"
 #
 _AZURE_KEYFILE_NAME = "AzureSpeechServerKey.json"
 
-_AZURE_API_KEY_PATH = str(RESOURCES_DIR / _AZURE_KEYFILE_NAME)
+_AZURE_API_KEY_PATH = str(KEYS_DIR / _AZURE_KEYFILE_NAME)
 
 _AZURE_API_KEY = ""
 _AZURE_API_REGION = ""

@@ -8,21 +8,22 @@
     Icelandic-language text to speech via Amazon Polly.
 
 """
+# pyright: reportUnknownMemberType=false
 
 from typing import Any, Optional, cast
 
 import json
 from logging import getLogger
-
-_LOG = getLogger(__file__)
 from threading import Lock
 
 import boto3  # pyright: ignore[reportMissingTypeStubs]
 import cachetools
 import requests
 from botocore.exceptions import ClientError  # pyright: ignore[reportMissingTypeStubs]
-from utility import RESOURCES_DIR
 
+from . import KEYS_DIR
+
+_LOG = getLogger(__file__)
 NAME = "Amazon Polly"
 VOICES = frozenset(("Karl", "Dora"))
 AUDIO_FORMATS = frozenset(("mp3", "pcm", "ogg_vorbis"))
@@ -37,7 +38,7 @@ AUDIO_FORMATS = frozenset(("mp3", "pcm", "ogg_vorbis"))
 # }
 #
 _AWS_KEYFILE_NAME = "AWSPollyServerKey.json"
-_AWS_API_KEYS_PATH = str(RESOURCES_DIR / _AWS_KEYFILE_NAME)
+_AWS_API_KEYS_PATH = str(KEYS_DIR / _AWS_KEYFILE_NAME)
 
 
 _aws_api_client: Optional[boto3.Session] = None
@@ -59,9 +60,9 @@ def _initialize_aws_client() -> Optional[boto3.Session]:
             except Exception as e:
                 _LOG.warning(f"Unable to read AWS Polly credentials: {e}")
                 return None
-            _api_client = boto3.Session(**aws_config).client("polly")
+            _api_client: boto3.Session = boto3.Session(**aws_config).client("polly")  # type: ignore
         # Return client instance
-        return _api_client  # type: ignore
+        return _api_client
 
 
 # Time to live (in seconds) for synthesized text URL caching

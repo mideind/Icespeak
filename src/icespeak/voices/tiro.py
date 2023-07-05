@@ -11,17 +11,17 @@
 
 from typing import Optional
 
-from logging import getLogger
-
-_LOG = getLogger(__file__)
 import uuid
+from logging import getLogger
 from pathlib import Path
 
 import requests
-from speech.trans import strip_markup
+
+from icespeak.trans import strip_markup
 
 from . import AUDIO_SCRATCH_DIR, suffix_for_audiofmt
 
+_LOG = getLogger(__file__)
 NAME = "Tiro"
 VOICES = frozenset(("Alfur", "Dilja", "Bjartur", "Rosa", "Alfur_v2", "Dilja_v2"))
 AUDIO_FORMATS = frozenset(("mp3", "pcm", "ogg_vorbis"))
