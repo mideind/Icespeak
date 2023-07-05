@@ -4,31 +4,30 @@
 
     Copyright (C) 2023 Miðeind ehf.  All rights reserved.
 
-    
+
 """
 
-from typing import (
-    Any,
-    Deque,
-    Dict,
-    Iterable,
-    List,
-    Optional,
-    Tuple,
-    Type,
-)
 from types import ModuleType
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Optional,
+)
 
 from logging import getLogger
+
 _LOG = getLogger(__file__)
 import importlib
-from pathlib import Path
-from inspect import isfunction, ismethod
-from html.parser import HTMLParser
 from collections import deque
-from .trans import TRANSCRIBER_CLASS, DefaultTranscriber, TranscriptionMethod
+from html.parser import HTMLParser
+from inspect import isfunction, ismethod
 
 from utility import GREYNIR_ROOT_DIR, cap_first, modules_in_dir
+
+from .trans import TRANSCRIBER_CLASS, DefaultTranscriber, TranscriptionMethod
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
 
 # Text formats
 # For details about SSML markup, see:
@@ -48,16 +47,16 @@ VOICES_DIR = GREYNIR_ROOT_DIR / "speech" / "voices"
 assert VOICES_DIR.is_dir()
 
 
-def _load_voice_modules() -> Dict[str, ModuleType]:
+def _load_voice_modules() -> dict[str, ModuleType]:
     """Dynamically load all voice modules, map
     voice ID strings to the relevant modules."""
 
-    v2m: Dict[str, ModuleType] = {}
+    v2m: dict[str, ModuleType] = {}
     for modname in modules_in_dir(VOICES_DIR):
         try:
             # Try to import
             m = importlib.import_module(modname)
-            voices: Iterable[str] = getattr(m, "VOICES")
+            voices: Iterable[str] = m.VOICES
             if not voices:
                 continue  # No voices declared, skip
             for v in voices:
@@ -79,7 +78,7 @@ assert DEFAULT_VOICE in SUPPORTED_VOICES
 assert DEFAULT_VOICE in RECOMMENDED_VOICES
 
 
-def _sanitize_args(args: Dict[str, Any]) -> Dict[str, Any]:
+def _sanitize_args(args: dict[str, Any]) -> dict[str, Any]:
     """Make sure arguments to speech synthesis functions are sane."""
     # Make sure we have a valid voice ID
     voice_id = args["voice_id"].lower().capitalize()
@@ -114,7 +113,7 @@ def text_to_audio_data(
     module = VOICE_TO_MODULE.get(voice_id)
     assert module is not None
     # Get the function from the module
-    fn = getattr(module, "text_to_audio_data")
+    fn = module.text_to_audio_data
     assert isfunction(fn)
     # Call function in module, passing on the arguments
     return fn(**_sanitize_args(args))
@@ -137,7 +136,7 @@ def text_to_audio_url(
     module = VOICE_TO_MODULE.get(voice_id)
     assert module is not None
     # Get the function from the module
-    fn = getattr(module, "text_to_audio_url")
+    fn = module.text_to_audio_url
     assert isfunction(fn)
     # Call function in module, passing on the arguments
     return fn(**_sanitize_args(args))
@@ -174,7 +173,7 @@ class GreynirSSMLParser(HTMLParser):
 
         # Fetch transcriber for this voice module,
         # using DefaultTranscriber as fallback
-        self._handler: Type[DefaultTranscriber] = getattr(
+        self._handler: type[DefaultTranscriber] = getattr(
             module, TRANSCRIBER_CLASS, DefaultTranscriber
         )
 
@@ -186,9 +185,9 @@ class GreynirSSMLParser(HTMLParser):
         self.reset()
 
         # Set (or reset) variables used during parsing
-        self._str_stack: Deque[str] = deque()
+        self._str_stack: deque[str] = deque()
         self._str_stack.append("")
-        self._attr_stack: Deque[Dict[str, Optional[str]]] = deque()
+        self._attr_stack: deque[dict[str, Optional[str]]] = deque()
 
         self.feed(voice_string)
         self.close()
@@ -199,7 +198,7 @@ class GreynirSSMLParser(HTMLParser):
 
     # ----------------------------------------
 
-    def handle_starttag(self, tag: str, attrs: List[Tuple[str, Optional[str]]]):
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, Optional[str]]]):
         """Called when a tag is opened."""
         if tag == "greynir":
             self._str_stack.append("")
@@ -230,7 +229,7 @@ class GreynirSSMLParser(HTMLParser):
             else:
                 self._str_stack.append(s)
 
-    def handle_startendtag(self, tag: str, attrs: List[Tuple[str, Optional[str]]]):
+    def handle_startendtag(self, tag: str, attrs: list[tuple[str, Optional[str]]]):
         """Called when a empty tag is opened (and closed), e.g. '<greynir ... />'."""
         if tag == "greynir":
             dattrs = dict(attrs)

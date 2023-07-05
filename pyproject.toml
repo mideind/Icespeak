@@ -58,6 +58,24 @@ ignore = [
     "S101",   # Disallow assert statements rule
     "TRY",    # Pedantic exception rules
     "EM",     # Pedantic exception message rules
+    "PLR",
+    "ARG",
+    "C",
+    "E",
+    "BLE",
+    "ANN",
+    "PTH",
+    "SLF",
+    "RUF",
+    "PGH",
+    "SIM",
+    "F",
+    "FA",
+    "N",
+    "A",
+    "ISC",
+    "PLW",
+    "RET",
     # Keep these ignored (either disagreeable or cause issues)
     "COM", # Commas (sometimes takes issue with black formatting)
     "ERA", # Commented out code
@@ -81,6 +99,8 @@ section-order = [
 typehints = ["typing", "typing_extensions", "types"]
 
 [project.optional-dependencies]
+# Dependencies needed to parse text for more in-depth transcribing
+parsing = ["tokenizer", "reynir", "islenska"]
 # Dev dependencies
 dev = [
     "pytest>=7.2.1",

@@ -9,11 +9,11 @@
     numbers to Icelandic text.
 
 """
-
-from typing import Mapping, Optional, Callable, Union
+from typing import Optional, Union
 from typing_extensions import Literal
-import re
 
+import re
+from collections.abc import Mapping
 
 _SUB_20_NEUTRAL: Mapping[int, str] = {
     1: "eitt",
@@ -86,6 +86,10 @@ _LARGE_NUMBERS: tuple[tuple[int, str, str], ...] = (
     (10**9, "milljarð", "kk"),
     (10**6, "milljón", "kvk"),
 )
+_MILLION = 1000000
+_THOUSAND = 1000
+_HUNDRED = 100
+_TWENTY = 20
 
 
 def number_to_neutral(n: int = 0, *, one_hundred: bool = False) -> str:
@@ -107,18 +111,14 @@ def number_to_neutral(n: int = 0, *, one_hundred: bool = False) -> str:
         minus = "mínus "
         n = -n
 
-    MILLION = 1000000
-    THOUSAND = 1000
-
     # Helper function to check whether a number should be prefixed with "og"
-    should_prepend_og: Callable[[int], bool] = (
-        lambda x: x > 0 and int(str(x).rstrip("0")) < 20
-    )
+    def should_prepend_og(x: int) -> bool:
+        return x > 0 and int(str(x).rstrip("0")) < _TWENTY
 
     # Very large numbers
-    while n >= MILLION:
+    while n >= _MILLION:
         large_num, isl_num, gender = 1, "", ""
-        for large_num, isl_num, gender in _LARGE_NUMBERS:
+        for large_num, isl_num, gender in _LARGE_NUMBERS:  # noqa: B007
             if large_num <= n:
                 break
 
@@ -130,10 +130,9 @@ def number_to_neutral(n: int = 0, *, one_hundred: bool = False) -> str:
         if gender == "kk":
             # e.g. "milljarður" if last number ends with "eitt/einn" else "milljarðar"
             isl_num += "ur" if last == "eitt" else "ar"
-        elif gender == "kvk":
+        elif gender == "kvk" and last != "eitt":
             # e.g. "milljón" if last number ends with "eitt/ein" else "milljónir"
-            if last != "eitt":
-                isl_num += "ir"
+            isl_num += "ir"
 
         if last in _NUM_NEUT_TO_DECL:
             # Change "eitt" to "einn/ein"
@@ -143,8 +142,8 @@ def number_to_neutral(n: int = 0, *, one_hundred: bool = False) -> str:
         if should_prepend_og(n):
             text.append("og")
 
-    if THOUSAND <= n < MILLION:
-        thousands, n = divmod(n, THOUSAND)
+    if _THOUSAND <= n < _MILLION:
+        thousands, n = divmod(n, _THOUSAND)
 
         if thousands > 1:
             text.extend(number_to_neutral(thousands, one_hundred=True).split())
@@ -157,7 +156,7 @@ def number_to_neutral(n: int = 0, *, one_hundred: bool = False) -> str:
         if should_prepend_og(n) and n not in range(110, 200, 10):
             text.append("og")
 
-    if 100 <= n < THOUSAND:
+    if _HUNDRED <= n < _THOUSAND:
         hundreds, n = divmod(n, 100)
 
         if hundreds > 1:
@@ -177,7 +176,7 @@ def number_to_neutral(n: int = 0, *, one_hundred: bool = False) -> str:
         if should_prepend_og(n):
             text.append("og")
 
-    if 20 <= n < 100:
+    if _TWENTY <= n < _HUNDRED:
         tens, digit = divmod(n, 10)
         tens *= 10
 
@@ -187,7 +186,7 @@ def number_to_neutral(n: int = 0, *, one_hundred: bool = False) -> str:
             text.append(_SUB_20_NEUTRAL[digit])
         n = 0
 
-    if 0 < n < 20:
+    if 0 < n < _TWENTY:
         text.append(_SUB_20_NEUTRAL[n])
         n = 0
 
@@ -624,9 +623,7 @@ def neutral_text_to_ordinal(
     # Change e.g.
     # "eitt hundraðasti" -> "hundraðasti"
     # "ein milljónasta og fyrsta" -> "milljónasta og fyrsta"
-    ordinal_str = re.sub(r"^(einn?|eitt) ((\S*)([au]st[iau]))", r"\2", ordinal_str)
-
-    return ordinal_str
+    return re.sub(r"^(einn?|eitt) ((\S*)([au]st[iau]))", r"\2", ordinal_str)
 
 
 def number_to_ordinal(
@@ -705,7 +702,7 @@ def digits_to_text(s: str, *, regex: str = r"\b\d+") -> str:
     return re.sub(regex, convert, s)
 
 
-_ROMAN_NUMERALS: Mapping[str, int] = {
+ROMAN_NUMERALS: Mapping[str, int] = {
     "I": 1,
     "V": 5,
     "X": 10,
@@ -721,7 +718,7 @@ def _roman_numeral_to_int(n: str) -> int:
     Helper function, changes a correct roman numeral to an integer.
     Source: https://stackoverflow.com/a/52426119
     """
-    nums = [_ROMAN_NUMERALS[i] for i in n.upper() if i in _ROMAN_NUMERALS]
+    nums = [ROMAN_NUMERALS[i] for i in n.upper() if i in ROMAN_NUMERALS]
     return sum(
         val if val >= nums[min(i + 1, len(n) - 1)] else -val
         for i, val in enumerate(nums)

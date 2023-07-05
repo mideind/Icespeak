@@ -9,21 +9,21 @@
 
 """
 
-from typing import Optional, Tuple
+from typing import Optional
 
 from logging import getLogger
+
 _LOG = getLogger(__file__)
 import json
-import uuid
 import pathlib
+import uuid
 
-import azure.cognitiveservices.speech as speechsdk # pyright: ignore[reportMissingTypeStubs]
-
-from . import AUDIO_SCRATCH_DIR
+import azure.cognitiveservices.speech as speechsdk  # pyright: ignore[reportMissingTypeStubs]
 from utility import RESOURCES_DIR
-from ..trans import DefaultTranscriber, strip_markup
-from . import suffix_for_audiofmt
 
+from icespeak.trans import DefaultTranscriber, strip_markup
+
+from . import AUDIO_SCRATCH_DIR, suffix_for_audiofmt
 
 NAME = "Azure Cognitive Services"
 AUDIO_FORMATS = frozenset(("mp3", "pcm", "opus"))
@@ -79,7 +79,7 @@ _AZURE_API_KEY = ""
 _AZURE_API_REGION = ""
 
 
-def _azure_api_key() -> Tuple[str, str]:
+def _azure_api_key() -> tuple[str, str]:
     """Lazy-load API key and region from JSON and return as tuple."""
     global _AZURE_API_KEY
     global _AZURE_API_REGION
@@ -192,8 +192,7 @@ def text_to_audio_data(
         try:
             # Read audio data from file and return it
             with open(audio_file_path, "rb") as f:
-                audio_data = f.read()
-            return audio_data
+                return f.read()
         except Exception as e:
             _LOG.error(
                 f"Azure: Error reading synthesized audio file {audio_file_path}: {e}"
@@ -213,18 +212,8 @@ def text_to_audio_url(
     audio_file_path = _synthesize_text(**locals())
     if audio_file_path:
         # Generate and return file:// URL to audio file
-        url = pathlib.Path(audio_file_path).as_uri()
-        return url
+        return pathlib.Path(audio_file_path).as_uri()
     return None
-
-    # Old method returned data URI
-    # data = text_to_audio_data(**locals())
-    # if not data:
-    #     return None
-    # # Generate Data URI from the bytes received
-    # mime_type = mimetype_for_audiofmt(audio_format)
-    # data_uri = generate_data_uri(data, mime_type=mime_type)
-    # return data_uri
 
 
 class Transcriber(DefaultTranscriber):

@@ -8,8 +8,8 @@
 """
 
 from base64 import b64encode
-from utility import STATIC_DIR
 
+from utility import STATIC_DIR
 
 # Directory for temporary audio files
 AUDIO_SCRATCH_DIR = STATIC_DIR / "audio" / "tmp"

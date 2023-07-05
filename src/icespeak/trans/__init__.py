@@ -11,51 +11,40 @@
 """
 
 
-from typing import (
-    Any,
-    Callable,
-    FrozenSet,
-    Iterable,
-    List,
-    Match,
-    Mapping,
-    Optional,
-    Tuple,
-    Union,
-    cast,
-)
+from typing import Any, Callable, Optional, Union, cast
 
-import re
 import itertools
+import re
+from collections.abc import Iterable, Mapping
 from functools import lru_cache
+from re import Match
 
-from tokenizer import Abbreviations
-
-# Ensure abbreviations have been loaded
-Abbreviations.initialize()
-
-from tokenizer.definitions import HYPHENS
 from islenska.basics import ALL_CASES, ALL_GENDERS, ALL_NUMBERS
+from reynir import TOK, Greynir, Tok
 from reynir.bindb import GreynirBin
 from reynir.simpletree import SimpleTree
-from reynir import Greynir, TOK, Tok
+from tokenizer import Abbreviations
+from tokenizer.definitions import HYPHENS
 
 from .num import (
+    ROMAN_NUMERALS,
     CaseType,
     GenderType,
     NumberType,
     digits_to_text,
     float_to_text,
     floats_to_text,
-    number_to_text,
-    numbers_to_text,
     number_to_ordinal,
+    number_to_text,
     numbers_to_ordinal,
+    numbers_to_text,
+    roman_numeral_to_ordinal,
     year_to_text,
     years_to_text,
-    _ROMAN_NUMERALS,
-    roman_numeral_to_ordinal,
 )
+
+# Ensure abbreviations have been loaded
+Abbreviations.initialize()
 
 # Each voice module in the directory `speech/voices` can define a
 # 'Transcriber' class, as a subclass of 'DefaultTranscriber', in
@@ -84,13 +73,14 @@ def gssml(data: Any = None, *, type: str, **kwargs: Union[str, int, float]) -> s
     Example:
         gssml(43, type="number", gender="kk") -> '<greynir type="number" gender="kk">43</greynir>'
     """
-    assert type and isinstance(
+    assert type, "Type keyword cannot be empty."
+    assert isinstance(
         type, str
-    ), f"type keyword arg must be non-empty string in function gssml; data: {data}"
+    ), f"type keyword arg must be string in function gssml; data: {data}"
     return (
         f'<greynir type="{type}"'
         + "".join(f' {k}="{v}"' for k, v in kwargs.items())
-        + (f">{data}</greynir>" if data is not None else f" />")
+        + (f">{data}</greynir>" if data is not None else " />")
     )
 
 
@@ -135,12 +125,12 @@ _CHAR_PRONUNCIATION: Mapping[str, str] = {
 }
 
 # Icelandic/English alphabet, uppercased
-_ICE_ENG_ALPHA = "".join(c.upper() for c in _CHAR_PRONUNCIATION.keys())
+_ICE_ENG_ALPHA = "".join(c.upper() for c in _CHAR_PRONUNCIATION)
 
 # Matches e.g. "klukkan 14:30", "kl. 2:23:31", "02:15"
 _TIME_REGEX = re.compile(
     r"((?P<klukkan>(kl\.|klukkan)) )?(?P<hour>\d{1,2}):"
-    r"(?P<minute>\d\d)(:(?P<second>\d\d))?",
+    + r"(?P<minute>\d\d)(:(?P<second>\d\d))?",
     flags=re.IGNORECASE,
 )
 _MONTH_ABBREVS = (
@@ -179,11 +169,11 @@ _DATE_REGEXES = (
     # Matches e.g. "25. janúar 1999" or "25 des."
     re.compile(
         r"(?P<day>\d{1,2})\.? ?"
-        r"(?P<month>(jan(úar|\.)?|feb(rúar|\.)?|mar(s|\.)?|"
-        r"apr(íl|\.)?|maí\.?|jún(í|\.)?|"
-        r"júl(í|\.)?|ágú(st|\.)?|sep(tember|\.)?|"
-        r"okt(óber|\.)?|nóv(ember|\.)?|des(ember|\.)?))"  # 'month' capture group ends
-        r"( (?P<year>\d{1,4}))?",  # Optional
+        + r"(?P<month>(jan(úar|\.)?|feb(rúar|\.)?|mar(s|\.)?|"
+        + r"apr(íl|\.)?|maí\.?|jún(í|\.)?|"
+        + r"júl(í|\.)?|ágú(st|\.)?|sep(tember|\.)?|"
+        + r"okt(óber|\.)?|nóv(ember|\.)?|des(ember|\.)?))"  # 'month' capture group ends
+        + r"( (?P<year>\d{1,4}))?",  # Optional
         flags=re.IGNORECASE,
     ),
 )
@@ -198,7 +188,10 @@ def _split_substring_types(t: str) -> Iterable[str]:
         list(_split_substring_types("hello world,123"))
         -> ["hello", " ", "world", ",", "123"]
     """
-    f: Callable[[str], int] = lambda c: c.isalpha() + 2 * c.isdecimal()
+
+    def f(c: str) -> int:
+        return c.isalpha() + 2 * c.isdecimal()
+
     return ("".join(g) for _, g in itertools.groupby(t, key=f))
 
 
@@ -208,11 +201,11 @@ def _split_substring_types(t: str) -> Iterable[str]:
 # (e.g. matches "EUIPO" or "MSc", but not "TESTING")
 _ABBREV_RE = re.compile(
     rf"([{_ICE_ENG_ALPHA + _ICE_ENG_ALPHA.lower()}]\."
-    rf"|\b[{_ICE_ENG_ALPHA}]{{2,5}}(?![{_ICE_ENG_ALPHA}]))"
+    + rf"|\b[{_ICE_ENG_ALPHA}]{{2,5}}(?![{_ICE_ENG_ALPHA}]))"
 )
 
 # Terms common in sentences which refer to results from sports
-_SPORTS_LEMMAS: FrozenSet[str] = frozenset(("leikur", "vinna", "tapa", "sigra"))
+_SPORTS_LEMMAS: frozenset[str] = frozenset(("leikur", "vinna", "tapa", "sigra"))
 
 _HYPHEN_SYMBOLS = frozenset(HYPHENS)
 
@@ -270,7 +263,7 @@ class DefaultTranscriber:
 
     # &,<,> cause speech synthesis errors,
     # change these to text
-    _DANGER_SYMBOLS: Tuple[Tuple[str, str], ...] = (
+    _DANGER_SYMBOLS: tuple[tuple[str, str], ...] = (
         ("&", " og "),
         ("<=", " minna eða jafnt og "),
         ("<", " minna en "),
@@ -406,12 +399,12 @@ class DefaultTranscriber:
     def timespan(cls, seconds: str) -> str:
         """Voicify a span of time, specified in seconds."""
         # TODO: Replace time_period_desc in queries/util/__init__.py
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @classmethod
     def distance(cls, meters: str) -> str:
         # TODO: Replace distance_desc in queries/util/__init__.py
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @classmethod
     @_empty_str
@@ -426,7 +419,7 @@ class DefaultTranscriber:
             s: Optional[int] = int(gd["second"]) if gd["second"] is not None else None
             suffix: Optional[str] = None
 
-            t: List[str] = []
+            t: list[str] = []
             # If "klukkan" or "kl." at beginning of string,
             # prepend "klukkan"
             if prefix:
@@ -584,7 +577,7 @@ class DefaultTranscriber:
         # Less common symbols
         "°": "gráðumerki",
         "±": "plús-mínus merki",
-        "–": "stutt þankastrik",
+        "-": "stutt þankastrik",
         "—": "þankastrik",
         "…": "úrfellingarpunktar",
         "™": "vörumerki",
@@ -606,15 +599,17 @@ class DefaultTranscriber:
         Spell out a sequence of characters.
         If literal is set, also pronounce spaces and punctuation symbols.
         """
-        pronounce: Callable[[str], str] = (
-            lambda c: cls._CHAR_PRONUNCIATION.get(c.lower(), c)
-            if not c.isspace()
-            else ""
-        )
+
+        def pronounce(c: str) -> str:
+            return cls._CHAR_PRONUNCIATION.get(c.lower(), c) if not c.isspace() else ""
+
         if literal:
-            pronounce = lambda c: cls._CHAR_PRONUNCIATION.get(
-                c.lower(), cls._PUNCT_PRONUNCIATION.get(c, c)
-            )
+
+            def pronounce(c):
+                return cls._CHAR_PRONUNCIATION.get(
+                    c.lower(), cls._PUNCT_PRONUNCIATION.get(c, c)
+                )
+
         t = tuple(map(pronounce, txt))
         return (
             cls.vbreak(time="0.01s")
@@ -649,17 +644,17 @@ class DefaultTranscriber:
     @classmethod
     def amount(cls, txt: str) -> str:
         # TODO
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @classmethod
     def currency(cls, txt: str) -> str:
         # TODO
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @classmethod
     def measurement(cls, txt: str) -> str:
         # TODO
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @classmethod
     @_empty_str
@@ -683,7 +678,7 @@ class DefaultTranscriber:
     @_empty_str
     def username(cls, txt: str) -> str:
         """Voicify a username."""
-        newtext: List[str] = []
+        newtext: list[str] = []
         if txt.startswith("@"):
             txt = txt[1:]
             newtext.append("att")
@@ -719,7 +714,7 @@ class DefaultTranscriber:
     @_empty_str
     def domain(cls, txt: str) -> str:
         """Voicify a domain name."""
-        newtext: List[str] = []
+        newtext: list[str] = []
         for x in _split_substring_types(txt):
             if x in cls._DOMAIN_PRONUNCIATIONS:
                 newtext.append(cls._DOMAIN_PRONUNCIATIONS[x])
@@ -891,11 +886,8 @@ class DefaultTranscriber:
         def _percent(tok: Tok, term: Optional[SimpleTree]) -> str:
             """Handles a percentage, e.g. '15,6%' or '40 prósent'."""
             gender = "hk"
-            n, cases, _ = cast(Tuple[float, Any, Any], tok.val)
-            if cases is None:
-                case = "nf"
-            else:
-                case = cases[0]
+            n, cases, _ = cast(tuple[float, Any, Any], tok.val)
+            case = "nf" if cases is None else cases[0]
             if n.is_integer():
                 val = cls.number(n, case=case, gender=gender)
             else:
@@ -950,10 +942,10 @@ class DefaultTranscriber:
             TOK.PERCENT: _percent,
         }
 
-        parts: List[str] = []
+        parts: list[str] = []
         for s in p_result["sentences"]:
-            s_parts: List[str] = []
-            # List of (token, terminal node) pairs.
+            s_parts: list[str] = []
+            # list of (token, terminal node) pairs.
             # Terminal nodes can be None if the sentence wasn't parseable
             tk_term_list = tuple(
                 zip(s.tokens, s.terminal_nodes or (None for _ in s.tokens))
@@ -1043,7 +1035,7 @@ class DefaultTranscriber:
                 else:
                     # Spell this part
                     parts[i] = cls.spell(p.replace(".", ""))
-            if i + 2 >= len(parts) and all(l in _ROMAN_NUMERALS for l in parts[i]):
+            if i + 2 >= len(parts) and all(l in ROMAN_NUMERALS for l in parts[i]):
                 # Last or second to last part of name looks
                 # like an uppercase roman numeral,
                 # replace with ordinal
@@ -1064,7 +1056,7 @@ class DefaultTranscriber:
                 strength in cls._VBREAK_STRENGTHS
             ), f"Break strength {strength} is invalid."
             return f'<break strength="{strength}" />'
-        return f"<break />"
+        return "<break />"
 
     @classmethod
     @_empty_str

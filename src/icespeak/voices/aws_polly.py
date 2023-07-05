@@ -9,20 +9,19 @@
 
 """
 
-from typing import Optional, Any, cast
+from typing import Any, Optional, cast
 
 import json
 from logging import getLogger
+
 _LOG = getLogger(__file__)
 from threading import Lock
 
-import requests
-import cachetools
 import boto3  # type: ignore
+import cachetools
+import requests
 from botocore.exceptions import ClientError  # type: ignore
-
 from utility import RESOURCES_DIR
-
 
 NAME = "Amazon Polly"
 VOICES = frozenset(("Karl", "Dora"))

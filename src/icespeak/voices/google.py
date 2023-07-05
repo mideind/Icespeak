@@ -12,6 +12,7 @@
 from typing import Optional
 
 from logging import getLogger
+
 _LOG = getLogger(__file__)
 import uuid
 from pathlib import Path
@@ -20,10 +21,9 @@ from google.cloud import texttospeech
 
 from . import AUDIO_SCRATCH_DIR, suffix_for_audiofmt
 
-
 NAME = "Google"
 VOICES = frozenset(("Anna",))
-AUDIO_FORMATS = frozenset(("mp3"))
+AUDIO_FORMATS = frozenset("mp3")
 
 
 def text_to_audio_data(
@@ -87,5 +87,4 @@ def text_to_audio_url(
         return None
 
     # Generate and return file:// URL to audio file
-    url = Path(out_fn).as_uri()
-    return url
+    return Path(out_fn).as_uri()

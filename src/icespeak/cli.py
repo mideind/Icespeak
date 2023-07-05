@@ -13,28 +13,31 @@
         speak-cli --help
 
 """
+# (Allow print statements)
+# ruff: noqa: T201
 
-from typing import Optional, cast, List
+from typing import Optional, cast
 
-import sys
 import subprocess
+import sys
 from logging import getLogger
+
 _LOG = getLogger(__file__)
+import wave
 from pathlib import Path
 from shutil import which
 from urllib.request import urlopen
-import wave
 
 import requests
 
 from . import (
-    text_to_audio_url,
-    DEFAULT_VOICE,
-    SUPPORTED_VOICES,
-    DEFAULT_TEXT_FORMAT,
     DEFAULT_AUDIO_FORMAT,
+    DEFAULT_TEXT_FORMAT,
+    DEFAULT_VOICE,
     SUPPORTED_AUDIO_FORMATS,
     SUPPORTED_TEXT_FORMATS,
+    SUPPORTED_VOICES,
+    text_to_audio_url,
 )
 from .voices import suffix_for_audiofmt
 
@@ -61,7 +64,7 @@ def _is_file_uri(s: str) -> bool:
 
 def _bytes4file_or_data_uri(uri: str) -> bytes:
     """Returns bytes of file at file URI (RFC8089) or in data URI (RFC2397)."""
-    with urlopen(uri) as response:
+    with urlopen(uri) as response:  # noqa: S310
         return response.read()
 
 
@@ -101,7 +104,7 @@ def _play_audio_file(path: str) -> None:
     MPG123 = which("mpg123")  # mpg123 is a cross-platform player
     CMDMP3 = which("cmdmp3")  # cmdmp3 is a Windows command line mp3 player
 
-    cmd: Optional[List[str]] = None
+    cmd: Optional[list[str]] = None
     if Path(AFPLAY).is_file():
         cmd = [AFPLAY, path]
     elif MPV:
@@ -115,7 +118,7 @@ def _play_audio_file(path: str) -> None:
         _die("Couldn't find suitable command line audio player.")
 
     print(f"Playing file '{path}'")
-    subprocess.run(cast(List[str], cmd))
+    subprocess.run(cast(list[str], cmd))  # noqa: S603
 
 
 DEFAULT_TEXT = ["Góðan daginn og til hamingju með lífið."]
