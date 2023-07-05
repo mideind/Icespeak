@@ -163,3 +163,5 @@ $RECYCLE.BIN/
 # Coverage test cache
 .coverage
 
+audio/*
+keys/*
