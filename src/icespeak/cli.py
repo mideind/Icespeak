@@ -2,7 +2,7 @@
 
     Icespeak - Icelandic TTS library
 
-    Copyright (C) 2023 Miðeind ehf.  All rights reserved.
+    Copyright (C) 2023 Miðeind ehf.
 
        This program is free software: you can redistribute it and/or modify
        it under the terms of the GNU General Public License as published by
@@ -54,6 +54,7 @@ from .voices import suffix_for_audiofmt
 # from .utility import sanitize_filename
 
 _LOG = getLogger(__file__)
+
 
 def _die(msg: str, exit_code: int = 1) -> None:
     print(msg, file=sys.stderr)

@@ -2,7 +2,7 @@
 
     Icespeak - Icelandic TTS library
 
-    Copyright (C) 2023 Miðeind ehf.  All rights reserved.
+    Copyright (C) 2023 Miðeind ehf.
 
        This program is free software: you can redistribute it and/or modify
        it under the terms of the GNU General Public License as published by

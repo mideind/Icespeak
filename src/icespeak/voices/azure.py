@@ -2,7 +2,7 @@
 
     Icespeak - Icelandic TTS library
 
-    Copyright (C) 2023 Miðeind ehf.  All rights reserved.
+    Copyright (C) 2023 Miðeind ehf.
 
        This program is free software: you can redistribute it and/or modify
        it under the terms of the GNU General Public License as published by
@@ -182,9 +182,9 @@ def _synthesize_text(
             return out_fn
         elif result.reason == speechsdk.ResultReason.Canceled:
             cancellation_details = result.cancellation_details
-            _LOG.error("Speech synthesis canceled: %s",cancellation_details.reason)
+            _LOG.error("Speech synthesis canceled: %s", cancellation_details.reason)
             if cancellation_details.reason == speechsdk.CancellationReason.Error:
-                _LOG.error("Azure TTS error: %s",cancellation_details.error_details)
+                _LOG.error("Azure TTS error: %s", cancellation_details.error_details)
     except Exception:
         _LOG.exception("Error communicating with Azure Speech API.")
 
