@@ -59,8 +59,8 @@ def text_to_audio_data(
             input=synthesis_input, voice=voice, audio_config=audio_config
         )
         return response.audio_content
-    except Exception as e:
-        _LOG.error(f"Error communicating with Google Cloud STT API: {e}")
+    except Exception:
+        _LOG.exception("Error communicating with Google Cloud STT API.")
 
 
 def text_to_audio_url(
@@ -81,8 +81,8 @@ def text_to_audio_url(
     try:
         with open(out_fn, "wb") as f:
             f.write(data)
-    except Exception as e:
-        _LOG.error(f"Error writing audio file {out_fn}: {e}")
+    except Exception:
+        _LOG.exception("Error writing audio file %s.", out_fn)
         return None
 
     # Generate and return file:// URL to audio file

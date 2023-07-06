@@ -58,7 +58,7 @@ def _initialize_aws_client() -> Optional[boto3.Session]:
                 with open(_AWS_API_KEYS_PATH) as json_file:
                     aws_config = json.load(json_file)
             except Exception as e:
-                _LOG.warning(f"Unable to read AWS Polly credentials: {e}")
+                _LOG.warning("Unable to read AWS Polly credentials: %s", e)
                 return None
             _api_client: boto3.Session = boto3.Session(**aws_config).client("polly")  # type: ignore
         # Return client instance
@@ -94,8 +94,9 @@ def text_to_audio_url(
 
     if audio_format not in AUDIO_FORMATS:
         _LOG.warn(
-            f"Unsupported audio format for Amazon Polly speech synthesis: {audio_format}."
-            " Falling back to mp3"
+            "Unsupported audio format for Amazon Polly speech synthesis: %s."
+            + " Falling back to mp3",
+            audio_format,
         )
         audio_format = "mp3"
 
@@ -133,8 +134,8 @@ def text_to_audio_url(
             ExpiresIn=_AWS_URL_TTL,
             HttpMethod="GET",
         )
-    except ClientError as e:
-        _LOG.error(e)
+    except ClientError:
+        _LOG.exception("Error synthesizing speech.")
         return None
 
     return url
@@ -154,6 +155,6 @@ def text_to_audio_data(
     try:
         r = requests.get(url, timeout=10)
         return r.content
-    except Exception as e:
-        _LOG.error(f"Error fetching URL {url}: {e}")
+    except Exception:
+        _LOG.exception("Error fetching URL %s.", url)
     return None

@@ -47,8 +47,9 @@ def text_to_audio_data(
 
     if audio_format not in AUDIO_FORMATS:
         _LOG.warn(
-            f"Unsupported audio format for Tiro speech synthesis: {audio_format}."
-            " Falling back to mp3"
+            "Unsupported audio format for Tiro speech synthesis: %s."
+            + " Falling back to mp3",
+            audio_format,
         )
         audio_format = "mp3"
 
@@ -70,7 +71,7 @@ def text_to_audio_data(
             )
         return r.content
     except Exception as e:
-        _LOG.error(f"Error communicating with Tiro API at {_TIRO_TTS_URL}: {e}")
+        _LOG.error("Error communicating with Tiro API at %s: %s", _TIRO_TTS_URL, e)
 
 
 def text_to_audio_url(
@@ -91,8 +92,8 @@ def text_to_audio_url(
     try:
         with open(out_fn, "wb") as f:
             f.write(data)
-    except Exception as e:
-        _LOG.error(f"Error writing audio file {out_fn}: {e}")
+    except Exception:
+        _LOG.exception("Error writing audio file %s.", out_fn)
         return None
 
     # Generate and return file:// URL to audio file

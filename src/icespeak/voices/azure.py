@@ -5,7 +5,7 @@
     Copyright (C) 2023 Miðeind ehf.  All rights reserved.
 
 
-    Icelandic-language text to speech via the MS Azure Speech API.
+    Icelandic-language text to speech via the Azure Speech API.
 
 """
 
@@ -91,7 +91,7 @@ def _azure_api_key() -> tuple[str, str]:
             _AZURE_API_KEY = js["key"]
             _AZURE_API_REGION = js["region"]
     except Exception as e:
-        _LOG.warning(f"Unable to read Azure Speech API credentials: {e}")
+        _LOG.warning("Unable to read Azure Speech API credentials: %s", e)
 
     return (_AZURE_API_KEY, _AZURE_API_REGION)
 
@@ -170,11 +170,11 @@ def _synthesize_text(
             return out_fn
         elif result.reason == speechsdk.ResultReason.Canceled:
             cancellation_details = result.cancellation_details
-            _LOG.error(f"Speech synthesis canceled: {cancellation_details.reason}")
+            _LOG.error("Speech synthesis canceled: %s",cancellation_details.reason)
             if cancellation_details.reason == speechsdk.CancellationReason.Error:
-                _LOG.error(f"Azure TTS error: {cancellation_details.error_details}")
-    except Exception as e:
-        _LOG.error(f"Error communicating with Azure Speech API: {e}")
+                _LOG.error("Azure TTS error: %s",cancellation_details.error_details)
+    except Exception:
+        _LOG.exception("Error communicating with Azure Speech API.")
 
 
 def text_to_audio_data(

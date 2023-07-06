@@ -61,8 +61,8 @@ def _load_voice_modules() -> dict[str, ModuleType]:
             for v in voices:
                 assert v not in v2m, f"Voice '{v}' already declared in module {v2m[v]}"
                 v2m[v] = m
-        except Exception as e:
-            _LOG.error(f"Error importing voice module {modname}: {e}")
+        except Exception:
+            _LOG.exception("Error importing voice module %s.", modname)
 
     return v2m
 

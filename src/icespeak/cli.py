@@ -79,8 +79,8 @@ def _fetch_audio_bytes(url: str) -> Optional[bytes]:
                 f"Received HTTP status code {r.status_code} when fetching {url}"
             )
         return r.content
-    except Exception as e:
-        _LOG.error(f"Error fetching audio file: {e}")
+    except Exception:
+        _LOG.exception("Error fetching audio file.")
 
 
 def _write_wav(
