@@ -14,8 +14,8 @@ classifiers = [
 ]
 requires-python = ">=3.9"
 dependencies = [
-    # Async HTTP requests, with optimization extras
     # "aiohttp[speedups]>=3.8.4",
+    "requests>=2.31.0",
     # Azure TTS
     "azure-cognitiveservices-speech>=1.25.0",
     # Google TTS
@@ -23,6 +23,10 @@ dependencies = [
     # AWS Polly TTS
     "botocore>=1.21.40",
     "boto3>=1.18.40",
+    "typing-extensions>=4.7.1",
+    "islenska",
+    "reynir",
+    "tokenizer",
 ]
 
 [tool.pytest.ini_options]

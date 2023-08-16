@@ -19,6 +19,7 @@
 
 """
 
+from pathlib import Path
 from types import ModuleType
 from typing import (
     TYPE_CHECKING,
@@ -31,8 +32,7 @@ from collections import deque
 from html.parser import HTMLParser
 from inspect import isfunction, ismethod
 from logging import getLogger
-
-from utility import GREYNIR_ROOT_DIR, cap_first, modules_in_dir
+from typing_extensions import override
 
 from .trans import TRANSCRIBER_CLASS, DefaultTranscriber, TranscriptionMethod
 
@@ -54,7 +54,7 @@ DEFAULT_AUDIO_FORMAT = "mp3"
 SUPPORTED_AUDIO_FORMATS = frozenset(("mp3", "ogg_vorbis", "pcm", "opus"))
 assert DEFAULT_AUDIO_FORMAT in SUPPORTED_AUDIO_FORMATS
 
-VOICES_DIR = GREYNIR_ROOT_DIR / "speech" / "voices"
+VOICES_DIR = Path(__file__).parent / "voices"
 assert VOICES_DIR.is_dir()
 
 
@@ -63,14 +63,19 @@ def _load_voice_modules() -> dict[str, ModuleType]:
     voice ID strings to the relevant modules."""
 
     v2m: dict[str, ModuleType] = {}
-    for modname in modules_in_dir(VOICES_DIR):
+    for f in VOICES_DIR.glob("*.py"):
+        if f.name == "__init__.py":
+            continue
+        modname = f".{'voices'}.{f.with_suffix('').name}"
         try:
             # Try to import
             m = importlib.import_module(modname)
-            voices: Iterable[str] = m.VOICES
-            if not voices:
+            voices = getattr(m, "VOICES", None)
+            if not voices or not isinstance(voices, Iterable):
                 continue  # No voices declared, skip
+            v: Any
             for v in voices:
+                assert isinstance(v, str), f"Voice {v!r} is not a string"
                 assert v not in v2m, f"Voice '{v}' already declared in module {v2m[v]}"
                 v2m[v] = m
         except Exception:
@@ -205,21 +210,26 @@ class GreynirSSMLParser(HTMLParser):
         assert (
             len(self._str_stack) == 1
         ), "Error during parsing, are all markup tags correctly closed?"
-        return cap_first(self._str_stack[0])
+        out = self._str_stack[0]
+        # Capitalize before returning
+        return out[0].upper() + out[1:]
 
     # ----------------------------------------
 
+    @override
     def handle_starttag(self, tag: str, attrs: list[tuple[str, Optional[str]]]):
         """Called when a tag is opened."""
         if tag == "greynir":
             self._str_stack.append("")
             self._attr_stack.append(dict(attrs))
 
+    @override
     def handle_data(self, data: str) -> None:
         """Called when data is encountered."""
         # Append string data to current string in stack
         self._str_stack[-1] += self._handler.danger_symbols(data)
 
+    @override
     def handle_endtag(self, tag: str):
         """Called when a tag is closed."""
         if tag == "greynir":
@@ -240,6 +250,7 @@ class GreynirSSMLParser(HTMLParser):
             else:
                 self._str_stack.append(s)
 
+    @override
     def handle_startendtag(self, tag: str, attrs: list[tuple[str, Optional[str]]]):
         """Called when a empty tag is opened (and closed), e.g. '<greynir ... />'."""
         if tag == "greynir":

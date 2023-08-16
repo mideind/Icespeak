@@ -18,8 +18,12 @@
 
 
 """
+from __future__ import annotations
 
+
+import abc
 from base64 import b64encode
+from enum import Enum
 from pathlib import Path
 
 # TODO: Un-hardcode these
@@ -64,6 +68,43 @@ def generate_data_uri(data: bytes, mime_type: str = BINARY_MIMETYPE) -> str:
     """Generate Data URI (RFC2397) from bytes."""
     b64str = b64encode(data).decode("ascii")
     return f"data:{mime_type};base64,{b64str}"
+
+
+# TODO: allow user to pass in a audio file directory when doing TTS,
+# so we can use e.g. tempfile.TemporaryDirectory if we don't want persistence
+# Example could be: icespeak.set_audio_directory(dir), or have keyword arg in some context manager
+
+class TTSBase(abc.ABC):
+    class TextFormat(str, Enum):
+        PLAIN = "plain"
+        SSML = "SSML"
+
+    @abc.abstractmethod
+    def tts(self, text: str, *, text_format: TextFormat = TextFormat.SSML) -> Path:
+        """Takes in text and returns the path to the synthesized audio file."""
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    async def tts_async(
+        self, text: str, *, text_format: TextFormat = TextFormat.SSML
+    ) -> Path:
+        """Takes in text and returns the path to the synthesized audio file."""
+        raise NotImplementedError
+
+    # TODO: Static methods are missing some arguments
+    @abc.abstractmethod
+    @staticmethod
+    def tts_static(text: str, *, text_format: TextFormat = TextFormat.SSML) -> Path:
+        """Takes in text and returns the path to the synthesized audio file."""
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    @staticmethod
+    async def tts_async_static(
+        text: str, *, text_format: TextFormat = TextFormat.SSML
+    ) -> Path:
+        """Takes in text and returns the path to the synthesized audio file."""
+        raise NotImplementedError
 
 
 DEFAULT_LOCALE = "is_IS"

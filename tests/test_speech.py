@@ -29,7 +29,6 @@ from pathlib import Path
 
 import pytest
 import requests
-from utility import read_api_key
 
 from icespeak import text_to_audio_url
 from icespeak.trans import DefaultTranscriber as DT

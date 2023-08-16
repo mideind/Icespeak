@@ -58,7 +58,7 @@ from .num import (
 # Ensure abbreviations have been loaded
 Abbreviations.initialize()
 
-# Each voice module in the directory `speech/voices` can define a
+# Each voice module in the directory `../voices` can define a
 # 'Transcriber' class, as a subclass of 'DefaultTranscriber', in
 # order to override transcription methods for a particular voice
 TRANSCRIBER_CLASS = "Transcriber"
