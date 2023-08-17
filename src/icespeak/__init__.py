@@ -19,25 +19,22 @@
 
 """
 
-from pathlib import Path
 from types import ModuleType
 from typing import (
-    TYPE_CHECKING,
     Any,
     Optional,
 )
+from typing_extensions import override
 
 import importlib
 from collections import deque
+from collections.abc import Iterable
 from html.parser import HTMLParser
 from inspect import isfunction, ismethod
 from logging import getLogger
-from typing_extensions import override
+from pathlib import Path
 
-from .trans import TRANSCRIBER_CLASS, DefaultTranscriber, TranscriptionMethod
-
-if TYPE_CHECKING:
-    from collections.abc import Iterable
+from .transcribe import TRANSCRIBER_CLASS, DefaultTranscriber, TranscriptionMethod
 
 _LOG = getLogger(__file__)
 # Text formats

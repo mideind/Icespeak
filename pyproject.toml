@@ -53,6 +53,7 @@ reportUnnecessaryTypeIgnoreComment = "information"
 reportUnusedCallResult = "none"
 
 [tool.ruff]
+target-version = "py39"
 # See https://beta.ruff.rs/docs/rules/ for list of rules
 # Enable all rules
 select = ["ALL"]
@@ -76,7 +77,7 @@ ignore = [
     "RUF",
     "PGH",
     "SIM",
-    "F",
+    "PERF203",
     "FA",
     "N",
     "A",
@@ -111,11 +112,11 @@ parsing = ["tokenizer", "reynir", "islenska"]
 # Dev dependencies
 dev = [
     "pytest>=7.2.1",
+    "ruff>=0.0.274",
     # Pre-commit hook
     "pre-commit",
     "black",
     "mypy",
-    "ruff>=0.0.274",
 ]
 
 [project.urls]

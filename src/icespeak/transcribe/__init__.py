@@ -589,7 +589,7 @@ class DefaultTranscriber:
         # Less common symbols
         "°": "gráðumerki",
         "±": "plús-mínus merki",
-        "-": "stutt þankastrik",
+        # "-": "stutt þankastrik",
         "—": "þankastrik",
         "…": "úrfellingarpunktar",
         "™": "vörumerki",

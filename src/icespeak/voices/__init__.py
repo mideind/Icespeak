@@ -20,11 +20,14 @@
 """
 from __future__ import annotations
 
+from typing import TYPE_CHECKING, Literal
 
 import abc
 from base64 import b64encode
-from enum import Enum
 from pathlib import Path
+
+if TYPE_CHECKING:
+    from collections.abc import Container
 
 # TODO: Un-hardcode these
 # TTS API keys directory
@@ -74,37 +77,39 @@ def generate_data_uri(data: bytes, mime_type: str = BINARY_MIMETYPE) -> str:
 # so we can use e.g. tempfile.TemporaryDirectory if we don't want persistence
 # Example could be: icespeak.set_audio_directory(dir), or have keyword arg in some context manager
 
+
 class TTSBase(abc.ABC):
-    class TextFormat(str, Enum):
-        PLAIN = "plain"
-        SSML = "SSML"
-
+    @property
     @abc.abstractmethod
-    def tts(self, text: str, *, text_format: TextFormat = TextFormat.SSML) -> Path:
-        """Takes in text and returns the path to the synthesized audio file."""
+    def voices(self) -> Container[str]:
         raise NotImplementedError
 
     @abc.abstractmethod
-    async def tts_async(
-        self, text: str, *, text_format: TextFormat = TextFormat.SSML
-    ) -> Path:
+    def tts(self, text: str, *, text_format: Literal["plain", "ssml"] = "ssml") -> Path:
         """Takes in text and returns the path to the synthesized audio file."""
         raise NotImplementedError
 
-    # TODO: Static methods are missing some arguments
-    @abc.abstractmethod
-    @staticmethod
-    def tts_static(text: str, *, text_format: TextFormat = TextFormat.SSML) -> Path:
-        """Takes in text and returns the path to the synthesized audio file."""
-        raise NotImplementedError
+    # @abc.abstractmethod
+    # async def tts_async(
+    #     self, text: str, *, text_format: TextFormat = TextFormat.SSML
+    # ) -> Path:
+    #     """Takes in text and returns the path to the synthesized audio file."""
+    #     raise NotImplementedError
 
-    @abc.abstractmethod
-    @staticmethod
-    async def tts_async_static(
-        text: str, *, text_format: TextFormat = TextFormat.SSML
-    ) -> Path:
-        """Takes in text and returns the path to the synthesized audio file."""
-        raise NotImplementedError
+    # # TODO: Static methods are missing some arguments
+    # @abc.abstractmethod
+    # @staticmethod
+    # def tts_static(text: str, *, text_format: TextFormat = TextFormat.SSML) -> Path:
+    #     """Takes in text and returns the path to the synthesized audio file."""
+    #     raise NotImplementedError
+
+    # @abc.abstractmethod
+    # @staticmethod
+    # async def tts_async_static(
+    #     text: str, *, text_format: TextFormat = TextFormat.SSML
+    # ) -> Path:
+    #     """Takes in text and returns the path to the synthesized audio file."""
+    #     raise NotImplementedError
 
 
 DEFAULT_LOCALE = "is_IS"

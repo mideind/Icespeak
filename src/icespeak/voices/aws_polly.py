@@ -22,10 +22,13 @@
 """
 # pyright: reportUnknownMemberType=false
 
-from typing import Any, Optional, cast
+from typing import Any, Literal, Optional, cast
+from typing_extensions import override
 
 import json
+from collections.abc import Container
 from logging import getLogger
+from pathlib import Path
 from threading import Lock
 
 import boto3  # pyright: ignore[reportMissingTypeStubs]
@@ -33,7 +36,19 @@ import cachetools
 import requests
 from botocore.exceptions import ClientError  # pyright: ignore[reportMissingTypeStubs]
 
-from . import KEYS_DIR
+from . import KEYS_DIR, TTSBase
+
+
+class Polly(TTSBase):
+    @property
+    @override
+    def voices(self) -> Container[str]:
+        return frozenset(("Karl", "Dora"))
+
+    @override
+    def tts(self, text: str, *, text_format: Literal["plain", "ssml"] = "ssml") -> Path:
+        ...  # TODO
+
 
 _LOG = getLogger(__file__)
 NAME = "Amazon Polly"

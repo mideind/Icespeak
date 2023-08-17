@@ -30,7 +30,7 @@ from logging import getLogger
 
 import azure.cognitiveservices.speech as speechsdk  # pyright: ignore[reportMissingTypeStubs]
 
-from icespeak.trans import DefaultTranscriber, strip_markup
+from icespeak.transcribe import DefaultTranscriber, strip_markup
 
 from . import AUDIO_SCRATCH_DIR, KEYS_DIR, suffix_for_audiofmt
 
@@ -120,8 +120,10 @@ def _synthesize_text(
 
     if audio_format not in AUDIO_FORMATS:
         _LOG.warn(
-            f"Unsupported audio format for Azure speech synthesis: {audio_format}."
-            " Falling back to mp3"
+
+                f"Unsupported audio format for Azure speech synthesis: {audio_format}."
+                " Falling back to mp3"
+
         )
         audio_format = "mp3"
 

@@ -29,7 +29,7 @@ from pathlib import Path
 
 import requests
 
-from icespeak.trans import strip_markup
+from icespeak.transcribe import strip_markup
 
 from . import AUDIO_SCRATCH_DIR, suffix_for_audiofmt
 
