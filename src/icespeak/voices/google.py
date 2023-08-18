@@ -40,7 +40,7 @@ from . import suffix_for_audiofmt
 _LOG = getLogger(__file__)
 NAME = "Google"
 VOICES = frozenset(("Anna",))
-AUDIO_FORMATS = frozenset("mp3")
+AUDIO_FORMATS = frozenset(("mp3",))
 
 
 assert API_KEYS.google is not None, "Google API key missing."
