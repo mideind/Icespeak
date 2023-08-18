@@ -29,9 +29,10 @@ from pathlib import Path
 
 import requests
 
+from icespeak.settings import SETTINGS, AudioFormatsT, TextFormatsT
 from icespeak.transcribe import strip_markup
 
-from . import AUDIO_SCRATCH_DIR, suffix_for_audiofmt
+from . import suffix_for_audiofmt
 
 _LOG = getLogger(__file__)
 NAME = "Tiro"
@@ -86,27 +87,25 @@ def text_to_audio_data(
         _LOG.error("Error communicating with Tiro API at %s: %s", _TIRO_TTS_URL, e)
 
 
-def text_to_audio_url(
+def text_to_speech(
     text: str,
-    text_format: str,
-    audio_format: str,
-    voice_id: str,
-    speed: float = 1.0,
-) -> Optional[str]:
+    *,
+    voice_id: str = SETTINGS.DEFAULT_VOICE,
+    speed: float = SETTINGS.DEFAULT_VOICE_SPEED,
+    text_format: TextFormatsT = SETTINGS.DEFAULT_TEXT_FORMAT,
+    audio_format: AudioFormatsT = SETTINGS.DEFAULT_AUDIO_FORMAT,
+) -> Path:
     """Returns URL for speech-synthesized text."""
 
     data = text_to_audio_data(**locals())
-    if not data:
-        return None
 
     suffix = suffix_for_audiofmt(audio_format)
-    out_fn: str = str(AUDIO_SCRATCH_DIR / f"{uuid.uuid4()}.{suffix}")
+    out_fn: str = str(SETTINGS.AUDIO_DIR / f"{uuid.uuid4()}.{suffix}")
     try:
         with open(out_fn, "wb") as f:
             f.write(data)
     except Exception:
         _LOG.exception("Error writing audio file %s.", out_fn)
-        return None
 
     # Generate and return file:// URL to audio file
-    return Path(out_fn).as_uri()
+    return Path(out_fn)

@@ -20,21 +20,30 @@
     Icelandic-language text to speech via the Google Cloud API.
 
 """
-# pyright: reportUnknownMemberType=false
 from typing import Optional
 
 import uuid
 from logging import getLogger
 from pathlib import Path
 
-from google.cloud import texttospeech  # pyright: ignore[reportMissingTypeStubs]
+from google.cloud import texttospeech
 
-from . import AUDIO_SCRATCH_DIR, suffix_for_audiofmt
+from icespeak.settings import (
+    API_KEYS,
+    SETTINGS,
+    AudioFormatsT,
+    TextFormatsT,
+)
+
+from . import suffix_for_audiofmt
 
 _LOG = getLogger(__file__)
 NAME = "Google"
 VOICES = frozenset(("Anna",))
 AUDIO_FORMATS = frozenset("mp3")
+
+
+assert API_KEYS.google is not None, "Google API key missing."
 
 
 def text_to_audio_data(
@@ -47,7 +56,8 @@ def text_to_audio_data(
     """Feeds text to Google's TTS API and returns audio data received from server."""
 
     # Instantiates a client
-    client = texttospeech.TextToSpeechClient()
+    assert API_KEYS.google is not None
+    client = texttospeech.TextToSpeechClient.from_service_account_info(API_KEYS.google)
 
     # Set the text input to be synthesized
     synthesis_input = texttospeech.SynthesisInput(text=text)
@@ -75,27 +85,22 @@ def text_to_audio_data(
         _LOG.exception("Error communicating with Google Cloud STT API.")
 
 
-def text_to_audio_url(
+def text_to_speech(
     text: str,
-    text_format: str,
-    audio_format: str,
-    voice_id: str,
-    speed: float = 1.0,
-) -> Optional[str]:
-    """Returns URL for speech-synthesized text."""
-
+    *,
+    voice_id: str = SETTINGS.DEFAULT_VOICE,
+    speed: float = SETTINGS.DEFAULT_VOICE_SPEED,
+    text_format: TextFormatsT = SETTINGS.DEFAULT_TEXT_FORMAT,
+    audio_format: AudioFormatsT = SETTINGS.DEFAULT_AUDIO_FORMAT,
+) -> Path:
     data = text_to_audio_data(**locals())
-    if not data:
-        return None
 
     suffix = suffix_for_audiofmt(audio_format)
-    out_fn: str = str(AUDIO_SCRATCH_DIR / f"{uuid.uuid4()}.{suffix}")
+    out_file = SETTINGS.AUDIO_DIR / f"{uuid.uuid4()}.{suffix}"
     try:
-        with open(out_fn, "wb") as f:
-            f.write(data)
+        out_file.write_bytes(data)
     except Exception:
-        _LOG.exception("Error writing audio file %s.", out_fn)
-        return None
+        _LOG.exception("Error writing audio file %s.", out_file)
 
     # Generate and return file:// URL to audio file
-    return Path(out_fn).as_uri()
+    return Path(out_file)

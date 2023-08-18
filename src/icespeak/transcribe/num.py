@@ -21,11 +21,11 @@
     numbers to Icelandic text.
 
 """
+from collections.abc import Mapping
 from typing import Optional, Union
 from typing_extensions import Literal
 
 import re
-from collections.abc import Mapping
 
 _SUB_20_NEUTRAL: Mapping[int, str] = {
     1: "eitt",

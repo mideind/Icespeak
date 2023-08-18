@@ -20,76 +20,34 @@
     Icelandic-language text to speech via Amazon Polly.
 
 """
-# pyright: reportUnknownMemberType=false
+from __future__ import annotations
 
-from typing import Any, Literal, Optional, cast
-from typing_extensions import override
+from typing import TYPE_CHECKING, Any, cast
 
-import json
-from collections.abc import Container
 from logging import getLogger
-from pathlib import Path
 from threading import Lock
 
-import boto3  # pyright: ignore[reportMissingTypeStubs]
-import cachetools
-import requests
-from botocore.exceptions import ClientError  # pyright: ignore[reportMissingTypeStubs]
+import boto3
+from botocore.exceptions import ClientError
 
-from . import KEYS_DIR, TTSBase
+from icespeak.settings import API_KEYS, AudioFormatsT, TextFormatsT
 
-
-class Polly(TTSBase):
-    @property
-    @override
-    def voices(self) -> Container[str]:
-        return frozenset(("Karl", "Dora"))
-
-    @override
-    def tts(self, text: str, *, text_format: Literal["plain", "ssml"] = "ssml") -> Path:
-        ...  # TODO
-
+if TYPE_CHECKING:
+    from pathlib import Path
 
 _LOG = getLogger(__file__)
-NAME = "Amazon Polly"
+
 VOICES = frozenset(("Karl", "Dora"))
 AUDIO_FORMATS = frozenset(("mp3", "pcm", "ogg_vorbis"))
-
-# The AWS Polly API access keys
-# You must obtain your own keys if you want to use this code
-# JSON format is the following:
-# {
-#     "aws_access_key_id": "my_key",
-#     "aws_secret_access_key": "my_secret",
-#     "region_name": "my_region"
-# }
-#
-_AWS_KEYFILE_NAME = "AWSPollyServerKey.json"
-_AWS_API_KEYS_PATH = str(KEYS_DIR / _AWS_KEYFILE_NAME)
-
-
-_aws_api_client: Optional[boto3.Session] = None
-_aws_api_client_lock = Lock()
-
-
-def _initialize_aws_client() -> Optional[boto3.Session]:
-    """Set up AWS Polly client."""
-    global _api_client
-
-    # Make sure that only one thread is messing with the global variable
-    with _aws_api_client_lock:
-        if _aws_api_client is None:
-            # Read AWS Polly API keys from file
-            aws_config = {}
-            try:
-                with open(_AWS_API_KEYS_PATH) as json_file:
-                    aws_config = json.load(json_file)
-            except Exception as e:
-                _LOG.warning("Unable to read AWS Polly credentials: %s", e)
-                return None
-            _api_client: boto3.Session = boto3.Session(**aws_config).client("polly")  # type: ignore
-        # Return client instance
-        return _api_client
+with Lock():
+    assert API_KEYS.aws, "AWS Polly API key missing."
+    # See boto3.Session.client for arguments
+    _AWS_CLIENT = boto3.client(
+        "polly",
+        region_name=API_KEYS.aws.region_name.get_secret_value(),
+        aws_access_key_id=API_KEYS.aws.aws_access_key_id.get_secret_value(),
+        aws_secret_access_key=API_KEYS.aws.aws_secret_access_key.get_secret_value(),
+    )
 
 
 # Time to live (in seconds) for synthesized text URL caching
@@ -100,24 +58,15 @@ _AWS_CACHE_TTL = _AWS_URL_TTL - 30  # seconds
 _AWS_CACHE_MAXITEMS = 30
 
 
-@cachetools.cached(cachetools.TTLCache(_AWS_CACHE_MAXITEMS, _AWS_CACHE_TTL))
-def text_to_audio_url(
+def text_to_speech(
     text: str,
-    text_format: str,
-    audio_format: str,
-    voice_id: Optional[str],
-    speed: float = 1.0,
-) -> Optional[str]:
+    *,
+    voice_id: str,
+    speed: float,
+    text_format: TextFormatsT,
+    audio_format: AudioFormatsT,
+) -> Path | None:
     """Returns Amazon Polly URL to audio file with speech-synthesized text."""
-
-    assert voice_id in VOICES
-    assert audio_format in AUDIO_FORMATS
-
-    # Set up client lazily
-    client = _initialize_aws_client()
-    if client is None:
-        _LOG.warning("Unable to instantiate AWS client")
-        return None
 
     if audio_format not in AUDIO_FORMATS:
         _LOG.warn(
@@ -155,7 +104,7 @@ def text_to_audio_url(
     }
 
     try:
-        url = cast(Any, client).generate_presigned_url(
+        url = cast(Any, _AWS_CLIENT).generate_presigned_url(
             ClientMethod="synthesize_speech",
             Params=params,
             ExpiresIn=_AWS_URL_TTL,
@@ -166,22 +115,3 @@ def text_to_audio_url(
         return None
 
     return url
-
-
-def text_to_audio_data(
-    text: str,
-    text_format: str,
-    audio_format: str,
-    voice_id: str,
-    speed: float,
-) -> Optional[bytes]:
-    """Returns audio data for speech-synthesized text."""
-    url = text_to_audio_url(**locals())
-    if not url:
-        return None
-    try:
-        r = requests.get(url, timeout=10)
-        return r.content
-    except Exception:
-        _LOG.exception("Error fetching URL %s.", url)
-    return None

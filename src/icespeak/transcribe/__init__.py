@@ -23,11 +23,11 @@
 """
 
 
+from collections.abc import Iterable, Mapping
 from typing import Any, Callable, Optional, Union, cast
 
 import itertools
 import re
-from collections.abc import Iterable, Mapping
 from functools import lru_cache
 from re import Match
 

@@ -24,6 +24,9 @@ dependencies = [
     "botocore>=1.21.40",
     "boto3>=1.18.40",
     "typing-extensions>=4.7.1",
+    "pydantic-settings>=2.0.3",
+    "cachetools>=5.3.1",
+    # TODO: Make these optional
     "islenska",
     "reynir",
     "tokenizer",
@@ -47,6 +50,9 @@ reportImplicitStringConcatenation = "information"
 reportImportCycles = "warning"
 reportMissingSuperCall = "none"
 reportPropertyTypeMismatch = "warning"
+reportUnknownMemberType = "information"
+reportUnknownArgumentType = "information"
+reportMissingTypeStubs = "information"
 reportShadowedImports = "warning"
 reportUninitializedInstanceVariable = "information"
 reportUnnecessaryTypeIgnoreComment = "information"
@@ -60,12 +66,12 @@ select = ["ALL"]
 # Ignore specific rules
 # (we should aim to have these as few as possible)
 ignore = [
-    "D",      # Docstring style rules
-    "TD",     # Pedantic TODO comment rules
-    "FIX002", # Line contains TODO rule
-    "S101",   # Disallow assert statements rule
-    "TRY",    # Pedantic exception rules
-    "EM",     # Pedantic exception message rules
+    "D",       # Docstring style rules
+    "TD",      # Pedantic TODO comment rules
+    "FIX002",  # Line contains TODO rule
+    "S101",    # Disallow assert statements rule
+    "TRY",     # Pedantic exception rules
+    "EM",      # Pedantic exception message rules
     "PLR",
     "ARG",
     "C",
@@ -104,7 +110,7 @@ section-order = [
 ]
 [tool.ruff.isort.sections]
 # Have typing libraries above other imports
-typehints = ["typing", "typing_extensions", "types"]
+typehints = ["typing", "typing_extensions", "types", "collections.abc"]
 
 [project.optional-dependencies]
 # Dependencies needed to parse text for more in-depth transcribing
@@ -123,7 +129,7 @@ dev = [
 repository = "https://github.com/mideind/icespeak"
 
 [project.scripts]
-speak-cli = "icespeak.cli:main"
+tts = "icespeak.cli:main"
 
 # Automatic versioning and build system configuration
 

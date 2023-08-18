@@ -22,7 +22,7 @@
 
     Run the following command for a list of options:
 
-        speak-cli --help
+        tts --help
 
 """
 # (Allow print statements)
@@ -40,15 +40,8 @@ from urllib.request import urlopen
 
 import requests
 
-from . import (
-    DEFAULT_AUDIO_FORMAT,
-    DEFAULT_TEXT_FORMAT,
-    DEFAULT_VOICE,
-    SUPPORTED_AUDIO_FORMATS,
-    SUPPORTED_TEXT_FORMATS,
-    SUPPORTED_VOICES,
-    text_to_audio_url,
-)
+from .settings import SETTINGS
+from .tts import AVAILABLE_VOICES, text_to_speech
 from .voices import suffix_for_audiofmt
 
 # from .utility import sanitize_filename
@@ -150,8 +143,8 @@ def main() -> None:
         "-v",
         "--voice",
         help="specify which voice to use",
-        default=DEFAULT_VOICE,
-        choices=list(SUPPORTED_VOICES),
+        default=SETTINGS.DEFAULT_VOICE,
+        choices=list(AVAILABLE_VOICES),
     )
     parser.add_argument(
         "-l",
@@ -163,8 +156,7 @@ def main() -> None:
         "-f",
         "--audioformat",
         help="select audio format",
-        default=DEFAULT_AUDIO_FORMAT,
-        choices=list(SUPPORTED_AUDIO_FORMATS),
+        default=SETTINGS.DEFAULT_AUDIO_FORMAT,
     )
     parser.add_argument(
         "-s",
@@ -177,8 +169,8 @@ def main() -> None:
         "-t",
         "--textformat",
         help="set text format",
-        default=DEFAULT_TEXT_FORMAT,
-        choices=list(SUPPORTED_TEXT_FORMATS),
+        default=SETTINGS.DEFAULT_TEXT_FORMAT,
+        choices=["text", "ssml"],
     )
     parser.add_argument(
         "-o",
@@ -208,7 +200,7 @@ def main() -> None:
     args = parser.parse_args()
 
     if args.list_voices:
-        for voice in SUPPORTED_VOICES:
+        for voice in AVAILABLE_VOICES:
             print(voice)
         sys.exit(0)
 
@@ -222,15 +214,15 @@ def main() -> None:
         _die("WAV output flag only supported for PCM format.")
 
     # Synthesize the text according to CLI options
-    url = text_to_audio_url(
+    url = text_to_speech(
         text,
         text_format=args.textformat,
         audio_format=args.audioformat,
         voice_id=args.voice,
         speed=args.speed,
-    )
+    ).as_uri()
     if not url:
-        _die("Error generating speech synthesis URL.")
+        _die("Error synthesizing speech.")
 
     # Command line flag specifies that we should just dump the URL to stdout
     if args.url:
@@ -251,7 +243,7 @@ def main() -> None:
         fn = args.override
     else:
         # Generate file name
-        # fn = sanitize_filename(text)
+        fn = sanitize_filename(text)
         fn = f"{fn}.{suffix_for_audiofmt(args.audioformat)}"
 
     # Write audio data to file
