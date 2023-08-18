@@ -83,7 +83,6 @@ ignore = [
     "RUF",
     "PGH",
     "SIM",
-    "PERF203",
     "FA",
     "N",
     "A",

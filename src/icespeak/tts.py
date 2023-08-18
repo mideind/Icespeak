@@ -70,7 +70,7 @@ def _load_modules() -> Mapping[str, TTSFuncT]:
             m: VoiceModuleT = cast(
                 VoiceModuleT, importlib.import_module(modname, package="icespeak")
             )
-        except Exception:
+        except Exception:  # noqa: PERF203
             _LOG.exception("Error importing voice module %r.", modname)
             continue
         voices = m.VOICES

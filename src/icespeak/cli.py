@@ -30,6 +30,7 @@
 
 from typing import Optional, cast
 
+import string
 import subprocess
 import sys
 import wave
@@ -71,6 +72,22 @@ def _bytes4file_or_data_uri(uri: str) -> bytes:
     """Returns bytes of file at file URI (RFC8089) or in data URI (RFC2397)."""
     with urlopen(uri) as response:  # noqa: S310
         return response.read()
+
+
+def _sanitize_filename(fn: str, maxlen: int = 60) -> str:
+    """Sanitize a potential filename string by limiting allowed characters."""
+
+    ALLOWED_FILE_CHARS = string.ascii_letters + string.digits + "._-"
+
+    # Replace whitespace with dash
+    fn = "-".join([t for t in fn.lower().split()])
+
+    # Rm non-ASCII chars, non-filename chars and limit length
+    fn = "".join(c if c in ALLOWED_FILE_CHARS else "_" for c in fn)[:maxlen].rstrip(
+        "._"
+    )
+
+    return fn
 
 
 def _fetch_audio_bytes(url: str) -> Optional[bytes]:
@@ -243,7 +260,7 @@ def main() -> None:
         fn = args.override
     else:
         # Generate file name
-        fn = sanitize_filename(text)
+        fn = _sanitize_filename(text)
         fn = f"{fn}.{suffix_for_audiofmt(args.audioformat)}"
 
     # Write audio data to file
