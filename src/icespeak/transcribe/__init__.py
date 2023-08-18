@@ -69,7 +69,7 @@ def strip_markup(text: str) -> str:
     return re.sub(r"<.*?>", "", text)
 
 
-def gssml(data: Any = None, *, type: str, **kwargs: Union[str, int, float]) -> str:
+def gssml(data: Any = None, *, type: str, **kwargs: Union[str, float]) -> str:
     """
     Utility function, surrounds data with Greynir-specific
     voice transcription tags.
