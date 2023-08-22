@@ -69,6 +69,9 @@ def strip_markup(text: str) -> str:
     return re.sub(r"<.*?>", "", text)
 
 
+GSSML_TAG = "greynir"
+
+
 def gssml(data: Any = None, *, type: str, **kwargs: Union[str, float]) -> str:
     """
     Utility function, surrounds data with Greynir-specific
@@ -90,9 +93,9 @@ def gssml(data: Any = None, *, type: str, **kwargs: Union[str, float]) -> str:
         type, str
     ), f"type keyword arg must be string in function gssml; data: {data}"
     return (
-        f'<greynir type="{type}"'
+        f'<{GSSML_TAG} type="{type}"'
         + "".join(f' {k}="{v}"' for k, v in kwargs.items())
-        + (f">{data}</greynir>" if data is not None else " />")
+        + (f">{data}</{GSSML_TAG}>" if data is not None else " />")
     )
 
 
@@ -439,14 +442,14 @@ class DefaultTranscriber:
 
             # Hours
             if h == 0 and m == 0:
-                # Call 00:00 "tólf á miðnætti"
+                # Refer to 00:00 as "tólf á miðnætti"
                 h = 12
                 suffix = "á miðnætti"
             elif 0 <= h <= 5:
-                # Call 00:xx-0:5:xx "... um nótt"
+                # Refer to 00:xx-05:xx as "... um nótt"
                 suffix = "um nótt"
             elif h == 12 and m == 0:
-                # Call 12:00 "tólf á hádegi"
+                # Refer to 12:00 as "tólf á hádegi"
                 suffix = "á hádegi"
             t.append(number_to_text(h, case="nf", gender="hk"))
 
@@ -566,7 +569,7 @@ class DefaultTranscriber:
         "*": "stjarna",
         "(": "vinstri svigi",
         ")": "hægri svigi",
-        "-": "bandstrik",
+        "-": "bandstrik",  # TODO: or "mínus"?
         "_": "niðurstrik",
         "=": "jafnt og merki",
         "+": "plús",

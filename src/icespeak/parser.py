@@ -28,7 +28,7 @@ from inspect import ismethod
 from logging import getLogger
 
 from .settings import SETTINGS
-from .transcribe import TRANSCRIBER_CLASS, DefaultTranscriber, TranscriptionMethod
+from .transcribe import GSSML_TAG, DefaultTranscriber, TranscriptionMethod
 from .tts import AVAILABLE_VOICES
 
 _LOG = getLogger(__file__)
@@ -57,18 +57,23 @@ class GreynirSSMLParser(HTMLParser):
         super().__init__()
         if voice_id not in AVAILABLE_VOICES:
             _LOG.warning(
-                f"Voice '{voice_id}' not in supported voices, reverting to default ({SETTINGS.DEFAULT_VOICE})"
+                "Voice %r not in supported voices, reverting to default: %r",
+                voice_id,
+                SETTINGS.DEFAULT_VOICE,
             )
             voice_id = SETTINGS.DEFAULT_VOICE
-        # Find the module that provides this voice
-        module = AVAILABLE_VOICES[voice_id]
+
+        # Get data for this voice
+        vd = AVAILABLE_VOICES[voice_id]
 
         # Fetch transcriber for this voice module,
         # using DefaultTranscriber as fallback
-        self._handler: type[DefaultTranscriber] = getattr(
-            module, TRANSCRIBER_CLASS, DefaultTranscriber
+        self._handler: type[DefaultTranscriber] = (
+            vd["Transcriber"] or DefaultTranscriber
         )
+
         self._str_stack: deque[str] = deque()
+        self._attr_stack: deque[dict[str, Optional[str]]] = deque()
 
     def transcribe(self, voice_string: str) -> str:
         """Parse and return transcribed voice string."""
@@ -80,7 +85,7 @@ class GreynirSSMLParser(HTMLParser):
         # Set (or reset) variables used during parsing
         self._str_stack.clear()
         self._str_stack.append("")
-        self._attr_stack: deque[dict[str, Optional[str]]] = deque()
+        self._attr_stack.clear()
 
         self.feed(voice_string)
         self.close()
@@ -89,14 +94,14 @@ class GreynirSSMLParser(HTMLParser):
         ), "Error during parsing, are all markup tags correctly closed?"
         out = self._str_stack[0]
         # Capitalize before returning
-        return out[0].upper() + out[1:]
+        return out[0].upper() + out[1:] if out else out
 
     # ----------------------------------------
 
     @override
     def handle_starttag(self, tag: str, attrs: list[tuple[str, Optional[str]]]):
         """Called when a tag is opened."""
-        if tag == "greynir":
+        if tag == GSSML_TAG:
             self._str_stack.append("")
             self._attr_stack.append(dict(attrs))
 
@@ -109,13 +114,15 @@ class GreynirSSMLParser(HTMLParser):
     @override
     def handle_endtag(self, tag: str):
         """Called when a tag is closed."""
-        if tag == "greynir":
+        if tag == GSSML_TAG:
             # Parse data inside the greynir tag we're closing
             s: str = self._str_stack.pop()  # String content
             if self._attr_stack:
                 dattrs = self._attr_stack.pop()  # Current tag attributes
                 t: Optional[str] = dattrs.pop("type")
-                assert t, f"Missing type attribute in <greynir> tag around string: {s}"
+                assert (
+                    t
+                ), f"Missing type attribute in <{GSSML_TAG}> tag around string: {s}"
                 # Fetch corresponding transcription method from handler
                 transf: TranscriptionMethod = getattr(self._handler, t)
                 assert ismethod(transf), f"{t} is not a transcription method."
@@ -130,10 +137,10 @@ class GreynirSSMLParser(HTMLParser):
     @override
     def handle_startendtag(self, tag: str, attrs: list[tuple[str, Optional[str]]]):
         """Called when a empty tag is opened (and closed), e.g. '<greynir ... />'."""
-        if tag == "greynir":
+        if tag == GSSML_TAG:
             dattrs = dict(attrs)
             t: Optional[str] = dattrs.pop("type")
-            assert t, "Missing type attribute in <greynir> tag"
+            assert t, f"Missing type attribute in <{GSSML_TAG}> tag"
             transf: TranscriptionMethod = getattr(self._handler, t)
             # If handler found, replace empty greynir tag with output,
             # otherwise simply remove empty greynir tag

@@ -161,7 +161,7 @@ def main() -> None:
         "--voice",
         help="specify which voice to use",
         default=SETTINGS.DEFAULT_VOICE,
-        choices=list(AVAILABLE_VOICES),
+        choices=list(AVAILABLE_VOICES.keys()),
     )
     parser.add_argument(
         "-l",

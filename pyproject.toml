@@ -43,7 +43,7 @@ overrides = [
 
 [tool.pyright]
 typeCheckingMode = "strict"
-# The following settings are off by default, even in strict mode
+# Some of the following settings are off by default, even in strict mode
 reportCallInDefaultInitializer = "information"
 reportImplicitOverride = "information"
 reportImplicitStringConcatenation = "information"

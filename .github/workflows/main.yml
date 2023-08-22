@@ -33,7 +33,19 @@ jobs:
           ruff --format=github --select=E9,F63,F7,F82 --target-version=py39 .
           # default set of ruff rules with GitHub Annotations
           ruff --format=github --target-version=py39 .
+      - name: Set up API keys
+        env:
+          AZURE_TTS_KEY: ${{ secrets.AZURE_TTS_KEY }}
+          AWS_POLLY_KEY: ${{ secrets.AWS_POLLY_KEY }}
+          GOOGLE_TTS_KEY: ${{ secrets.GOOGLE_TTS_KEY }}
+        run: |
+          # Azure TTS key
+          echo "$AZURE_TTS_KEY" > keys/AzureSpeechServerKey.json
+          # AWS Polly API key
+          echo "$AWS_POLLY_KEY" > keys/AWSPollyServerKey.json
+          # Google TTS key
+          echo "$GOOGLE_TTS_KEY" > keys/GoogleServiceAccount.json
       - name: Test with pytest
         run: |
-          pytest
+          pytest --run-slow
 

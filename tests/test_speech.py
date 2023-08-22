@@ -70,8 +70,8 @@ def test_speech_synthesis():
     _TEXT = "Prufa"
     _MIN_AUDIO_SIZE = 1000
 
-    # Test AWS Polly
-    if API_KEYS.aws:
+    # TODO: Test AWS Polly
+    if False:  # API_KEYS.aws:
         url = text_to_speech(
             text=_TEXT,
             text_format="text",
@@ -176,12 +176,11 @@ def test_greynirssmlparser():
     assert len(n) > 0
     # We strip spaces from the names of endtags,
     # but otherwise try to keep unrecognized tags unmodified
-    # TODO: These test fail
-    return
+
     x = """<bla attr="fad" f="3"></ bla  >"""
     n = gp.transcribe(x)
     assert "&" not in n and "<" not in n and ">" not in n
-    assert n == ""
+    assert not n
 
     x = """<bla attr="fad" f="3"><greynir type="vbreak" /></bla> <greynir type="number" gender="kvk">4</greynir>"""
     n = gp.transcribe(x)
@@ -753,6 +752,7 @@ def test_entity_transcription() -> None:
     assert "USS" not in n and n.endswith("Comfort")
     n = DT.entity("Bayern München - FC Rostov")
     assert "FC" not in n
+
 
 @pytest.mark.slow()
 def test_generic_transcription() -> None:

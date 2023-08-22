@@ -19,7 +19,7 @@
 
 """
 from collections.abc import Iterable, Mapping
-from typing import Protocol, cast
+from typing import Optional, Protocol, TypedDict, cast
 
 import importlib
 from logging import getLogger
@@ -27,6 +27,7 @@ from pathlib import Path
 
 # from cachetools import cached, TTLCache
 from .settings import MAX_SPEED, MIN_SPEED, SETTINGS, AudioFormatsT, TextFormatsT
+from .transcribe import TRANSCRIBER_CLASS, DefaultTranscriber
 
 _LOG = getLogger(__file__)
 
@@ -51,15 +52,24 @@ class VoiceModuleT(Protocol):
 
     VOICES: Iterable[str]
     text_to_speech: TTSFuncT
+    Transcriber: Optional[type[DefaultTranscriber]]
 
 
-def _load_modules() -> Mapping[str, TTSFuncT]:
+class VoiceDict(TypedDict):
+    text_to_speech: TTSFuncT
+    Transcriber: Optional[type[DefaultTranscriber]]
+
+
+VoiceMapping = Mapping[str, VoiceDict]
+
+
+def _load_modules() -> VoiceMapping:
     """
     Dynamically load all voice modules, map
     voice ID strings to the relevant functions.
     """
 
-    v2m: Mapping[str, TTSFuncT] = {}
+    v2m: VoiceMapping = {}
 
     vm_dir = Path(__file__).parent / "voices"
     for file in vm_dir.glob("*.py"):
@@ -77,12 +87,15 @@ def _load_modules() -> Mapping[str, TTSFuncT]:
         for v in voices:
             if v in v2m:
                 raise ValueError(f"Voice {v} is already defined in another module.")
-            v2m[v] = m.text_to_speech
+            v2m[v] = {
+                "text_to_speech": m.text_to_speech,
+                "Transcriber": getattr(m, TRANSCRIBER_CLASS, None),
+            }
 
     return v2m
 
 
-AVAILABLE_VOICES: Mapping[str, TTSFuncT] = _load_modules()
+AVAILABLE_VOICES: VoiceMapping = _load_modules()
 
 
 # @cached(TTLCache(maxsize=500, ttu=SETTINGS.AUDIO_TTL))
@@ -112,7 +125,7 @@ def text_to_speech(
     if speed < MIN_SPEED or speed > MAX_SPEED:
         raise ValueError(f"Speed {speed} is outside the range 0.5-2.0")
 
-    return AVAILABLE_VOICES[voice_id](
+    return AVAILABLE_VOICES[voice_id]["text_to_speech"](
         text,
         text_format=text_format,
         audio_format=audio_format,

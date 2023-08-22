@@ -98,9 +98,9 @@ def text_to_speech(
     suffix = suffix_for_audiofmt(audio_format)
     out_file = SETTINGS.AUDIO_DIR / f"{uuid.uuid4()}.{suffix}"
     try:
+        assert data is not None, "No data."
         out_file.write_bytes(data)
     except Exception:
         _LOG.exception("Error writing audio file %s.", out_file)
 
-    # Generate and return file:// URL to audio file
-    return Path(out_file)
+    return out_file

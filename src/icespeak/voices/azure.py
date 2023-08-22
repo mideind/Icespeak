@@ -126,6 +126,7 @@ def text_to_speech(
             speech_config=speech_conf, audio_config=audio_config
         )
 
+        result: speechsdk.SpeechSynthesisResult
         # Azure Speech API supports SSML but the notation is a bit different from Amazon Polly's
         # See https://learn.microsoft.com/en-us/azure/cognitive-services/speech-service/speech-synthesis-markup
         if text_format == "ssml":
@@ -139,22 +140,21 @@ def text_to_speech(
                 {text}
                 </voice></speak>
             """.strip()
-            speak_fn = synthesizer.speak_ssml
+            result = synthesizer.speak_ssml(text)
         else:
             # We're not sending SSML so strip any markup from text
             text = strip_markup(text)
-            speak_fn = synthesizer.speak_text
-
-        # Feed text into speech synthesizer
-        result: speechsdk.SpeechSynthesisResult = speak_fn(text)
+            result = synthesizer.speak_text(text)
 
         # Check result
         if result.reason == speechsdk.ResultReason.SynthesizingAudioCompleted:
             # Success, return path to the generated audio file
             return out_file
-        else:
-            cancellation_details = result.cancellation_details
-            raise RuntimeError(f"TTS with Azure failed: {cancellation_details.error_details}")
+
+        cancellation_details = result.cancellation_details
+        raise RuntimeError(
+            f"TTS with Azure failed: {cancellation_details.error_details}"
+        )
     except Exception:
         _LOG.exception("Error communicating with Azure Speech API.")
         raise
