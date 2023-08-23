@@ -66,12 +66,12 @@ select = ["ALL"]
 # Ignore specific rules
 # (we should aim to have these as few as possible)
 ignore = [
-    "D",       # Docstring style rules
-    "TD",      # Pedantic TODO comment rules
-    "FIX002",  # Line contains TODO rule
-    "S101",    # Disallow assert statements rule
-    "TRY",     # Pedantic exception rules
-    "EM",      # Pedantic exception message rules
+    "D",      # Docstring style rules
+    "TD",     # Pedantic TODO comment rules
+    "FIX002", # Line contains TODO rule
+    "S101",   # Disallow assert statements rule
+    "TRY",    # Pedantic exception rules
+    "EM",     # Pedantic exception message rules
     "PLR",
     "ARG",
     "C",
@@ -110,6 +110,10 @@ section-order = [
 [tool.ruff.isort.sections]
 # Have typing libraries above other imports
 typehints = ["typing", "typing_extensions", "types", "collections.abc"]
+
+[tool.ruff.per-file-ignores]
+# Allow print statements in CLI interface
+"src/icespeak/cli.py" = ["T201"]
 
 [project.optional-dependencies]
 # Dependencies needed to parse text for more in-depth transcribing

@@ -25,8 +25,6 @@
         tts --help
 
 """
-# (Allow print statements)
-# ruff: noqa: T201
 
 from typing import Optional, cast
 
