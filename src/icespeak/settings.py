@@ -122,7 +122,7 @@ class Keys(BaseModel):
 
     azure: Optional[AzureKey] = Field(default=None, description="Azure API key.")
     aws: Optional[AWSPollyKey] = Field(default=None, description="AWS Polly API key.")
-    google: Optional[dict[Any,Any]] = Field(
+    google: Optional[dict[Any, Any]] = Field(
         default=None, description="Path to Google API key file."
     )
 

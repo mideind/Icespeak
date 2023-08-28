@@ -32,11 +32,20 @@ from functools import lru_cache
 from re import Match
 
 from islenska.basics import ALL_CASES, ALL_GENDERS, ALL_NUMBERS
-from reynir import TOK, Greynir, Tok
+from reynir import Greynir
 from reynir.bindb import GreynirBin
 from reynir.simpletree import SimpleTree
-from tokenizer import Abbreviations
-from tokenizer.definitions import HYPHENS
+from tokenizer import TOK, Abbreviations, Tok, detokenize, tokenize
+from tokenizer.definitions import (
+    HYPHENS,
+    AmountTuple,
+    # CURRENCY_ABBREV,
+    # SI_UNITS,
+    # CURRENCY_SYMBOLS,
+    CurrencyTuple,
+    MeasurementTuple,
+    PunctuationTuple,
+)
 
 from .num import (
     ROMAN_NUMERALS,
@@ -97,6 +106,23 @@ def gssml(data: Any = None, *, type: str, **kwargs: Union[str, float]) -> str:
         + "".join(f' {k}="{v}"' for k, v in kwargs.items())
         + (f">{data}</{GSSML_TAG}>" if data is not None else " />")
     )
+
+
+def _currency_to_gender(code: str) -> GenderType:
+    non_kvk_currencies: Mapping[str, GenderType] = {
+        # KK
+        "USD": "kk",
+        "CHF": "kk",
+        "CAD": "kk",
+        # HK
+        "GBP": "hk",
+        "JPY": "hk",
+        "PLN": "hk",
+        "CNY": "hk",
+        "RMB": "hk",
+        "ZAR": "hk",
+    }
+    return non_kvk_currencies.get(code, "kvk")
 
 
 # Spell out how character names are pronounced in Icelandic
@@ -176,22 +202,48 @@ _MONTH_NAMES = (
     "nóvember",
     "desember",
 )
-_DATE_REGEXES = (
-    # Matches e.g. "1986-03-07"
-    re.compile(r"(?P<year>\d{1,4})-(?P<month>\d{1,2})-(?P<day>\d{1,2})"),
-    # Matches e.g. "1/4/2001"
-    re.compile(r"(?P<day>\d{1,2})/(?P<month>\d{1,2})/(?P<year>\d{1,4})"),
-    # Matches e.g. "25. janúar 1999" or "25 des."
-    re.compile(
-        r"(?P<day>\d{1,2})\.? ?"
-        + r"(?P<month>(jan(úar|\.)?|feb(rúar|\.)?|mar(s|\.)?|"
-        + r"apr(íl|\.)?|maí\.?|jún(í|\.)?|"
-        + r"júl(í|\.)?|ágú(st|\.)?|sep(tember|\.)?|"
-        + r"okt(óber|\.)?|nóv(ember|\.)?|des(ember|\.)?))"  # 'month' capture group ends
-        + r"( (?P<year>\d{1,4}))?",  # Optional
-        flags=re.IGNORECASE,
+_DATE_REGEX = re.compile(
+    "|".join(
+        (  # TODO: This matches incorrect dates such as 1999-88-63 or 43/67/1999
+            # Matches e.g. "1986-03-07"
+            r"(?P<year1>\d{1,4})-(?P<month1>\d{1,2})-(?P<day1>\d{1,2})",
+            # Matches e.g. "1/4/2001"
+            r"(?P<day2>\d{1,2})/(?P<month2>\d{1,2})/(?P<year2>\d{1,4})",
+            # Matches e.g. "25. janúar 1999" or "25 des."
+            r"(?P<day3>\d{1,2})\.? ?"
+            + r"(?P<month3>(jan(úar|\.)?|feb(rúar|\.)?|mar(s|\.)?|"
+            + r"apr(íl|\.)?|maí\.?|jún(í|\.)?|"
+            + r"júl(í|\.)?|ágú(st|\.)?|sept?(ember|\.)?|"
+            + r"okt(óber|\.)?|nóv(ember|\.)?|des(ember|\.)?))"  # 'month' capture group ends
+            + r"( (?P<year3>\d{1,4}))?",  # Optional
+        )
     ),
+    flags=re.IGNORECASE,
 )
+
+
+def _date_from_match(match: re.Match[str], case: CaseType = "nf") -> str:
+    gd = match.groupdict()
+
+    day_val: Optional[str] = next(
+        filter(bool, (gd[f"day{i}"] for i in range(1, 4))), None
+    )
+    month_val: Optional[str] = next(
+        filter(bool, (gd[f"month{i}"] for i in range(1, 4))), None
+    )
+    year_val: Optional[str] = next(
+        filter(bool, (gd[f"year{i}"] for i in range(1, 4))), None
+    )
+
+    day = number_to_ordinal(day_val, gender="kk", case=case, number="et")
+    mon: str = month_val
+    # Month names don't change in different declensions
+    month = (
+        _MONTH_NAMES[int(mon) - 1]  # DD/MM/YYYY specification
+        if mon.isdecimal()
+        else _MONTH_NAMES[_MONTH_ABBREVS.index(mon[:3])]  # Non-decimal
+    )
+    return f"{day} {month} {year_to_text(year_val)}" if year_val else f"{day} {month}"
 
 
 def _split_substring_types(t: str) -> Iterable[str]:
@@ -203,11 +255,8 @@ def _split_substring_types(t: str) -> Iterable[str]:
         list(_split_substring_types("hello world,123"))
         -> ["hello", " ", "world", ",", "123"]
     """
-
-    def f(c: str) -> int:
-        return c.isalpha() + 2 * c.isdecimal()
-
-    return ("".join(g) for _, g in itertools.groupby(t, key=f))
+    chartype2val: Callable[[str], int] = lambda c: c.isalpha() + 2 * c.isdecimal()
+    return ("".join(g) for _, g in itertools.groupby(t, key=chartype2val))
 
 
 # Matches letter followed by period or
@@ -221,7 +270,9 @@ _ABBREV_RE = re.compile(
 
 # Terms common in sentences which refer to results from sports
 _SPORTS_LEMMAS: frozenset[str] = frozenset(("leikur", "vinna", "tapa", "sigra"))
-
+_IGNORED_TOKENS = frozenset(
+    (TOK.PUNCTUATION, TOK.WORD, TOK.PERSON, TOK.ENTITY, TOK.TIMESTAMP, TOK.UNKNOWN)
+)
 _HYPHEN_SYMBOLS = frozenset(HYPHENS)
 
 _StrBool = Union[str, bool]
@@ -408,6 +459,7 @@ class DefaultTranscriber:
     @_empty_str
     def phone(cls, txt: str) -> str:
         """Spell out a phone number."""
+        # TODO: "plús" for e.g. +354-5588-5522
         return cls.digits(txt)
 
     @classmethod
@@ -479,28 +531,13 @@ class DefaultTranscriber:
     @_empty_str
     def date(cls, txt: str, case: CaseType = "nf") -> str:
         """Voicifies a date"""
-        for r in _DATE_REGEXES:
-            match = r.search(txt)
-            if match:
-                # Found match
-                start, end = match.span()
-                gd = match.groupdict()
-                day = number_to_ordinal(gd["day"], gender="kk", case=case, number="et")
-                mon: str = gd["month"]
-                # Month names don't change in different declensions
-                month = (
-                    _MONTH_NAMES[int(mon) - 1]  # DD/MM/YYYY specification
-                    if mon.isdecimal()
-                    else _MONTH_NAMES[_MONTH_ABBREVS.index(mon[:3])]  # Non-decimal
-                )
-                fmt_date = (
-                    f"{day} {month} {year_to_text(gd['year'])}"
-                    if gd["year"]
-                    else f"{day} {month}"
-                )
-                # Only replace date part, leave rest of string intact
-                txt = txt[:start] + fmt_date + txt[end:]
-                break
+        match = _DATE_REGEX.search(txt)
+        if match:
+            # Found match
+            start, end = match.span()
+            fmt_date = _date_from_match(match, case=case)
+            # Only replace date part, leave rest of string intact
+            txt = txt[:start] + fmt_date + txt[end:]
         return txt
 
     @classmethod
@@ -1087,3 +1124,101 @@ class DefaultTranscriber:
     def sentence(cls, txt: str) -> str:
         """Sentence delimiter for speech synthesis."""
         return f"<s>{txt}</s>"
+
+    @classmethod
+    def token_transcribe(cls, text: str):
+        """
+        Quick transcription of Icelandic text for TTS.
+        Utilizes the tokenizer library.
+        """
+        tokens: list[Tok] = list(tokenize(text))
+        for token in tokens:
+            if token.kind in _IGNORED_TOKENS:
+                continue
+
+            elif token.kind == TOK.TIME:
+                token.txt = cls.time(token.txt)
+
+            elif token.kind == TOK.DATE:
+                token.txt = cls.date(token.txt, case="þf")
+
+            elif token.kind == TOK.YEAR:
+                token.txt = cls.year(token.integer)
+
+            elif token.kind == TOK.NUMBER:
+                token.txt = cls.float(token.number, case="nf", gender="hk")
+
+            elif token.kind == TOK.TELNO:
+                token.txt = cls.phone(token.txt)
+
+            elif token.kind == TOK.PERCENT:
+                pass  # TODO
+
+            elif token.kind == TOK.URL:
+                protocol, _, domain = token.txt.partition("://")
+                if domain:
+                    token.txt = cls.spell(protocol) + cls.domain(domain)
+
+            elif token.kind == TOK.ORDINAL:
+                token.txt = cls.ordinal(token.ordinal, case="nf", gender="kk")
+
+            elif token.kind == TOK.CURRENCY:
+                curr, _, _ = cast(CurrencyTuple, token.val)
+                token.txt = cls.currency(curr)
+
+            elif token.kind == TOK.AMOUNT:
+                num, curr, _, _ = cast(AmountTuple, token.val)
+                token.txt = (
+                    cls.float(num, case="nf", gender=_currency_to_gender(curr))
+                    + " "
+                    + cls.currency(curr)
+                )
+
+            elif token.kind == TOK.EMAIL:
+                token.txt = cls.email(token.txt)
+
+            elif token.kind == TOK.DATEABS:
+                token.txt = cls.date(token.txt, case="þf")
+
+            elif token.kind == TOK.DATEREL:
+                token.txt = cls.date(token.txt, case="þf")
+
+            elif token.kind == TOK.TIMESTAMPABS:
+                token.txt = cls.time(cls.date(token.txt, case="þf"))
+
+            elif token.kind == TOK.TIMESTAMPREL:
+                token.txt = cls.time(cls.date(token.txt, case="þf"))
+
+            elif token.kind == TOK.MEASUREMENT:
+                unit, num = cast(MeasurementTuple, token.val)
+                pass  # TODO
+                # TOK.MEASUREMENT: lambda tok, term: tok.txt, SI_UNITS in tokenizer
+
+            elif token.kind == TOK.NUMWLETTER:
+                num, letter = cast(PunctuationTuple, token.val)
+                token.txt = (
+                    cls.number(num, case="nf", gender="hk") + " " + cls.spell(letter)
+                )
+
+            elif token.kind == TOK.DOMAIN:
+                token.txt = cls.domain(token.txt)
+
+            elif token.kind == TOK.HASHTAG:
+                token.txt = f"myllumerki {token.txt.lstrip('#')}"
+
+            elif token.kind == TOK.MOLECULE:
+                token.txt = cls.molecule(token.txt)
+
+            elif token.kind == TOK.SSN:
+                token.txt = cls.digits(token.txt)
+
+            elif token.kind == TOK.USERNAME:
+                token.txt = cls.username(token.txt)
+
+            elif token.kind == TOK.SERIALNUMBER:
+                token.txt = cls.digits(token.txt)
+
+            elif token.kind == TOK.COMPANY:
+                token.txt = cls.entity(token.txt)
+
+        return detokenize(tokens)
