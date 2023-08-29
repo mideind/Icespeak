@@ -23,12 +23,9 @@ from .parser import GreynirSSMLParser
 from .transcribe import DefaultTranscriber, gssml
 from .tts import text_to_speech
 
-fast_transcribe = DefaultTranscriber.token_transcribe
-
 __all__ = (
     "GreynirSSMLParser",
     "text_to_speech",
     "gssml",
     "DefaultTranscriber",
-    "fast_transcribe",
 )

@@ -37,13 +37,12 @@ from reynir.bindb import GreynirBin
 from reynir.simpletree import SimpleTree
 from tokenizer import TOK, Abbreviations, Tok, detokenize, tokenize
 from tokenizer.definitions import (
+    CURRENCY_SYMBOLS,
     HYPHENS,
     AmountTuple,
-    # CURRENCY_ABBREV,
-    # SI_UNITS,
-    # CURRENCY_SYMBOLS,
     CurrencyTuple,
-    MeasurementTuple,
+    DateTimeTuple,
+    NumberTuple,
     PunctuationTuple,
 )
 
@@ -123,6 +122,61 @@ def _currency_to_gender(code: str) -> GenderType:
         "ZAR": "hk",
     }
     return non_kvk_currencies.get(code, "kvk")
+
+
+def _unit_to_gender(unit: str) -> GenderType:
+    _non_hk_units: Mapping[str, GenderType] = {
+        # Distance
+        "m": "kk",
+        "mm": "kk",
+        "μm": "kk",
+        "cm": "kk",
+        "sm": "kk",
+        "km": "kk",
+        "mi": "kvk",
+        # Area
+        "m²": "kk",
+        "fm": "kk",
+        "km²": "kk",
+        "cm²": "kk",
+        "ha": "kk",
+        # Volume
+        "m³": "kk",
+        "cm³": "kk",
+        "km³": "kk",
+        "l": "kk",
+        "ltr": "kk",
+        "dl": "kk",
+        "cl": "kk",
+        "ml": "kk",
+        "bbl": "kvk",
+        # Temperature
+        "K": "kvk",
+        "°K": "kvk",
+        "°C": "kvk",
+        "°F": "kvk",
+        # Duration
+        "s": "kvk",
+        "ms": "kvk",
+        "μs": "kvk",
+        "klst": "kvk",
+        "mín": "kvk",
+        # Force
+        "kWh": "kvk",
+        "MWh": "kvk",
+        "kWst": "kvk",
+        "MWst": "kvk",
+        "kcal": "kvk",
+        "cal": "kvk",
+        # Power
+        "°": "kvk",
+        # Percentage and promille
+        "%": "kvk",
+        # Velocity
+        "m/s": "kk",
+        "km/klst": "kk",
+    }
+    return _non_hk_units.get(unit, "hk")
 
 
 # Spell out how character names are pronounced in Icelandic
@@ -246,6 +300,44 @@ def _date_from_match(match: re.Match[str], case: CaseType = "nf") -> str:
     return f"{day} {month} {year_to_text(year_val)}" if year_val else f"{day} {month}"
 
 
+def _time_to_text(hour: int, minute: int, second: Optional[int]) -> str:
+    suffix: Optional[str] = None
+    t: list[str] = []
+
+    # Hours
+    if hour == 0 and minute == 0:
+        # Refer to 00:00 as "tólf á miðnætti"
+        hour = 12
+        suffix = "á miðnætti"
+    elif 0 <= hour <= 5:
+        # Refer to 00:xx-05:xx as "... um nótt"
+        suffix = "um nótt"
+    elif hour == 12 and minute == 0:
+        # Refer to 12:00 as "tólf á hádegi"
+        suffix = "á hádegi"
+    t.append(number_to_text(hour, case="nf", gender="hk"))
+
+    # Minutes
+    if minute > 0:
+        if minute < 10:
+            # e.g. "þrettán núll fjögur"
+            t.append("núll")
+        t.append(number_to_text(minute, case="nf", gender="hk"))
+
+    # Seconds
+    if second is not None and second > 0:
+        if second < 10:
+            # e.g. "þrettán núll fjögur núll sex"
+            t.append("núll")
+        t.append(number_to_text(second, case="nf", gender="hk"))
+
+    # Suffix for certain times of day to reduce ambiguity
+    if suffix:
+        t.append(suffix)
+
+    return " ".join(t)
+
+
 def _split_substring_types(t: str) -> Iterable[str]:
     """
     Split text into alphabetic, decimal or
@@ -279,6 +371,14 @@ _StrBool = Union[str, bool]
 TranscriptionMethod = Callable[..., str]
 
 
+def _is_plural(num: Union[str, float]) -> bool:
+    """Determine whether an Icelandic word following a given number should be
+    plural or not, e.g. "21 maður", "22 menn", "1,1 kílómetri", "11 menn" etc.
+    Accepts string, float or int as argument."""
+    sn = str(num)
+    return not (sn.endswith("1") and not sn.endswith("11"))
+
+
 def _empty_str(f: TranscriptionMethod) -> TranscriptionMethod:
     """
     Decorator which returns an empty string
@@ -287,7 +387,7 @@ def _empty_str(f: TranscriptionMethod) -> TranscriptionMethod:
     """
 
     def _inner(cls: "DefaultTranscriber", txt: str, **kwargs: _StrBool):
-        if not txt:
+        if txt == "":  # noqa
             return ""
         return f(cls, txt, **kwargs)
 
@@ -696,20 +796,140 @@ class DefaultTranscriber:
         # (e.g. "cand.med."),
         return txt
 
-    @classmethod
-    def amount(cls, txt: str) -> str:
-        # TODO
-        raise NotImplementedError
+    # HACK: Inflect at runtime instead of hardcoding, doesn't deal with other cases
+    _CURRENCY_PRONUNCIATION: Mapping[str, Mapping[NumberType, str]] = {
+        "ISK": {"et": "króna", "ft": "krónur"},
+        "DKK": {"et": "dönsk króna", "ft": "danskar krónur"},
+        "NOK": {"et": "norsk króna", "ft": "norskar krónur"},
+        "SEK": {"et": "sænsk króna", "ft": "sænskar krónur"},
+        "GBP": {"et": "sterlingspund", "ft": "sterlingspund"},
+        "USD": {"et": "bandaríkjadalur", "ft": "bandaríkjadalir"},
+        "EUR": {"et": "evra", "ft": "evrur"},
+        "CAD": {"et": "kanadískur dalur", "ft": "kanadískir dalir"},
+        "AUD": {"et": "ástralskur dalur", "ft": "ástralskir dalir"},
+        "CHF": {"et": "svissneskur franki", "ft": "svissneskir frankar"},
+        "JPY": {"et": "japanskt jen", "ft": "japönsk jen"},
+        "PLN": {"et": "pólskt slot", "ft": "pólsk slot"},
+        "RUB": {"et": "rússnesk rúbla", "ft": "rússneskar rúblur"},
+        "CZK": {"et": "tékknesk króna", "ft": "tékkneskar krónur"},
+        "INR": {"et": "indversk rúpía", "ft": "indverskar rúpíur"},
+        "IDR": {"et": "indónesísk rúpía", "ft": "indónesískar rúpíur"},
+        "CNY": {"et": "kínverskt júan", "ft": "kínversk júan"},
+        "RMB": {"et": "kínverskt júan", "ft": "kínversk júan"},
+        "HKD": {"et": "Hong Kong dalur", "ft": "Hong Kong dalir"},
+        "NZD": {"et": "nýsjálenskur dalur", "ft": "nýsjálenskir dalir"},
+        "SGD": {"et": "singapúrskur dalur", "ft": "singapúrskir dalir"},
+        "MXN": {"et": "mexíkóskt pesó", "ft": "mexíkósk pesó"},
+        "ZAR": {"et": "suður-afrískt rand", "ft": "suður-afrísk rand"},
+    }
 
     @classmethod
-    def currency(cls, txt: str) -> str:
-        # TODO
-        raise NotImplementedError
+    def currency(cls, txt: str, *, number: NumberType = "ft") -> str:
+        if txt not in cls._CURRENCY_PRONUNCIATION:
+            return cls.spell(txt)
+        return cls._CURRENCY_PRONUNCIATION[txt][number]
+
+    # HACK: Inflect at runtime instead of hardcoding, doesn't deal with other cases
+    _SI_UNIT_PRONUNCIATION: Mapping[str, Mapping[NumberType, str]] = {
+        # Distance
+        "m": {"et": "metri", "ft": "metrar"},
+        "mm": {"et": "millimetri", "ft": "millimetrar"},
+        "μm": {"et": "míkrómetri", "ft": "míkrómetrar"},
+        "cm": {"et": "sentimetri", "ft": "sentimetrar"},
+        "sm": {"et": "sentimetri", "ft": "sentimetrar"},
+        "km": {"et": "kílómetri", "ft": "kílómetrar"},
+        "ft": {"et": "fet", "ft": "fet"},
+        "mi": {"et": "míla", "ft": "mílur"},
+        # Area
+        "m²": {"et": "fermetri", "ft": "fermetrar"},
+        "fm": {"et": "fermetri", "ft": "fermetrar"},
+        "km²": {"et": "ferkílómetri", "ft": "ferkílómetrar"},
+        "cm²": {"et": "fersentimetri", "ft": "fersentimetrar"},
+        "ha": {"et": "hektari", "ft": "hektarar"},
+        # Volume
+        "m³": {"et": "rúmmetri", "ft": "rúmmetrar"},
+        "cm³": {"et": "rúmsentimetri", "ft": "rúmsentimetrar"},
+        "km³": {"et": "rúmkílómetri", "ft": "rúmkílómetrar"},
+        "l": {"et": "lítri", "ft": "lítrar"},
+        "ltr": {"et": "lítri", "ft": "lítrar"},
+        "dl": {"et": "desilítri", "ft": "desilítrar"},
+        "cl": {"et": "sentilítri", "ft": "sentilítrar"},
+        "ml": {"et": "millilítri", "ft": "millilítrar"},
+        "gal": {"et": "gallon", "ft": "gallon"},
+        "bbl": {"et": "tunna", "ft": "tunnur"},
+        # Temperature
+        "K": {"et": "kelvíngráða", "ft": "kelvíngráður"},
+        "°K": {"et": "kelvíngráða", "ft": "kelvíngráður"},
+        "°C": {"et": "gráða á selsíus", "ft": "gráður á selsíus"},
+        "°F": {"et": "Fahrenheit-gráða", "ft": "Fahrenheit-gráður"},
+        # Mass
+        "g": {"et": "gramm", "ft": "grömm"},
+        "gr": {"et": "gramm", "ft": "grömm"},
+        "kg": {"et": "kílógramm", "ft": "kílógrömm"},
+        "t": {"et": "tonn", "ft": "tonn"},
+        "mg": {"et": "milligramm", "ft": "milligrömm"},
+        "μg": {"et": "míkrógramm", "ft": "míkrógrömm"},
+        "tn": {"et": "tonn", "ft": "tonn"},
+        "lb": {"et": "pund", "ft": "pund"},
+        # Duration
+        "s": {"et": "sekúnda", "ft": "sekúndur"},
+        "ms": {"et": "millisekúnda", "ft": "millisekúndur"},
+        "μs": {"et": "míkrósekúnda", "ft": "míkrósekúndur"},
+        "klst": {"et": "klukkustund", "ft": "klukkustundir"},
+        "mín": {"et": "mínúta", "ft": "mínútur"},
+        # Force
+        "N": {"et": "njúton", "ft": "njúton"},
+        "kN": {"et": "kílónjúton", "ft": "kílónjúton"},
+        # Energy
+        "J": {"et": "júl", "ft": "júl"},
+        "kJ": {"et": "kílójúl", "ft": "kílójúl"},
+        "MJ": {"et": "megajúl", "ft": "megajúl"},
+        "GJ": {"et": "gígajúl", "ft": "gígajúl"},
+        "TJ": {"et": "terajúl", "ft": "terajúl"},
+        "kWh": {"et": "kílóvattstund", "ft": "kílóvattstundir"},
+        "MWh": {"et": "megavattstund", "ft": "megavattstundir"},
+        "kWst": {"et": "kílóvattstund", "ft": "kílóvattstundir"},
+        "MWst": {"et": "megavattstund", "ft": "megavattstundir"},
+        "kcal": {"et": "kílókaloría", "ft": "kílókaloríur"},
+        "cal": {"et": "kaloría", "ft": "kaloríur"},
+        # Power
+        "W": {"et": "vatt", "ft": "vött"},
+        "mW": {"et": "millivatt", "ft": "millivött"},
+        "kW": {"et": "kílóvatt", "ft": "kílóvött"},
+        "MW": {"et": "megavatt", "ft": "megavött"},
+        "GW": {"et": "gígavatt", "ft": "gígavött"},
+        "TW": {"et": "teravatt", "ft": "teravött"},
+        # Electric potential
+        "V": {"et": "volt", "ft": "volt"},
+        "mV": {"et": "millivolt", "ft": "millivolt"},
+        "kV": {"et": "kílóvolt", "ft": "kílóvolt"},
+        # Electric current
+        "A": {"et": "amper", "ft": "amper"},
+        "mA": {"et": "milliamper", "ft": "milliamper"},
+        # Frequency
+        "Hz": {"et": "herts", "ft": "herts"},
+        "kHz": {"et": "kílóherts", "ft": "kílóherts"},
+        "MHz": {"et": "megaherts", "ft": "megaherts"},
+        "GHz": {"et": "gígaherts", "ft": "gígaherts"},
+        # Pressure
+        "Pa": {"et": "paskal", "ft": "pasköl"},
+        "kPa": {"et": "kílópaskal", "ft": "kílópasköl"},
+        "hPa": {"et": "hektópaskal", "ft": "hektópasköl"},
+        # Angle
+        "°": {"et": "gráða", "ft": "gráður"},
+        # Percentage and promille
+        "%": {"et": "prósenta", "ft": "prósentur"},
+        "‰": {"et": "prómill", "ft": "prómill"},
+        # Velocity
+        "m/s": {"et": "metri á sekúndu", "ft": "metrar á sekúndu"},
+        "km/klst": {"et": "kílómetri á klukkustund", "ft": "kílómetrar á klukkustund"},
+    }
 
     @classmethod
-    def measurement(cls, txt: str) -> str:
-        # TODO
-        raise NotImplementedError
+    def unit(cls, txt: str, *, number: NumberType = "ft") -> str:
+        if txt not in cls._SI_UNIT_PRONUNCIATION:
+            return txt
+        return cls._SI_UNIT_PRONUNCIATION[txt][number]
 
     @classmethod
     @_empty_str
@@ -893,13 +1113,10 @@ class DefaultTranscriber:
     @_empty_str
     @_bool_args("full_text")
     @lru_cache(maxsize=50)  # Caching, as this method could be slow
-    def generic(cls, txt: str, *, full_text: bool = False) -> str:
+    def parser_transcribe(cls, txt: str, *, full_text: bool = False) -> str:
         """
-        Attempt to voicify some generic text.
-        Parses text and calls other transcription handlers
-        based on inferred meaning of words.
-        if full_text is set to True,
-        add paragraph and sentence markers.
+        Slow transcription of Icelandic text for TTS.
+        Utilizes the parser from the GreynirPackage library.
         """
         if cls._greynir is None:
             cls._greynir = Greynir(no_sentence_start=True)
@@ -1133,11 +1350,22 @@ class DefaultTranscriber:
         """
         tokens: list[Tok] = list(tokenize(text))
         for token in tokens:
-            if token.kind in _IGNORED_TOKENS:
+            if (
+                token.kind == TOK.WORD
+                and "." in token.txt
+                and (meanings := Abbreviations.get_meaning(token.txt))
+            ):
+                # Expand abbreviation
+                token.txt = meanings[0].stofn
+
+            elif token.kind in _IGNORED_TOKENS:
+                if token.txt == "-":
+                    token.txt = "bandstrik"
                 continue
 
             elif token.kind == TOK.TIME:
-                token.txt = cls.time(token.txt)
+                h, m, s = cast(DateTimeTuple, token.val)
+                token.txt = _time_to_text(h, m, s or None)
 
             elif token.kind == TOK.DATE:
                 token.txt = cls.date(token.txt, case="þf")
@@ -1152,7 +1380,14 @@ class DefaultTranscriber:
                 token.txt = cls.phone(token.txt)
 
             elif token.kind == TOK.PERCENT:
-                pass  # TODO
+                percent, _, _ = cast(NumberTuple, token.val)
+                if "%" in token.txt:
+                    token.txt = cls.float(percent, case="nf", gender="hk") + " prósent"
+                elif "pró" in token.txt:
+                    # Written form, only transcribe the number
+                    token.txt = cls.floats(token.txt, case="nf", gender="hk")
+                elif "‰" in token.txt:
+                    token.txt = cls.float(percent, case="nf", gender="hk") + " prómill"
 
             elif token.kind == TOK.URL:
                 protocol, _, domain = token.txt.partition("://")
@@ -1160,7 +1395,7 @@ class DefaultTranscriber:
                     token.txt = cls.spell(protocol) + cls.domain(domain)
 
             elif token.kind == TOK.ORDINAL:
-                token.txt = cls.ordinal(token.ordinal, case="nf", gender="kk")
+                token.txt = cls.ordinal(token.ordinal, case="þf", gender="kk")
 
             elif token.kind == TOK.CURRENCY:
                 curr, _, _ = cast(CurrencyTuple, token.val)
@@ -1168,10 +1403,11 @@ class DefaultTranscriber:
 
             elif token.kind == TOK.AMOUNT:
                 num, curr, _, _ = cast(AmountTuple, token.val)
+                curr = CURRENCY_SYMBOLS.get(curr, curr)
                 token.txt = (
                     cls.float(num, case="nf", gender=_currency_to_gender(curr))
                     + " "
-                    + cls.currency(curr)
+                    + cls.currency(curr, number="ft" if _is_plural(num) else "et")
                 )
 
             elif token.kind == TOK.EMAIL:
@@ -1190,9 +1426,25 @@ class DefaultTranscriber:
                 token.txt = cls.time(cls.date(token.txt, case="þf"))
 
             elif token.kind == TOK.MEASUREMENT:
-                unit, num = cast(MeasurementTuple, token.val)
-                pass  # TODO
-                # TOK.MEASUREMENT: lambda tok, term: tok.txt, SI_UNITS in tokenizer
+                # We can't use token.val here because
+                # the tokenization converts everything to SI units :/
+                # unit, num = cast(MeasurementTuple, token.val)
+
+                # HACK: Deal correctly with messes such as "-1.234,56km"
+                i = 0
+                while i < len(token.txt):
+                    c = token.txt[i]
+                    if not (c.isdecimal() or c in "+-,. "):
+                        break
+                    i += 1
+                num = float(token.txt[:i].replace(".", "").replace(",", "."))
+                unit = token.txt[i:]
+
+                token.txt = (
+                    cls.float(num, case="nf", gender=_unit_to_gender(unit))
+                    + " "
+                    + cls.unit(unit, number="ft" if _is_plural(num) else "et")
+                )
 
             elif token.kind == TOK.NUMWLETTER:
                 num, letter = cast(PunctuationTuple, token.val)

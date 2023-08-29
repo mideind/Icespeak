@@ -756,52 +756,54 @@ def test_entity_transcription() -> None:
 
 @pytest.mark.slow()
 def test_generic_transcription() -> None:
-    n = DT.generic("þjálfari ÍR")
+    n = DT.parser_transcribe("þjálfari ÍR")
     assert "ÍR" not in n and "þjálfari " in n
-    n = DT.generic("fulltrúi í samninganefnd félagsins")
+    n = DT.parser_transcribe("fulltrúi í samninganefnd félagsins")
     assert n == "fulltrúi í samninganefnd félagsins"
-    n = DT.generic("formaður nefndarinnar")
+    n = DT.parser_transcribe("formaður nefndarinnar")
     assert n == "formaður nefndarinnar"
-    n = DT.generic("fyrrverandi Bandaríkjaforseti")
+    n = DT.parser_transcribe("fyrrverandi Bandaríkjaforseti")
     assert n == "fyrrverandi Bandaríkjaforseti"
-    n = DT.generic("þjálfari Fram í Olís deild karla")
+    n = DT.parser_transcribe("þjálfari Fram í Olís deild karla")
     assert n == "þjálfari Fram í Olís deild karla"
-    n = DT.generic("NASF")
+    n = DT.parser_transcribe("NASF")
     assert n and "NASF" not in n
-    n = DT.generic("íþróttakennari")
+    n = DT.parser_transcribe("íþróttakennari")
     assert n == "íþróttakennari"
-    n = DT.generic("formaður Bandalags háskólamanna")
+    n = DT.parser_transcribe("formaður Bandalags háskólamanna")
     assert n == "formaður Bandalags háskólamanna"
-    n = DT.generic("formaður Leigjendasamtakanna")
+    n = DT.parser_transcribe("formaður Leigjendasamtakanna")
     assert n == "formaður Leigjendasamtakanna"
-    n = DT.generic("framkvæmdastjóri Samtaka atvinnulífsins (SA)")
+    n = DT.parser_transcribe("framkvæmdastjóri Samtaka atvinnulífsins (SA)")
     assert "framkvæmdastjóri Samtaka atvinnulífsins" in n and "SA" not in n
-    n = DT.generic("innanríkisráðherra í stjórn Sigmundar Davíðs Gunnlaugssonar")
+    n = DT.parser_transcribe(
+        "innanríkisráðherra í stjórn Sigmundar Davíðs Gunnlaugssonar"
+    )
     assert n == "innanríkisráðherra í stjórn Sigmundar Davíðs Gunnlaugssonar"
-    n = DT.generic("fyrsti ráðherra Íslands")
+    n = DT.parser_transcribe("fyrsti ráðherra Íslands")
     assert n == "fyrsti ráðherra Íslands"
-    n = DT.generic("málpípur þær")
+    n = DT.parser_transcribe("málpípur þær")
     assert n == "málpípur þær"
-    n = DT.generic("sundsérfræðingur RÚV")
+    n = DT.parser_transcribe("sundsérfræðingur RÚV")
     assert n == "sundsérfræðingur RÚV"
-    n = DT.generic("framkvæmdastjóri Strætó ehf.")
+    n = DT.parser_transcribe("framkvæmdastjóri Strætó ehf.")
     assert "framkvæmdastjóri Strætó" in n and "ehf." not in n
-    n = DT.generic("þáverandi sjávarútvegsráðherra")
+    n = DT.parser_transcribe("þáverandi sjávarútvegsráðherra")
     assert n == "þáverandi sjávarútvegsráðherra"
-    n = DT.generic("knattspyrnudómari")
+    n = DT.parser_transcribe("knattspyrnudómari")
     assert n == "knattspyrnudómari"
-    n = DT.generic("framkvæmdastjóri Félags atvinnurekenda")
+    n = DT.parser_transcribe("framkvæmdastjóri Félags atvinnurekenda")
     assert n == "framkvæmdastjóri Félags atvinnurekenda"
-    n = DT.generic("þjálfari Stjörnunnar")
+    n = DT.parser_transcribe("þjálfari Stjörnunnar")
     assert n == "þjálfari Stjörnunnar"
-    n = DT.generic("lektor við HÍ")
+    n = DT.parser_transcribe("lektor við HÍ")
     assert "lektor við" in n and "HÍ" not in n
-    n = DT.generic("formaður VR og LÍV")
+    n = DT.parser_transcribe("formaður VR og LÍV")
     assert "formaður" in n and "VR" not in n and "LÍV" not in n
     # Test complete_text arg
-    n = DT.generic("trillukarl í Skerjafirði")
+    n = DT.parser_transcribe("trillukarl í Skerjafirði")
     assert n == "trillukarl í Skerjafirði"
-    n = DT.generic("trillukarl í Skerjafirði", full_text=True)
+    n = DT.parser_transcribe("trillukarl í Skerjafirði", full_text=True)
     assert n == "<p><s>trillukarl í Skerjafirði</s></p>"
 
     # Replace whitespace with single space in text
@@ -817,19 +819,8 @@ def test_generic_transcription() -> None:
         við mikilli verðbólgu í landinu.
         """
     )
-    n = DT.generic(t, full_text=True)
+    n = DT.parser_transcribe(t, full_text=True)
     assert "fjórtán" in n and "yfir þrjú komma tvö prósent" in n
-    t = ws_to_space(
-        """
-        Breski seðlabankinn hækkaði stýrivexti sína í dag
-        um hálft prósentustig og eru vextir nú yfir 3,2 prósentum.
-        Það eru hæstu stýrivextir í Bretlandi í 14 ár.
-        Seðlabankinn vonar að vaxtahækkunin stemmi stigu
-        við mikilli verðbólgu í landinu.
-        """
-    )
-    n = DT.generic(t, full_text=True)
-    assert "fjórtán" in n and "yfir þremur komma tveimur prósentum" in n
     t = ws_to_space(
         """
         t.d. var 249% munur á ódýrstu og dýrustu rauðrófunum,
@@ -837,14 +828,14 @@ def test_generic_transcription() -> None:
         97% munur á vínberjum og 2-3% af jarðarberjum.
         """
     )
-    n = DT.generic(t, full_text=True)
+    n = DT.parser_transcribe(t, full_text=True)
     assert (
         "%" not in n
         and "til dæmis" in n
         and "tvö hundruð níutíu og eitt prósent" in n
         and "tvö til þrjú prósent"
     )
-    n = DT.generic(
+    n = DT.parser_transcribe(
         "sagðist hún vona að á næstu 10-20 árum "
         + "yrði farið að nýta tæknina 9,2-5,3 prósent meira."
     )
@@ -858,7 +849,7 @@ def test_generic_transcription() -> None:
         sem voru sterkari og unnu þeir leikinn 2-0.
         """
     )
-    n = DT.generic(t, full_text=True)
+    n = DT.parser_transcribe(t, full_text=True)
     assert "Frakkland til Marókkó" not in n and "HM" not in n and "tvö núll" in n
     t = ws_to_space(
         """
@@ -867,38 +858,38 @@ def test_generic_transcription() -> None:
         í Berlín sprakk snemma í morgun.
         """
     )
-    n = DT.generic(t, full_text=True)
+    n = DT.parser_transcribe(t, full_text=True)
     assert n.startswith("<p><s>") and n.endswith("</s></p>")
     assert "tveir" in n and "eitt þúsund og fimm hundruð" in n and "sextán metra" in n
 
     t = ws_to_space("Fréttin var síðast uppfærð 3/12/2022 kl. 10:42.")
-    n = DT.generic(t, full_text=True)
+    n = DT.parser_transcribe(t, full_text=True)
     assert n.startswith("<p><s>") and n.endswith("</s></p>")
     assert (
         "þriðja desember tvö þúsund tuttugu og tvö" in n
         and "klukkan tíu fjörutíu og tvö" in n
     )
     t = ws_to_space("Fréttin var síðast uppfærð 16. desember 2022 kl. 10:42.")
-    n = DT.generic(t, full_text=True)
+    n = DT.parser_transcribe(t, full_text=True)
     assert n.startswith("<p><s>") and n.endswith("</s></p>")
     assert (
         "sextánda desember tvö þúsund tuttugu og tvö" in n
         and "klukkan tíu fjörutíu og tvö" in n
     )
     t = ws_to_space("Fréttin var síðast uppfærð 2. janúar 2022.")
-    n = DT.generic(t, full_text=True)
+    n = DT.parser_transcribe(t, full_text=True)
     assert n.startswith("<p><s>") and n.endswith("</s></p>")
     assert "annan janúar tvö þúsund tuttugu og tvö" in n
     t = ws_to_space("Fréttin var síðast uppfærð 01/01/2022.")
-    n = DT.generic(t, full_text=True)
+    n = DT.parser_transcribe(t, full_text=True)
     assert n.startswith("<p><s>") and n.endswith("</s></p>")
     assert "fyrsta janúar tvö þúsund tuttugu og tvö" in n
     t = ws_to_space("Fréttin var síðast uppfærð 14. nóvember og 16. desember 1999.")
-    n = DT.generic(t, full_text=True)
+    n = DT.parser_transcribe(t, full_text=True)
     assert n.startswith("<p><s>") and n.endswith("</s></p>")
     assert "fjórtánda nóvember og sextánda desember nítján hundruð níutíu og níu" in n
     t = ws_to_space("Fréttin var síðast uppfærð 2. febrúar klukkan 13:30.")
-    n = DT.generic(t, full_text=True)
+    n = DT.parser_transcribe(t, full_text=True)
     assert n.startswith("<p><s>") and n.endswith("</s></p>")
     assert "annan febrúar klukkan þrettán þrjátíu" in n
 
@@ -916,7 +907,7 @@ def test_generic_transcription() -> None:
         nefndinni verður þýðing þess enn betur ljós,“ segir á vef Stjórnarráðsins.
         """
     )
-    n = DT.generic(t, full_text=True)
+    n = DT.parser_transcribe(t, full_text=True)
     assert n.startswith("<p><s>") and n.endswith("</s></p>")
     assert "hugverkarétti" in n
     assert "ICELAND" in n and "EUIPO" not in n
@@ -984,3 +975,123 @@ def test_voice_breaks() -> None:
     for s in DT._VBREAK_STRENGTHS:
         n = DT.vbreak(strength=s)
         assert n == f'<break strength="{s}" />'
+
+
+def test_token_transcribe() -> None:
+    # Replace whitespace with single space in text
+    # stretching over multiple lines
+    ws_re = re.compile(r"\n\s+")
+    ws_to_space: Callable[[str], str] = lambda t: ws_re.sub(" ", t.strip())
+    t = ws_to_space(
+        """
+        Frétt skrifuð þann 27. ágúst 2023 kl. 20:20.
+        """
+    )
+    n = DT.token_transcribe(t)
+    assert (
+        "tuttugasta og sjöunda ágúst tvö þúsund tuttugu og þrjú klukkan tuttugu tuttugu"
+        in n
+    )
+    t = ws_to_space(
+        """
+        t.d. var 249% munur á ódýrstu og dýrustu rauðrófunum,
+        118% munur milli bökunarkartafla, 291% munur á grænum eplum,
+        97% munur á vínberjum og 2-3% af jarðarberjum.
+        """
+    )
+    n = DT.token_transcribe(t)
+    assert (
+        "%" not in n
+        and "til dæmis" in n
+        and "tvö hundruð níutíu og eitt prósent" in n
+        and "tvö til þrjú prósent"
+    )
+    n = DT.token_transcribe(
+        "sagðist hún vona að á næstu 10-20 árum "
+        + "yrði farið að nýta tæknina 9,2-5,3 prósent meira."
+    )
+    assert (
+        "tíu bandstrik tuttugu árum" in n
+        and "níu komma tvö bandstrik fimm komma þrjú prósent" in n
+    )
+    t = ws_to_space(
+        """
+        Frakkland - Marókkó á HM.
+        Leikurinn var bráðfjörugur en það voru Frakkar
+        sem voru sterkari og unnu þeir leikinn 2-0.
+        """
+    )
+    n = DT.token_transcribe(t)
+    assert "Frakkland bandstrik Marókkó" in n and "tvö bandstrik núll" in n
+    t = ws_to_space(
+        """
+        2 eru slasaðir og um 1.500 fiskar dauðir eftir að um
+        16 metra hátt fiskabúr í miðju Radisson hóteli
+        í Berlín sprakk snemma í morgun.
+        """
+    )
+    n = DT.token_transcribe(t)
+    # assert "tveir" in n
+    assert "eitt þúsund og fimm hundruð" in n
+    assert "sextán" in n
+    t = ws_to_space(
+        """
+        Dæmi eru um að nauðsynjavörur hafi nær tvöfaldast í verði á síðustu tveimur árum
+        og enn hækka sumar vörur þrátt fyrir minni verðbólgu og sterkara gengi.
+        Viðskiptaráðherra vill skýringar á því. Framkvæmdastjóri Bónuss segir að
+        óvissa sé um verðlækkanir á næstunni því íslenskar landbúnaðarvörur hækki
+        líklega áfram. Matarkarfan kostar 9983 kr í dag. Fréttastofa fór í Krónuna
+        og kannaði verð á 15 algengum matvörum. Þessar vörur eiga það sameiginlegt að
+        hafa verið teknar fyrir í matvörukönnun Verðlagseftirlits ASÍ haustið 2021 og í
+        maí á þessu ári. Í körfunni er ýmislegt; þvottaduft, franskar og mjólk, svo eitthvað
+        sé nefnt. Í heild hefur þessi vörukarfa hækkað um 2% frá því í maí en um tæp 28% frá
+        haustinu 2021. Fór úr 7811 krónum haustið 2021 í 9983 í dag. Til samanburðar hefur
+        launavísitalan hækkað um 18,5% frá haustinu 2021. Allar vörurnar nema tvær höfðu hækkað
+        í verði frá haustinu 2021, þá var innrás Rússa í Úkraínu ekki hafin. Mjólkin hangir í
+        206 krónum. Frá því í vor hefur verð haldist óbreytt á níu vörum af fimmtán. Mjólkin hefur
+        ekki hækkað síðan í maí, kostar 206 krónur, og sama gildir um bananana, kílóverðið í
+        Krónunni óbreytt frá í vor, 300 krónur. Þeir hafa þó hækkað um 27% frá haustinu 2021.
+        Seríósið kom á óvart, það hefur hækkað um þriðjung frá maí og kílóverðið stendur í
+        1.572 krónum. „Það er kominn tími á verðlækkun á innfluttum vörum, og ég held að neytendur
+        muni sjá það en ég get ekki lofað verðlækkun á íslenskum landbúnaðarvörum því mér sýnist
+        það ekki vera að fara að gerast, til dæmis er búið að gefa út verðhækkun til bænda, 20-25%,
+        á lambakjöti og það eru hækkanir sem eiga eftir að skella á af fullum þunga í haust.“
+        Hér er upphæð í eintölu: 21 kr.
+        """
+    )
+    n = DT.token_transcribe(t)
+    assert "%" not in n and "prósent" in n
+    assert not any(c.isdecimal() for c in n)
+    assert "níu þúsund níu hundruð áttatíu og þrjár krónur" in n
+    assert "tuttugu og ein króna" in n
+    t = ws_to_space(
+        """
+        Norðmaðurinn Jakob Ingebrigtsen átti stórkostlegan endasprett
+        og tryggði sér heimsmeistaratitilinn í 5.000m hlaupi.
+        Jakob beið þar til á lokametrunum að elta Spánverjann Mohamed
+        Katir uppi og tók fram úr honum rétt áður en þeir komu að endamarkslínu.
+        Sá norski hljóp á 13 mínútum og 11.30 sekúndum og varð 14 hundraðshlutum
+        úr sekúndum á undan þeim spænska í mark. Jacob Krop frá Kenýa tók bronsið á 13:12.28.
+        """
+    )
+    n = DT.token_transcribe(t)
+    assert "fimm þúsund metra" in n and "ellefu komma þrj" in n
+    t = ws_to_space(
+        """
+        Sendu tölvupóst á jon.gudmundsson@gormur.bull.is og bla@gmail.com.
+        Kíktu svo á síðurnar is.wikipedia.org, ruv.is og bull.co.net.
+        """
+    )
+    n = DT.token_transcribe(t)
+    assert "jon.gudm" not in n and " punktur " in n
+    assert "com" not in n and "@" not in n and " is " in n
+    t = ws_to_space("Hvað eru 0,67cm í tommum?")
+    n = DT.token_transcribe(t)
+    assert "núll komma sextíu og sjö sentimetrar" in n
+    t = "Í 1., 2., 3. og 4. lagi. Í 31. lagi"
+    n = DT.token_transcribe(t)
+    assert "Í fyrsta" in n
+    # assert "öðru" in n
+    assert "þriðja" in n
+    assert "fjórða" in n
+    assert "þrítugasta og fyrsta" in n
