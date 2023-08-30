@@ -21,10 +21,9 @@
     specifically intended for Icelandic speech synthesis engines.
 
 """
+from __future__ import annotations
 
-
-from collections.abc import Iterable, Mapping
-from typing import Any, Callable, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Callable, Union, cast
 
 import itertools
 import re
@@ -34,7 +33,6 @@ from re import Match
 from islenska.basics import ALL_CASES, ALL_GENDERS, ALL_NUMBERS
 from reynir import Greynir
 from reynir.bindb import GreynirBin
-from reynir.simpletree import SimpleTree
 from tokenizer import TOK, Abbreviations, Tok, detokenize, tokenize
 from tokenizer.definitions import (
     CURRENCY_SYMBOLS,
@@ -63,6 +61,11 @@ from .num import (
     years_to_text,
 )
 
+if TYPE_CHECKING:
+    from collections.abc import Iterable, Mapping
+
+    from reynir.simpletree import SimpleTree
+
 # Ensure abbreviations have been loaded
 Abbreviations.initialize()
 
@@ -80,7 +83,7 @@ def strip_markup(text: str) -> str:
 GSSML_TAG = "greynir"
 
 
-def gssml(data: Any = None, *, type: str, **kwargs: Union[str, float]) -> str:
+def gssml(data: Any = None, *, type: str, **kwargs: str | float) -> str:
     """
     Utility function, surrounds data with Greynir-specific
     voice transcription tags.
@@ -220,7 +223,7 @@ _CHAR_PRONUNCIATION: Mapping[str, str] = {
 }
 
 # Icelandic/English alphabet, uppercased
-_ICE_ENG_ALPHA = "".join(c.upper() for c in _CHAR_PRONUNCIATION)
+ALPHABET = "".join(c.upper() for c in _CHAR_PRONUNCIATION)
 
 # Matches e.g. "klukkan 14:30", "kl. 2:23:31", "02:15"
 _TIME_REGEX = re.compile(
@@ -279,13 +282,11 @@ _DATE_REGEX = re.compile(
 def _date_from_match(match: re.Match[str], case: CaseType = "nf") -> str:
     gd = match.groupdict()
 
-    day_val: Optional[str] = next(
-        filter(bool, (gd[f"day{i}"] for i in range(1, 4))), None
-    )
-    month_val: Optional[str] = next(
+    day_val: str | None = next(filter(bool, (gd[f"day{i}"] for i in range(1, 4))), None)
+    month_val: str | None = next(
         filter(bool, (gd[f"month{i}"] for i in range(1, 4))), None
     )
-    year_val: Optional[str] = next(
+    year_val: str | None = next(
         filter(bool, (gd[f"year{i}"] for i in range(1, 4))), None
     )
 
@@ -300,8 +301,8 @@ def _date_from_match(match: re.Match[str], case: CaseType = "nf") -> str:
     return f"{day} {month} {year_to_text(year_val)}" if year_val else f"{day} {month}"
 
 
-def _time_to_text(hour: int, minute: int, second: Optional[int]) -> str:
-    suffix: Optional[str] = None
+def _time_to_text(hour: int, minute: int, second: int | None) -> str:
+    suffix: str | None = None
     t: list[str] = []
 
     # Hours
@@ -356,8 +357,7 @@ def _split_substring_types(t: str) -> Iterable[str]:
 # followed by another uppercase letter
 # (e.g. matches "EUIPO" or "MSc", but not "TESTING")
 _ABBREV_RE = re.compile(
-    rf"([{_ICE_ENG_ALPHA + _ICE_ENG_ALPHA.lower()}]\."
-    + rf"|\b[{_ICE_ENG_ALPHA}]{{2,5}}(?![{_ICE_ENG_ALPHA}]))"
+    rf"([{ALPHABET + ALPHABET.lower()}]\." + rf"|\b[{ALPHABET}]{{2,5}}(?![{ALPHABET}]))"
 )
 
 # Terms common in sentences which refer to results from sports
@@ -371,7 +371,7 @@ _StrBool = Union[str, bool]
 TranscriptionMethod = Callable[..., str]
 
 
-def _is_plural(num: Union[str, float]) -> bool:
+def _is_plural(num: str | float) -> bool:
     """Determine whether an Icelandic word following a given number should be
     plural or not, e.g. "21 maður", "22 menn", "1,1 kílómetri", "11 menn" etc.
     Accepts string, float or int as argument."""
@@ -386,7 +386,7 @@ def _empty_str(f: TranscriptionMethod) -> TranscriptionMethod:
     with an empty string.
     """
 
-    def _inner(cls: "DefaultTranscriber", txt: str, **kwargs: _StrBool):
+    def _inner(cls: DefaultTranscriber, txt: str, **kwargs: _StrBool):
         if txt == "":  # noqa
             return ""
         return f(cls, txt, **kwargs)
@@ -404,7 +404,7 @@ def _bool_args(*bool_args: str) -> Callable[[TranscriptionMethod], Transcription
     """
 
     def _decorator(f: TranscriptionMethod) -> TranscriptionMethod:
-        def _bool_translate(cls: "DefaultTranscriber", *args: str, **kwargs: str):
+        def _bool_translate(cls: DefaultTranscriber, *args: str, **kwargs: str):
             # Convert keyword arguments in bool_args from
             # str to boolean before calling decorated function
             newkwargs = {
@@ -425,7 +425,7 @@ class DefaultTranscriber:
     """
 
     # Singleton Greynir instance
-    _greynir: Optional[Greynir] = None
+    _greynir: Greynir | None = None
 
     # &,<,> cause speech synthesis errors,
     # change these to text
@@ -580,11 +580,11 @@ class DefaultTranscriber:
 
         def _time_fmt(match: Match[str]) -> str:
             gd = match.groupdict()
-            prefix: Optional[str] = gd["klukkan"]
+            prefix: str | None = gd["klukkan"]
             h: int = int(gd["hour"])
             m: int = int(gd["minute"])
-            s: Optional[int] = int(gd["second"]) if gd["second"] is not None else None
-            suffix: Optional[str] = None
+            s: int | None = int(gd["second"]) if gd["second"] is not None else None
+            suffix: str | None = None
 
             t: list[str] = []
             # If "klukkan" or "kl." at beginning of string,
@@ -744,7 +744,7 @@ class DefaultTranscriber:
         cls,
         txt: str,
         *,
-        pause_length: Optional[str] = None,
+        pause_length: str | None = None,
         literal: bool = False,
     ) -> str:
         """
@@ -1122,7 +1122,7 @@ class DefaultTranscriber:
             cls._greynir = Greynir(no_sentence_start=True)
         p_result = cls._greynir.parse(txt)
 
-        def _ordinal(tok: Tok, term: Optional[SimpleTree]) -> str:
+        def _ordinal(tok: Tok, term: SimpleTree | None) -> str:
             """Handles ordinals, e.g. '14.' or '2.'."""
             case, gender, number = "nf", "hk", "et"
             if term is not None:
@@ -1141,7 +1141,7 @@ class DefaultTranscriber:
                     )
             return cls.ordinal(txt, case=case, gender=gender, number=number)
 
-        def _number(tok: Tok, term: Optional[SimpleTree]) -> str:
+        def _number(tok: Tok, term: SimpleTree | None) -> str:
             """Handles numbers, e.g. '135', '17,86' or 'fjörutíu og þrír'."""
             if not tok.txt.replace(".", "").replace(",", "").isdecimal():
                 # Don't modify non-decimal numbers
@@ -1155,7 +1155,7 @@ class DefaultTranscriber:
             else:
                 return cls.number(txt, case=case, gender=gender)
 
-        def _percent(tok: Tok, term: Optional[SimpleTree]) -> str:
+        def _percent(tok: Tok, term: SimpleTree | None) -> str:
             """Handles a percentage, e.g. '15,6%' or '40 prósent'."""
             gender = "hk"
             n, cases, _ = cast(tuple[float, Any, Any], tok.val)
@@ -1173,7 +1173,7 @@ class DefaultTranscriber:
                 percent = tok.txt.split(" ")[-1]
             return f"{val} {percent}"
 
-        def _numwletter(tok: Tok, term: Optional[SimpleTree]) -> str:
+        def _numwletter(tok: Tok, term: SimpleTree | None) -> str:
             num = "".join(filter(lambda c: c.isdecimal(), tok.txt))
             return (
                 cls.number(num, case="nf", gender="hk")
@@ -1182,7 +1182,7 @@ class DefaultTranscriber:
             )
 
         # Map certain terminals directly to transcription functions
-        handler_map: Mapping[int, Callable[[Tok, Optional[SimpleTree]], str]] = {
+        handler_map: Mapping[int, Callable[[Tok, SimpleTree | None], str]] = {
             TOK.ENTITY: lambda tok, term: cls.entity(tok.txt),
             TOK.COMPANY: lambda tok, term: cls.entity(tok.txt),
             TOK.PERSON: lambda tok, term: cls.person(tok.txt),
@@ -1314,18 +1314,18 @@ class DefaultTranscriber:
                 parts[i] = roman_numeral_to_ordinal(parts[i], gender=gender)
         return " ".join(parts)
 
-    _VBREAK_STRENGTHS = frozenset(
+    VBREAK_STRENGTHS = frozenset(
         ("none", "x-weak", "weak", "medium", "strong", "x-strong")
     )
 
     @classmethod
-    def vbreak(cls, time: Optional[str] = None, strength: Optional[str] = None) -> str:
+    def vbreak(cls, time: str | None = None, strength: str | None = None) -> str:
         """Create a break in the voice/speech synthesis."""
         if time:
             return f'<break time="{time}" />'
         if strength:
             assert (
-                strength in cls._VBREAK_STRENGTHS
+                strength in cls.VBREAK_STRENGTHS
             ), f"Break strength {strength} is invalid."
             return f'<break strength="{strength}" />'
         return "<break />"

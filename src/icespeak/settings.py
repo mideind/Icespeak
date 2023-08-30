@@ -20,7 +20,8 @@
     Shared settings for the Icespeak package.
 
 """
-
+# We dont import annotations from __future__ here
+# due to pydantic
 from typing import Any, Literal, Optional
 
 import json
@@ -79,8 +80,8 @@ class Settings(BaseSettings):
             "If not set, creates a directory in the platform's temporary directory."
         ),
     )
-    AUDIO_TTL: int = Field(
-        default=600, gt=0, description="Time-to-live in seconds for cached audio files."
+    AUDIO_CACHE_SIZE: int = Field(
+        default=50, gt=0, description="Max number of audio files to cache."
     )
 
     KEYS_DIR: Path = Field(

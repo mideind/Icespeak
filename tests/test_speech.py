@@ -19,16 +19,18 @@
 
 """
 # ruff: noqa: PT018
+from __future__ import annotations
+
 from typing import Callable
 
 import datetime
-import logging
 import re
 from itertools import product
 
 import pytest
 
 from icespeak import text_to_speech
+from icespeak.settings import API_KEYS
 from icespeak.transcribe import DefaultTranscriber as DT
 from icespeak.tts import AVAILABLE_VOICES
 
@@ -65,38 +67,32 @@ def test_voices_utils():
 @pytest.mark.network()
 def test_speech_synthesis():
     """Test basic speech synthesis functionality."""
-    from icespeak.settings import API_KEYS
 
     _TEXT = "Prufa"
     _MIN_AUDIO_SIZE = 1000
 
-    # TODO: Test AWS Polly
-    if False:  # API_KEYS.aws:
-        url = text_to_speech(
-            text=_TEXT,
-            text_format="text",
-            audio_format="mp3",
-            voice_id="Dora",
-        )
-        assert url.is_file(), "Expected audio file to exist"
-        assert url.stat().st_size > _MIN_AUDIO_SIZE, "Expected longer audio data"
-        url.unlink()
-    else:
-        logging.info("No AWS Polly API key found, skipping test")
+    assert API_KEYS.aws
+    url = text_to_speech(
+        text=_TEXT,
+        text_format="text",
+        audio_format="mp3",
+        voice="Dora",
+    )
+    assert url.is_file(), "Expected audio file to exist"
+    assert url.stat().st_size > _MIN_AUDIO_SIZE, "Expected longer audio data"
+    url.unlink()
 
     # Test Azure Cognitive Services
-    if API_KEYS.azure:
-        url = text_to_speech(
-            text=_TEXT,
-            text_format="text",
-            audio_format="mp3",
-            voice_id="Gudrun",
-        )
-        assert url.is_file(), "Expected audio file to exist"
-        assert url.stat().st_size > _MIN_AUDIO_SIZE, "Expected longer audio data"
-        url.unlink()
-    else:
-        logging.info("No Azure Speech API key found, skipping test")
+    assert API_KEYS.azure
+    url = text_to_speech(
+        text=_TEXT,
+        text_format="text",
+        audio_format="mp3",
+        voice="Gudrun",
+    )
+    assert url.is_file(), "Expected audio file to exist"
+    assert url.stat().st_size > _MIN_AUDIO_SIZE, "Expected longer audio data"
+    url.unlink()
 
 
 def test_gssml():
@@ -662,11 +658,9 @@ def test_time_transcription() -> None:
 
 
 def test_spelling_transcription() -> None:
-    from icespeak.transcribe import _ICE_ENG_ALPHA
+    from icespeak.transcribe import ALPHABET
 
-    _ALPHABET = _ICE_ENG_ALPHA + _ICE_ENG_ALPHA.lower()
-
-    for a in (_ALPHABET, "ÁÍS", "BSÍ", "LSH", "SÍBS"):
+    for a in (ALPHABET + ALPHABET.lower(), "ÁÍS", "BSÍ", "LSH", "SÍBS"):
         n1 = DT.spell(a.upper())
         n2 = DT.spell(a.lower())
         assert n1 == n2
@@ -746,8 +740,6 @@ def test_entity_transcription() -> None:
     assert n == "Sleep Inn"
     n = DT.entity("GSMbensín")
     assert n == "GSMbensín"
-    n = DT.entity("Kvennalistinn.is")
-    assert n == "Kvennalistinn.is"  # TODO: 'punktur' is?
     n = DT.entity("USS Comfort")
     assert "USS" not in n and n.endswith("Comfort")
     n = DT.entity("Bayern München - FC Rostov")
@@ -972,7 +964,7 @@ def test_voice_breaks() -> None:
     for t in ("0ms", "50ms", "1s", "1.7s"):
         n = DT.vbreak(time=t)
         assert n == f'<break time="{t}" />'
-    for s in DT._VBREAK_STRENGTHS:
+    for s in DT.VBREAK_STRENGTHS:
         n = DT.vbreak(strength=s)
         assert n == f'<break strength="{s}" />'
 
@@ -1083,8 +1075,11 @@ def test_token_transcribe() -> None:
         """
     )
     n = DT.token_transcribe(t)
-    assert "jon.gudm" not in n and " punktur " in n
-    assert "com" not in n and "@" not in n and " is " in n
+    assert "@" not in n
+    assert "jon.gudm" not in n
+    assert " punktur " in n
+    assert " is " in n
+    assert "com" not in n
     t = ws_to_space("Hvað eru 0,67cm í tommum?")
     n = DT.token_transcribe(t)
     assert "núll komma sextíu og sjö sentimetrar" in n

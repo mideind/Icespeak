@@ -21,11 +21,12 @@
 
 from .parser import GreynirSSMLParser
 from .transcribe import DefaultTranscriber, gssml
-from .tts import text_to_speech
+from .tts import AVAILABLE_VOICES, text_to_speech
 
 __all__ = (
     "GreynirSSMLParser",
     "text_to_speech",
     "gssml",
     "DefaultTranscriber",
+    "AVAILABLE_VOICES",
 )

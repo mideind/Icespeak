@@ -20,23 +20,33 @@
     Icelandic-language text to speech via Tiro's text to speech API.
 
 """
+from __future__ import annotations
 
-from typing import Optional
+from typing import TYPE_CHECKING
 
 import uuid
 from logging import getLogger
-from pathlib import Path
 
 import requests
 
 from icespeak.settings import SETTINGS, AudioFormatsT, TextFormatsT
 from icespeak.transcribe import strip_markup
 
-from . import suffix_for_audiofmt
+from . import VoiceMap, suffix_for_audiofmt
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 _LOG = getLogger(__file__)
 NAME = "Tiro"
-VOICES = frozenset(("Alfur", "Dilja", "Bjartur", "Rosa", "Alfur_v2", "Dilja_v2"))
+VOICES: VoiceMap = {
+    "Alfur": {"id": "Alfur", "lang": "is-IS"},
+    "Dilja": {"id": "Dilja", "lang": "is-IS"},
+    "Bjartur": {"id": "Bjartur", "lang": "is-IS"},
+    "Rosa": {"id": "Rosa", "lang": "is-IS"},
+    "Alfur_v2": {"id": "Alfur_v2", "lang": "is-IS"},
+    "Dilja_v2": {"id": "Dilja_v2", "lang": "is-IS"},
+}
 AUDIO_FORMATS = frozenset(("mp3", "pcm", "ogg_vorbis"))
 
 
@@ -45,11 +55,12 @@ _TIRO_TTS_URL = "https://tts.tiro.is/v0/speech"
 
 def text_to_audio_data(
     text: str,
+    *,
+    voice: str,
+    speed: float = 1.0,
     text_format: str,
     audio_format: str,
-    voice_id: str,
-    speed: float = 1.0,
-) -> Optional[bytes]:
+) -> bytes:
     """Feeds text to Tiro's TTS API and returns audio data received from server."""
 
     # Tiro's API supports a subset of SSML tags
@@ -73,7 +84,7 @@ def text_to_audio_data(
         "SampleRate": "16000",
         "Text": text,
         "TextType": text_format,
-        "VoiceId": voice_id,
+        "VoiceId": voice,
     }
 
     try:
@@ -85,27 +96,33 @@ def text_to_audio_data(
         return r.content
     except Exception as e:
         _LOG.error("Error communicating with Tiro API at %s: %s", _TIRO_TTS_URL, e)
+        raise
 
 
 def text_to_speech(
     text: str,
     *,
-    voice_id: str = SETTINGS.DEFAULT_VOICE,
-    speed: float = SETTINGS.DEFAULT_VOICE_SPEED,
-    text_format: TextFormatsT = SETTINGS.DEFAULT_TEXT_FORMAT,
-    audio_format: AudioFormatsT = SETTINGS.DEFAULT_AUDIO_FORMAT,
+    voice: str,
+    speed: float,
+    text_format: TextFormatsT,
+    audio_format: AudioFormatsT,
 ) -> Path:
     """Returns URL for speech-synthesized text."""
 
-    data = text_to_audio_data(**locals())
+    data = text_to_audio_data(
+        text,
+        voice=voice,
+        speed=speed,
+        text_format=text_format,
+        audio_format=audio_format,
+    )
 
     suffix = suffix_for_audiofmt(audio_format)
-    out_fn: str = str(SETTINGS.AUDIO_DIR / f"{uuid.uuid4()}.{suffix}")
+    outfile: Path = SETTINGS.AUDIO_DIR / f"{uuid.uuid4()}.{suffix}"
     try:
-        with open(out_fn, "wb") as f:
-            f.write(data)
+        outfile.write_bytes(data)
     except Exception:
-        _LOG.exception("Error writing audio file %s.", out_fn)
+        _LOG.exception("Error writing audio file %s.", outfile)
 
     # Generate and return file:// URL to audio file
-    return Path(out_fn)
+    return outfile

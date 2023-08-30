@@ -20,56 +20,59 @@
     Icelandic-language text to speech via the Azure Speech API.
 
 """
+from __future__ import annotations
 
+from typing import TYPE_CHECKING
 
 import uuid
 from logging import getLogger
-from pathlib import Path
 
 import azure.cognitiveservices.speech as speechsdk
 
 from icespeak.settings import API_KEYS, SETTINGS, AudioFormatsT, TextFormatsT
 from icespeak.transcribe import DefaultTranscriber, strip_markup
 
-from . import suffix_for_audiofmt
+from . import VoiceMap, suffix_for_audiofmt
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 _LOG = getLogger(__file__)
 
 
-VOICE_TO_ID = {
+VOICES: VoiceMap = {
     # Icelandic
-    "Gudrun": "is-IS-GudrunNeural",
-    "Gunnar": "is-IS-GunnarNeural",
+    "Gudrun": {"id": "is-IS-GudrunNeural", "lang": "is-IS"},
+    "Gunnar": {"id": "is-IS-GunnarNeural", "lang": "is-IS"},
     # English (UK)
-    "Abbi": "en-GB-AbbiNeural",
-    "Alfie": "en-GB-AlfieNeural",
+    "Abbi": {"id": "en-GB-AbbiNeural", "lang": "en-GB"},
+    "Alfie": {"id": "en-GB-AlfieNeural", "lang": "en-GB"},
     # English (US)
-    "Jenny": "en-US-JennyNeural",
-    "Brandon": "en-US-BrandonNeural",
+    "Jenny": {"id": "en-US-JennyNeural", "lang": "en-US"},
+    "Brandon": {"id": "en-US-BrandonNeural", "lang": "en-US"},
     # French
-    "Brigitte": "fr-FR-BrigitteNeural",
-    "Alain": "fr-FR-AlainNeural",
+    "Brigitte": {"id": "fr-FR-BrigitteNeural", "lang": "fr-FR"},
+    "Alain": {"id": "fr-FR-AlainNeural", "lang": "fr-FR"},
     # German
-    "Amala": "de-DE-AmalaNeural",
+    "Amala": {"id": "de-DE-AmalaNeural", "lang": "de-DE"},
     # Danish
-    "Christel": "da-DK-ChristelNeural",
-    "Jeppe": "da-DK-JeppeNeural",
+    "Christel": {"id": "da-DK-ChristelNeural", "lang": "da-DK"},
+    "Jeppe": {"id": "da-DK-JeppeNeural", "lang": "da-DK"},
     # Swedish
-    "Sofie": "sv-SE-SofieNeural",
-    "Mattias": "sv-SE-MattiasNeural",
+    "Sofie": {"id": "sv-SE-SofieNeural", "lang": "sv-SE"},
+    "Mattias": {"id": "sv-SE-MattiasNeural", "lang": "sv-SE"},
     # Norwegian
-    "Finn": "nb-NO-FinnNeural",
-    "Iselin": "nb-NO-IselinNeural",
+    "Finn": {"id": "nb-NO-FinnNeural", "lang": "nb-NO"},
+    "Iselin": {"id": "nb-NO-IselinNeural", "lang": "nb-NO"},
     # Spanish
-    "Abril": "es-ES-AbrilNeural",
-    "Alvaro": "es-ES-AlvaroNeural",
+    "Abril": {"id": "es-ES-AbrilNeural", "lang": "es-ES"},
+    "Alvaro": {"id": "es-ES-AlvaroNeural", "lang": "es-ES"},
     # Polish
-    "Agnieszka": "pl-PL-AgnieszkaNeural",
-    "Marek": "pl-PL-MarekNeural",
+    "Agnieszka": {"id": "pl-PL-AgnieszkaNeural", "lang": "pl-PL"},
+    "Marek": {"id": "pl-PL-MarekNeural", "lang": "pl-PL"},
     # Many more voices available, see:
     # https://learn.microsoft.com/en-us/azure/cognitive-services/speech-service/language-support
 }
-VOICES = frozenset(VOICE_TO_ID.keys())
 AUDIO_FORMATS = frozenset(("mp3", "pcm", "opus"))
 
 if API_KEYS.azure is None:
@@ -82,10 +85,10 @@ AZURE_REGION = API_KEYS.azure.region.get_secret_value()
 def text_to_speech(
     text: str,
     *,
-    voice_id: str = SETTINGS.DEFAULT_VOICE,
-    speed: float = SETTINGS.DEFAULT_VOICE_SPEED,
-    text_format: TextFormatsT = SETTINGS.DEFAULT_TEXT_FORMAT,
-    audio_format: AudioFormatsT = SETTINGS.DEFAULT_AUDIO_FORMAT,
+    voice: str,
+    speed: float,
+    text_format: TextFormatsT,
+    audio_format: AudioFormatsT,
 ) -> Path:
     """Synthesizes text via Azure and returns path to generated audio file."""
 
@@ -107,7 +110,7 @@ def text_to_speech(
     }
     speech_conf = speechsdk.SpeechConfig(subscription=AZURE_KEY, region=AZURE_REGION)
 
-    azure_voice_id = VOICE_TO_ID[voice_id]
+    azure_voice_id = VOICES[voice]["id"]
     speech_conf.speech_synthesis_voice_name = azure_voice_id
 
     fmt = fmt2enum.get(audio_format, aof.Audio16Khz32KBitRateMonoMp3)

@@ -20,6 +20,9 @@
 """
 from __future__ import annotations
 
+from collections.abc import Mapping
+from typing import TypedDict
+
 from base64 import b64encode
 
 # Mime types and suffixes
@@ -42,6 +45,14 @@ AUDIOFMT_TO_SUFFIX = {
     # Recommended filename extension for Ogg Opus files is '.opus'.
     "opus": "opus",
 }
+
+
+class VoiceT(TypedDict):
+    id: str
+    lang: str
+
+
+VoiceMap = Mapping[str, VoiceT]
 
 
 def mimetype_for_audiofmt(fmt: str) -> str:
@@ -68,8 +79,8 @@ def generate_data_uri(data: bytes, mime_type: str = BINARY_MIMETYPE) -> str:
 DEFAULT_LOCALE = "is_IS"
 
 
-# Map locales to a default voice ID
-LOCALE_TO_VOICE_ID = {
+# Map locales to default voices
+LOCALE_TO_VOICE = {
     "is_IS": "Gudrun",
     "en_US": "Jenny",
     "en_GB": "Abbi",
@@ -82,11 +93,11 @@ LOCALE_TO_VOICE_ID = {
     "es_ES": "Abril",
     "pl_PL": "Agnieszka",
 }
-assert DEFAULT_LOCALE in LOCALE_TO_VOICE_ID
+assert DEFAULT_LOCALE in LOCALE_TO_VOICE
 
 
 def voice_for_locale(locale: str) -> str:
     """Returns default voice ID for the given locale. If locale is not
     supported, returns the default voice ID for the default locale."""
-    vid = LOCALE_TO_VOICE_ID.get(locale)
-    return vid or LOCALE_TO_VOICE_ID[DEFAULT_LOCALE]
+    vid = LOCALE_TO_VOICE.get(locale)
+    return vid or LOCALE_TO_VOICE[DEFAULT_LOCALE]

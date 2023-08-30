@@ -21,8 +21,9 @@
     numbers to Icelandic text.
 
 """
+from __future__ import annotations
+
 from collections.abc import Mapping
-from typing import Optional, Union
 from typing_extensions import Literal
 
 import re
@@ -216,7 +217,7 @@ NumberType = Literal["et", "ft"]
 
 
 def number_to_text(
-    n: Union[int, str],
+    n: int | str,
     *,
     case: str = "nf",
     gender: str = "hk",
@@ -266,7 +267,7 @@ def numbers_to_text(
 
 
 def float_to_text(
-    f: Union[float, str],
+    f: float | str,
     *,
     case: str = "nf",
     gender: str = "hk",
@@ -364,7 +365,7 @@ def floats_to_text(
     return re.sub(regex, convert, s)
 
 
-def year_to_text(year: Union[int, str]) -> str:
+def year_to_text(year: int | str) -> str:
     """
     Write year as text in Icelandic.
     Negative years automatically append "fyrir Krist" to the text.
@@ -398,7 +399,7 @@ def year_to_text(year: Union[int, str]) -> str:
 
 
 def years_to_text(
-    s: str, *, regex: Optional[str] = None, allow_three_digits: bool = False
+    s: str, *, regex: str | None = None, allow_three_digits: bool = False
 ) -> str:
     """
     Converts numbers in string matching the regex
@@ -639,7 +640,7 @@ def neutral_text_to_ordinal(
 
 
 def number_to_ordinal(
-    n: Union[int, str], *, case: str = "nf", gender: str = "kk", number: str = "et"
+    n: int | str, *, case: str = "nf", gender: str = "kk", number: str = "et"
 ) -> str:
     """
     Takes number and returns it as an ordinal
@@ -656,7 +657,7 @@ def number_to_ordinal(
 def numbers_to_ordinal(
     s: str,
     *,
-    regex: Optional[str] = None,
+    regex: str | None = None,
     case: str = "nf",
     gender: str = "kk",
     number: str = "et",

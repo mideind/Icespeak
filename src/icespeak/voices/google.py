@@ -20,11 +20,12 @@
     Icelandic-language text to speech via the Google Cloud API.
 
 """
-from typing import Optional
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 import uuid
 from logging import getLogger
-from pathlib import Path
 
 from google.cloud import texttospeech
 
@@ -35,11 +36,14 @@ from icespeak.settings import (
     TextFormatsT,
 )
 
-from . import suffix_for_audiofmt
+from . import VoiceMap, suffix_for_audiofmt
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 _LOG = getLogger(__file__)
 NAME = "Google"
-VOICES = frozenset(("Anna",))
+VOICES: VoiceMap = {"Anna": {"id": "is-IS-Standard-A", "lang": "is-IS"}}
 AUDIO_FORMATS = frozenset(("mp3",))
 
 
@@ -50,9 +54,9 @@ def text_to_audio_data(
     text: str,
     text_format: str,
     audio_format: str,
-    voice_id: str,
+    voice: str,
     speed: float = 1.0,
-) -> Optional[bytes]:
+) -> bytes:
     """Feeds text to Google's TTS API and returns audio data received from server."""
 
     # Instantiates a client
@@ -62,10 +66,9 @@ def text_to_audio_data(
     # Set the text input to be synthesized
     synthesis_input = texttospeech.SynthesisInput(text=text)
 
-    # Build the voice request, select the language code
-    # and the SSML voice gender.
-    voice = texttospeech.VoiceSelectionParams(
-        language_code="is-IS", ssml_gender=texttospeech.SsmlVoiceGender.FEMALE
+    # Build the voice request, select the language code and voice.
+    voice_selection = texttospeech.VoiceSelectionParams(
+        language_code=VOICES[voice]["lang"], name=VOICES[voice]["id"]
     )
 
     # Select the type of audio file you want returned.
@@ -78,22 +81,29 @@ def text_to_audio_data(
         # Perform the text-to-speech request on the text input
         # with the selected voice parameters and audio file type.
         response = client.synthesize_speech(
-            input=synthesis_input, voice=voice, audio_config=audio_config
+            input=synthesis_input, voice=voice_selection, audio_config=audio_config
         )
         return response.audio_content
     except Exception:
         _LOG.exception("Error communicating with Google Cloud STT API.")
+        raise
 
 
 def text_to_speech(
     text: str,
     *,
-    voice_id: str = SETTINGS.DEFAULT_VOICE,
-    speed: float = SETTINGS.DEFAULT_VOICE_SPEED,
-    text_format: TextFormatsT = SETTINGS.DEFAULT_TEXT_FORMAT,
-    audio_format: AudioFormatsT = SETTINGS.DEFAULT_AUDIO_FORMAT,
+    voice: str,
+    speed: float,
+    text_format: TextFormatsT,
+    audio_format: AudioFormatsT,
 ) -> Path:
-    data = text_to_audio_data(**locals())
+    data = text_to_audio_data(
+        text,
+        voice=voice,
+        speed=speed,
+        text_format=text_format,
+        audio_format=audio_format,
+    )
 
     suffix = suffix_for_audiofmt(audio_format)
     out_file = SETTINGS.AUDIO_DIR / f"{uuid.uuid4()}.{suffix}"

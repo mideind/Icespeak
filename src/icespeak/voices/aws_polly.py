@@ -22,27 +22,35 @@
 """
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any
 
+import uuid
 from logging import getLogger
 from threading import Lock
 
 import boto3
-from botocore.exceptions import ClientError
 
-from icespeak.settings import API_KEYS, AudioFormatsT, TextFormatsT
+from icespeak.settings import API_KEYS, SETTINGS, AudioFormatsT, TextFormatsT
+
+from . import suffix_for_audiofmt
 
 if TYPE_CHECKING:
     from pathlib import Path
 
+    from . import VoiceMap
+
 _LOG = getLogger(__file__)
 
-VOICES = frozenset(("Karl", "Dora"))
+VOICES: VoiceMap = {
+    "Karl": {"id": "Karl", "lang": "is-IS"},
+    "Dora": {"id": "Dora", "lang": "is-IS"},
+}
 AUDIO_FORMATS = frozenset(("mp3", "pcm", "ogg_vorbis"))
+
 with Lock():
     assert API_KEYS.aws, "AWS Polly API key missing."
     # See boto3.Session.client for arguments
-    _AWS_CLIENT = boto3.client(
+    _AWS_CLIENT: Any = boto3.client(
         "polly",
         region_name=API_KEYS.aws.region_name.get_secret_value(),
         aws_access_key_id=API_KEYS.aws.aws_access_key_id.get_secret_value(),
@@ -61,11 +69,11 @@ _AWS_CACHE_MAXITEMS = 30
 def text_to_speech(
     text: str,
     *,
-    voice_id: str,
+    voice: str,
     speed: float,
     text_format: TextFormatsT,
     audio_format: AudioFormatsT,
-) -> Path | None:
+) -> Path:
     """Returns Amazon Polly URL to audio file with speech-synthesized text."""
 
     if audio_format not in AUDIO_FORMATS:
@@ -86,32 +94,20 @@ def text_to_speech(
         if not text.startswith("<speak>"):
             text = f"<speak>{text}</speak>"
 
-    # Configure query string parameters for AWS request
-    params = {
-        # The text to synthesize
-        "Text": text,
-        # mp3 | ogg_vorbis | pcm
-        "OutputFormat": audio_format,
-        # Dora or Karl
-        "VoiceId": voice_id,
-        # Valid values for mp3 and ogg_vorbis are "8000", "16000", and "22050".
-        # The default value is "22050".
-        "SampleRate": "16000",
-        # Either "text" or "ssml"
-        "TextType": text_format,
-        # Only required for bilingual voices
-        # "LanguageCode": "is-IS"
-    }
-
     try:
-        url = cast(Any, _AWS_CLIENT).generate_presigned_url(
-            ClientMethod="synthesize_speech",
-            Params=params,
-            ExpiresIn=_AWS_URL_TTL,
-            HttpMethod="GET",
+        response: dict[str, Any] = _AWS_CLIENT.synthesize_speech(
+            Text=text,
+            TextType=text_format,
+            VoiceId=VOICES[voice]["id"],
+            LanguageCode=VOICES[voice]["lang"],
+            SampleRate="16000",
+            OutputFormat=audio_format,
         )
-    except ClientError:
+    except Exception:
         _LOG.exception("Error synthesizing speech.")
-        return None
+        raise
 
-    return url
+    suffix = suffix_for_audiofmt(audio_format)
+    outfile = SETTINGS.AUDIO_DIR / f"{uuid.uuid4()}.{suffix}"
+    outfile.write_bytes(response["AudioStream"].read())
+    return outfile

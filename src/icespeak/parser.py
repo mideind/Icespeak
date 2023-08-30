@@ -18,8 +18,8 @@
 
 
 """
+from __future__ import annotations
 
-from typing import Optional
 from typing_extensions import override
 
 from collections import deque
@@ -44,27 +44,27 @@ class GreynirSSMLParser(HTMLParser):
 
     Example:
         # Provide voice engine ID
-        gp = GreynirSSMLParser(voice_id)
+        gp = GreynirSSMLParser(voice)
         # Transcribe voice string
         voice_string = gp.transcribe(voice_string)
     """
 
-    def __init__(self, voice_id: str = SETTINGS.DEFAULT_VOICE) -> None:
+    def __init__(self, voice: str = SETTINGS.DEFAULT_VOICE) -> None:
         """
         Initialize parser and setup transcription handlers
         for the provided speech synthesis engine.
         """
         super().__init__()
-        if voice_id not in AVAILABLE_VOICES:
+        if voice not in AVAILABLE_VOICES:
             _LOG.warning(
                 "Voice %r not in supported voices, reverting to default: %r",
-                voice_id,
+                voice,
                 SETTINGS.DEFAULT_VOICE,
             )
-            voice_id = SETTINGS.DEFAULT_VOICE
+            voice = SETTINGS.DEFAULT_VOICE
 
         # Get data for this voice
-        vd = AVAILABLE_VOICES[voice_id]
+        vd = AVAILABLE_VOICES[voice]
 
         # Fetch transcriber for this voice module,
         # using DefaultTranscriber as fallback
@@ -73,7 +73,7 @@ class GreynirSSMLParser(HTMLParser):
         )
 
         self._str_stack: deque[str] = deque()
-        self._attr_stack: deque[dict[str, Optional[str]]] = deque()
+        self._attr_stack: deque[dict[str, str | None]] = deque()
 
     def transcribe(self, voice_string: str) -> str:
         """Parse and return transcribed voice string."""
@@ -99,7 +99,7 @@ class GreynirSSMLParser(HTMLParser):
     # ----------------------------------------
 
     @override
-    def handle_starttag(self, tag: str, attrs: list[tuple[str, Optional[str]]]):
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]):
         """Called when a tag is opened."""
         if tag == GSSML_TAG:
             self._str_stack.append("")
@@ -119,7 +119,7 @@ class GreynirSSMLParser(HTMLParser):
             s: str = self._str_stack.pop()  # String content
             if self._attr_stack:
                 dattrs = self._attr_stack.pop()  # Current tag attributes
-                t: Optional[str] = dattrs.pop("type")
+                t: str | None = dattrs.pop("type")
                 assert (
                     t
                 ), f"Missing type attribute in <{GSSML_TAG}> tag around string: {s}"
@@ -135,11 +135,11 @@ class GreynirSSMLParser(HTMLParser):
                 self._str_stack.append(s)
 
     @override
-    def handle_startendtag(self, tag: str, attrs: list[tuple[str, Optional[str]]]):
+    def handle_startendtag(self, tag: str, attrs: list[tuple[str, str | None]]):
         """Called when a empty tag is opened (and closed), e.g. '<greynir ... />'."""
         if tag == GSSML_TAG:
             dattrs = dict(attrs)
-            t: Optional[str] = dattrs.pop("type")
+            t: str | None = dattrs.pop("type")
             assert t, f"Missing type attribute in <{GSSML_TAG}> tag"
             transf: TranscriptionMethod = getattr(self._handler, t)
             # If handler found, replace empty greynir tag with output,

@@ -18,16 +18,23 @@
 
 
 """
-from collections.abc import Iterable, Mapping
-from typing import Optional, Protocol, TypedDict, cast
+from __future__ import annotations
+
+from collections.abc import Mapping
+from typing import TYPE_CHECKING, Protocol, TypedDict, TypeVar, cast
+from typing_extensions import override
 
 import importlib
 from logging import getLogger
 from pathlib import Path
 
-# from cachetools import cached, TTLCache
+from cachetools import LFUCache, cached
+
 from .settings import MAX_SPEED, MIN_SPEED, SETTINGS, AudioFormatsT, TextFormatsT
 from .transcribe import TRANSCRIBER_CLASS, DefaultTranscriber
+
+if TYPE_CHECKING:
+    from .voices import VoiceT
 
 _LOG = getLogger(__file__)
 
@@ -39,7 +46,7 @@ class TTSFuncT(Protocol):
         self,
         text: str,
         *,
-        voice_id: str,
+        voice: str,
         speed: float,
         text_format: TextFormatsT,
         audio_format: AudioFormatsT,
@@ -50,14 +57,15 @@ class TTSFuncT(Protocol):
 class VoiceModuleT(Protocol):
     """Protocol for a voice module."""
 
-    VOICES: Iterable[str]
+    VOICES: Mapping[str, VoiceT]
     text_to_speech: TTSFuncT
-    Transcriber: Optional[type[DefaultTranscriber]]
+    Transcriber: type[DefaultTranscriber] | None
 
 
 class VoiceDict(TypedDict):
     text_to_speech: TTSFuncT
-    Transcriber: Optional[type[DefaultTranscriber]]
+    Transcriber: type[DefaultTranscriber] | None
+    lang: str
 
 
 VoiceMapping = Mapping[str, VoiceDict]
@@ -80,16 +88,17 @@ def _load_modules() -> VoiceMapping:
             m: VoiceModuleT = cast(
                 VoiceModuleT, importlib.import_module(modname, package="icespeak")
             )
-        except Exception:  # noqa: PERF203
+        except Exception:
             _LOG.exception("Error importing voice module %r.", modname)
             continue
         voices = m.VOICES
-        for v in voices:
+        for v, info in voices.items():
             if v in v2m:
                 raise ValueError(f"Voice {v} is already defined in another module.")
             v2m[v] = {
                 "text_to_speech": m.text_to_speech,
                 "Transcriber": getattr(m, TRANSCRIBER_CLASS, None),
+                "lang": info["lang"],
             }
 
     return v2m
@@ -97,15 +106,33 @@ def _load_modules() -> VoiceMapping:
 
 AVAILABLE_VOICES: VoiceMapping = _load_modules()
 
+_T = TypeVar("_T")
 
-# @cached(TTLCache(maxsize=500, ttu=SETTINGS.AUDIO_TTL))
-# TODO: Use custom version of TLRUCache, which removes audio files upon cache eviction
-# https://cachetools.readthedocs.io/en/latest/#cachetools.TLRUCache
-# https://cachetools.readthedocs.io/en/latest/#extending-cache-classes
+
+class TmpFileLFUCache(LFUCache[_T, Path]):
+    """
+    Custom version of a least-frequently-used cache
+    which deletes files upon eviction from the cache.
+
+    See docs:
+    https://cachetools.readthedocs.io/en/latest/#extending-cache-classes
+    """
+
+    @override
+    def popitem(self) -> tuple[_T, Path]:
+        """Remove audio file when evicting from cache."""
+        key, audiofile = super().popitem()
+        _LOG.debug("Removing audio file: %s", audiofile)
+        # Remove file from file system
+        audiofile.unlink(missing_ok=True)
+        return key, audiofile
+
+
+@cached(cache=TmpFileLFUCache(maxsize=SETTINGS.AUDIO_CACHE_SIZE))
 def text_to_speech(
     text: str,
     *,
-    voice_id: str = SETTINGS.DEFAULT_VOICE,
+    voice: str = SETTINGS.DEFAULT_VOICE,
     speed: float = SETTINGS.DEFAULT_VOICE_SPEED,
     text_format: TextFormatsT = SETTINGS.DEFAULT_TEXT_FORMAT,
     audio_format: AudioFormatsT = SETTINGS.DEFAULT_AUDIO_FORMAT,
@@ -117,18 +144,17 @@ def text_to_speech(
     Request speech synthesis for the provided text.
     Returns an instance of :py:class:`pathlib.Path` pointing to the output audio file.
     """
-    # Fall back to default voice if voice_id param invalid
-    if voice_id not in AVAILABLE_VOICES:
+    if voice not in AVAILABLE_VOICES:
         raise ValueError(
-            f"Voice {voice_id} is not a supported voice: {AVAILABLE_VOICES.keys()}"
+            f"Voice {voice} is not a supported voice: {AVAILABLE_VOICES.keys()}"
         )
     if speed < MIN_SPEED or speed > MAX_SPEED:
         raise ValueError(f"Speed {speed} is outside the range 0.5-2.0")
 
-    return AVAILABLE_VOICES[voice_id]["text_to_speech"](
+    return AVAILABLE_VOICES[voice]["text_to_speech"](
         text,
+        voice=voice,
+        speed=speed,
         text_format=text_format,
         audio_format=audio_format,
-        voice_id=voice_id,
-        speed=speed,
     )

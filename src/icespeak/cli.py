@@ -25,8 +25,7 @@
         tts --help
 
 """
-
-from typing import Optional, cast
+from __future__ import annotations
 
 import string
 import subprocess
@@ -88,7 +87,7 @@ def _sanitize_filename(fn: str, maxlen: int = 60) -> str:
     return fn
 
 
-def _fetch_audio_bytes(url: str) -> Optional[bytes]:
+def _fetch_audio_bytes(url: str) -> bytes | None:
     """Returns bytes of audio file at URL."""
     if _is_data_uri(url) or _is_file_uri(url):
         return _bytes4file_or_data_uri(url)
@@ -128,7 +127,7 @@ def _play_audio_file(path: str) -> None:
     mpg123 = which("mpg123")  # mpg123 is a cross-platform player
     cmdmp3 = which("cmdmp3")  # cmdmp3 is a Windows command line mp3 player
 
-    cmd: Optional[list[str]] = None
+    cmd: list[str] | None = None
     if Path(afplay).is_file():
         cmd = [afplay, path]
     elif mpv:
@@ -140,9 +139,9 @@ def _play_audio_file(path: str) -> None:
 
     if not cmd:
         _die("Couldn't find suitable command line audio player.")
-
-    print(f"Playing file '{path}'")
-    subprocess.run(cast(list[str], cmd))  # noqa: S603
+    else:
+        print(f"Playing file '{path}'")
+        subprocess.run(cmd)  # noqa: S603
 
 
 DEFAULT_TEXT = ["Góðan daginn og til hamingju með lífið."]
@@ -233,7 +232,7 @@ def main() -> None:
         text,
         text_format=args.textformat,
         audio_format=args.audioformat,
-        voice_id=args.voice,
+        voice=args.voice,
         speed=args.speed,
     ).as_uri()
     if not url:
@@ -247,7 +246,7 @@ def main() -> None:
     # Download
     urldesc = f"data URI ({len(url)} bytes)" if _is_data_uri(url) else url
     print(f"Fetching {urldesc}")
-    data: Optional[bytes] = _fetch_audio_bytes(url)
+    data: bytes | None = _fetch_audio_bytes(url)
     if not data:
         _die("Unable to fetch audio data.")
 
