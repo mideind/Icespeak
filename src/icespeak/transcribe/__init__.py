@@ -31,6 +31,7 @@ from functools import lru_cache
 from re import Match
 
 from islenska.basics import ALL_CASES, ALL_GENDERS, ALL_NUMBERS
+from pydantic import BaseModel, Extra, Field
 from reynir import Greynir
 from reynir.bindb import GreynirBin
 from tokenizer import TOK, Abbreviations, Tok, detokenize, tokenize
@@ -43,6 +44,9 @@ from tokenizer.definitions import (
     NumberTuple,
     PunctuationTuple,
 )
+
+from icespeak.settings import SETTINGS
+from icespeak.tts import AVAILABLE_VOICES
 
 from .num import (
     ROMAN_NUMERALS,
@@ -107,6 +111,37 @@ def gssml(data: Any = None, *, type: str, **kwargs: str | float) -> str:
         f'<{GSSML_TAG} type="{type}"'
         + "".join(f' {k}="{v}"' for k, v in kwargs.items())
         + (f">{data}</{GSSML_TAG}>" if data is not None else " />")
+    )
+
+
+class TranscriptionOptions(BaseModel):
+    """Settings for transcription."""
+
+    model_config = {"frozen": True, "extra": Extra.forbid}
+
+    emails: bool = Field(default=True, description="Whether to transcribe emails.")
+    dates: bool = Field(default=True, description="Whether to transcribe dates.")
+    years: bool = Field(default=True, description="Whether to transcribe years.")
+    domains: bool = Field(default=True, description="Whether to transcribe domains.")
+    urls: bool = Field(default=True, description="Whether to transcribe URLs.")
+    amounts: bool = Field(
+        default=True,
+        description="Whether to transcribe amounts (number with currency).",
+    )
+    measurements: bool = Field(
+        default=True,
+        description="Whether to transcribe measurements "
+        + "(number with unit of measurement).",
+    )
+    percentages: bool = Field(
+        default=True, description="Whether to transcribe percentages."
+    )
+    # These are experimental, turned off by default
+    numbers: bool = Field(
+        default=False, description="Whether to transcribe (cardinal) numbers."
+    )
+    ordinals: bool = Field(
+        default=False, description="Whether to transcribe ordinal numbers."
     )
 
 
@@ -706,7 +741,7 @@ class DefaultTranscriber:
         "*": "stjarna",
         "(": "vinstri svigi",
         ")": "hægri svigi",
-        "-": "bandstrik",  # TODO: or "mínus"?
+        "-": "bandstrik",  # in some cases this should be "mínus"
         "_": "niðurstrik",
         "=": "jafnt og merki",
         "+": "plús",
@@ -1343,11 +1378,14 @@ class DefaultTranscriber:
         return f"<s>{txt}</s>"
 
     @classmethod
-    def token_transcribe(cls, text: str):
+    def token_transcribe(
+        cls, text: str, options: TranscriptionOptions | None = None
+    ) -> str:
         """
         Quick transcription of Icelandic text for TTS.
         Utilizes the tokenizer library.
         """
+        opt: TranscriptionOptions = options if options else TranscriptionOptions()
         tokens: list[Tok] = list(tokenize(text))
         for token in tokens:
             if (
@@ -1367,19 +1405,19 @@ class DefaultTranscriber:
                 h, m, s = cast(DateTimeTuple, token.val)
                 token.txt = _time_to_text(h, m, s or None)
 
-            elif token.kind == TOK.DATE:
+            elif token.kind == TOK.DATE and opt.dates:
                 token.txt = cls.date(token.txt, case="þf")
 
-            elif token.kind == TOK.YEAR:
+            elif token.kind == TOK.YEAR and opt.years:
                 token.txt = cls.year(token.integer)
 
-            elif token.kind == TOK.NUMBER:
+            elif token.kind == TOK.NUMBER and opt.numbers:
                 token.txt = cls.float(token.number, case="nf", gender="hk")
 
             elif token.kind == TOK.TELNO:
                 token.txt = cls.phone(token.txt)
 
-            elif token.kind == TOK.PERCENT:
+            elif token.kind == TOK.PERCENT and opt.percentages:
                 percent, _, _ = cast(NumberTuple, token.val)
                 if "%" in token.txt:
                     token.txt = cls.float(percent, case="nf", gender="hk") + " prósent"
@@ -1389,19 +1427,19 @@ class DefaultTranscriber:
                 elif "‰" in token.txt:
                     token.txt = cls.float(percent, case="nf", gender="hk") + " prómill"
 
-            elif token.kind == TOK.URL:
+            elif token.kind == TOK.URL and opt.urls:
                 protocol, _, domain = token.txt.partition("://")
                 if domain:
                     token.txt = cls.spell(protocol) + cls.domain(domain)
 
-            elif token.kind == TOK.ORDINAL:
+            elif token.kind == TOK.ORDINAL and opt.ordinals:
                 token.txt = cls.ordinal(token.ordinal, case="þf", gender="kk")
 
             elif token.kind == TOK.CURRENCY:
                 curr, _, _ = cast(CurrencyTuple, token.val)
                 token.txt = cls.currency(curr)
 
-            elif token.kind == TOK.AMOUNT:
+            elif token.kind == TOK.AMOUNT and opt.amounts:
                 num, curr, _, _ = cast(AmountTuple, token.val)
                 curr = CURRENCY_SYMBOLS.get(curr, curr)
                 token.txt = (
@@ -1410,13 +1448,13 @@ class DefaultTranscriber:
                     + cls.currency(curr, number="ft" if _is_plural(num) else "et")
                 )
 
-            elif token.kind == TOK.EMAIL:
+            elif token.kind == TOK.EMAIL and opt.emails:
                 token.txt = cls.email(token.txt)
 
-            elif token.kind == TOK.DATEABS:
+            elif token.kind == TOK.DATEABS and opt.dates:
                 token.txt = cls.date(token.txt, case="þf")
 
-            elif token.kind == TOK.DATEREL:
+            elif token.kind == TOK.DATEREL and opt.dates:
                 token.txt = cls.date(token.txt, case="þf")
 
             elif token.kind == TOK.TIMESTAMPABS:
@@ -1425,7 +1463,7 @@ class DefaultTranscriber:
             elif token.kind == TOK.TIMESTAMPREL:
                 token.txt = cls.time(cls.date(token.txt, case="þf"))
 
-            elif token.kind == TOK.MEASUREMENT:
+            elif token.kind == TOK.MEASUREMENT and opt.measurements:
                 # We can't use token.val here because
                 # the tokenization converts everything to SI units :/
                 # unit, num = cast(MeasurementTuple, token.val)
@@ -1452,11 +1490,11 @@ class DefaultTranscriber:
                     cls.number(num, case="nf", gender="hk") + " " + cls.spell(letter)
                 )
 
-            elif token.kind == TOK.DOMAIN:
+            elif token.kind == TOK.DOMAIN and opt.domains:
                 token.txt = cls.domain(token.txt)
 
             elif token.kind == TOK.HASHTAG:
-                token.txt = f"myllumerki {token.txt.lstrip('#')}"
+                token.txt = "myllumerki " + token.txt.lstrip("#")
 
             elif token.kind == TOK.MOLECULE:
                 token.txt = cls.molecule(token.txt)
@@ -1474,3 +1512,16 @@ class DefaultTranscriber:
                 token.txt = cls.entity(token.txt)
 
         return detokenize(tokens)
+
+
+def fast_transcribe(
+    text: str,
+    voice: str = SETTINGS.DEFAULT_VOICE,
+    options: TranscriptionOptions | None = None,
+):
+    """
+    Simple wrapper for token-based transcription
+    of text for a specific TTS voice.
+    """
+    t = AVAILABLE_VOICES[voice]["Transcriber"] or DefaultTranscriber
+    return t.token_transcribe(text, options)

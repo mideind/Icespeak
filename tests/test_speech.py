@@ -32,6 +32,7 @@ import pytest
 from icespeak import text_to_speech
 from icespeak.settings import API_KEYS
 from icespeak.transcribe import DefaultTranscriber as DT
+from icespeak.transcribe import TranscriptionOptions
 from icespeak.tts import AVAILABLE_VOICES
 
 
@@ -969,12 +970,14 @@ def test_voice_breaks() -> None:
         assert n == f'<break strength="{s}" />'
 
 
-def test_token_transcribe() -> None:
+_ws_re = re.compile(r"\n\s+")
+_fix_ws: Callable[[str], str] = lambda t: _ws_re.sub(" ", t.strip())
+
+
+def test_token_transcribe_basic() -> None:
     # Replace whitespace with single space in text
     # stretching over multiple lines
-    ws_re = re.compile(r"\n\s+")
-    ws_to_space: Callable[[str], str] = lambda t: ws_re.sub(" ", t.strip())
-    t = ws_to_space(
+    t = _fix_ws(
         """
         Frétt skrifuð þann 27. ágúst 2023 kl. 20:20.
         """
@@ -984,7 +987,7 @@ def test_token_transcribe() -> None:
         "tuttugasta og sjöunda ágúst tvö þúsund tuttugu og þrjú klukkan tuttugu tuttugu"
         in n
     )
-    t = ws_to_space(
+    t = _fix_ws(
         """
         t.d. var 249% munur á ódýrstu og dýrustu rauðrófunum,
         118% munur milli bökunarkartafla, 291% munur á grænum eplum,
@@ -998,35 +1001,53 @@ def test_token_transcribe() -> None:
         and "tvö hundruð níutíu og eitt prósent" in n
         and "tvö til þrjú prósent"
     )
+    t = _fix_ws(
+        """
+        Sendu tölvupóst á jon.gudmundsson@gormur.bull.is og bla@gmail.com.
+        Kíktu svo á síðurnar is.wikipedia.org, ruv.is og bull.co.net.
+        """
+    )
+    n = DT.token_transcribe(t)
+    assert "@" not in n
+    assert "jon.gudm" not in n
+    assert " punktur " in n
+    assert " is " in n
+    assert "com" not in n
+    t = _fix_ws("Hvað eru 0,67cm í tommum?")
+    n = DT.token_transcribe(t)
+    assert "núll komma sextíu og sjö sentimetrar" in n
+
+
+def test_token_transcribe_experimental():
+    t_opts = TranscriptionOptions(numbers=True, ordinals=True)
     n = DT.token_transcribe(
         "sagðist hún vona að á næstu 10-20 árum "
-        + "yrði farið að nýta tæknina 9,2-5,3 prósent meira."
+        + "yrði farið að nýta tæknina 9,2-5,3 prósent meira.",
+        t_opts,
     )
-    assert (
-        "tíu bandstrik tuttugu árum" in n
-        and "níu komma tvö bandstrik fimm komma þrjú prósent" in n
-    )
-    t = ws_to_space(
+    assert "tíu bandstrik tuttugu árum" in n
+    assert "níu komma tvö bandstrik fimm komma þrjú prósent" in n
+    t = _fix_ws(
         """
         Frakkland - Marókkó á HM.
         Leikurinn var bráðfjörugur en það voru Frakkar
         sem voru sterkari og unnu þeir leikinn 2-0.
         """
     )
-    n = DT.token_transcribe(t)
+    n = DT.token_transcribe(t, t_opts)
     assert "Frakkland bandstrik Marókkó" in n and "tvö bandstrik núll" in n
-    t = ws_to_space(
+    t = _fix_ws(
         """
         2 eru slasaðir og um 1.500 fiskar dauðir eftir að um
         16 metra hátt fiskabúr í miðju Radisson hóteli
         í Berlín sprakk snemma í morgun.
         """
     )
-    n = DT.token_transcribe(t)
+    n = DT.token_transcribe(t, t_opts)
     # assert "tveir" in n
     assert "eitt þúsund og fimm hundruð" in n
     assert "sextán" in n
-    t = ws_to_space(
+    t = _fix_ws(
         """
         Dæmi eru um að nauðsynjavörur hafi nær tvöfaldast í verði á síðustu tveimur árum
         og enn hækka sumar vörur þrátt fyrir minni verðbólgu og sterkara gengi.
@@ -1051,12 +1072,12 @@ def test_token_transcribe() -> None:
         Hér er upphæð í eintölu: 21 kr.
         """
     )
-    n = DT.token_transcribe(t)
+    n = DT.token_transcribe(t, t_opts)
     assert "%" not in n and "prósent" in n
     assert not any(c.isdecimal() for c in n)
     assert "níu þúsund níu hundruð áttatíu og þrjár krónur" in n
     assert "tuttugu og ein króna" in n
-    t = ws_to_space(
+    t = _fix_ws(
         """
         Norðmaðurinn Jakob Ingebrigtsen átti stórkostlegan endasprett
         og tryggði sér heimsmeistaratitilinn í 5.000m hlaupi.
@@ -1066,25 +1087,10 @@ def test_token_transcribe() -> None:
         úr sekúndum á undan þeim spænska í mark. Jacob Krop frá Kenýa tók bronsið á 13:12.28.
         """
     )
-    n = DT.token_transcribe(t)
+    n = DT.token_transcribe(t, t_opts)
     assert "fimm þúsund metra" in n and "ellefu komma þrj" in n
-    t = ws_to_space(
-        """
-        Sendu tölvupóst á jon.gudmundsson@gormur.bull.is og bla@gmail.com.
-        Kíktu svo á síðurnar is.wikipedia.org, ruv.is og bull.co.net.
-        """
-    )
-    n = DT.token_transcribe(t)
-    assert "@" not in n
-    assert "jon.gudm" not in n
-    assert " punktur " in n
-    assert " is " in n
-    assert "com" not in n
-    t = ws_to_space("Hvað eru 0,67cm í tommum?")
-    n = DT.token_transcribe(t)
-    assert "núll komma sextíu og sjö sentimetrar" in n
     t = "Í 1., 2., 3. og 4. lagi. Í 31. lagi"
-    n = DT.token_transcribe(t)
+    n = DT.token_transcribe(t, t_opts)
     assert "Í fyrsta" in n
     # assert "öðru" in n
     assert "þriðja" in n

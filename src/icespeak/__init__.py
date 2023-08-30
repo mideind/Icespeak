@@ -20,7 +20,7 @@
 """
 
 from .parser import GreynirSSMLParser
-from .transcribe import DefaultTranscriber, gssml
+from .transcribe import DefaultTranscriber, TranscriptionOptions, fast_transcribe, gssml
 from .tts import AVAILABLE_VOICES, text_to_speech
 
 __all__ = (
@@ -29,4 +29,6 @@ __all__ = (
     "gssml",
     "DefaultTranscriber",
     "AVAILABLE_VOICES",
+    "TranscriptionOptions",
+    "fast_transcribe",
 )
