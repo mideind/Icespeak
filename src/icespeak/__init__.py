@@ -19,8 +19,9 @@
 
 """
 
-from .parser import GreynirSSMLParser
-from .transcribe import DefaultTranscriber, TranscriptionOptions, fast_transcribe, gssml
+from .parser import GreynirSSMLParser, fast_transcribe
+from .settings import SETTINGS
+from .transcribe import DefaultTranscriber, TranscriptionOptions, gssml
 from .tts import AVAILABLE_VOICES, text_to_speech
 
 __all__ = (
@@ -31,4 +32,5 @@ __all__ = (
     "AVAILABLE_VOICES",
     "TranscriptionOptions",
     "fast_transcribe",
+    "SETTINGS",
 )

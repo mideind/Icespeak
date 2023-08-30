@@ -28,10 +28,28 @@ from inspect import ismethod
 from logging import getLogger
 
 from .settings import SETTINGS
-from .transcribe import GSSML_TAG, DefaultTranscriber, TranscriptionMethod
+from .transcribe import (
+    GSSML_TAG,
+    DefaultTranscriber,
+    TranscriptionMethod,
+    TranscriptionOptions,
+)
 from .tts import AVAILABLE_VOICES
 
 _LOG = getLogger(__file__)
+
+
+def fast_transcribe(
+    text: str,
+    voice: str = SETTINGS.DEFAULT_VOICE,
+    options: TranscriptionOptions | None = None,
+):
+    """
+    Simple wrapper for token-based transcription
+    of text for a specific TTS voice.
+    """
+    t = AVAILABLE_VOICES[voice]["Transcriber"] or DefaultTranscriber
+    return t.token_transcribe(text, options)
 
 
 class GreynirSSMLParser(HTMLParser):

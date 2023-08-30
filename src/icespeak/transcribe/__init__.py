@@ -45,9 +45,6 @@ from tokenizer.definitions import (
     PunctuationTuple,
 )
 
-from icespeak.settings import SETTINGS
-from icespeak.tts import AVAILABLE_VOICES
-
 from .num import (
     ROMAN_NUMERALS,
     CaseType,
@@ -1512,16 +1509,3 @@ class DefaultTranscriber:
                 token.txt = cls.entity(token.txt)
 
         return detokenize(tokens)
-
-
-def fast_transcribe(
-    text: str,
-    voice: str = SETTINGS.DEFAULT_VOICE,
-    options: TranscriptionOptions | None = None,
-):
-    """
-    Simple wrapper for token-based transcription
-    of text for a specific TTS voice.
-    """
-    t = AVAILABLE_VOICES[voice]["Transcriber"] or DefaultTranscriber
-    return t.token_transcribe(text, options)
