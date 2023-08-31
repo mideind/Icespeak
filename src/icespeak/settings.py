@@ -43,7 +43,7 @@ MAX_SPEED = 2.0
 MIN_SPEED = 0.5
 
 
-def _create_audio_dir() -> Path:
+def _create_tmp_audio_dir() -> Path:
     """
     Called when the user doesn't specify an output audio directory.
     Creates and returns path to directory in the temporary directory.
@@ -74,14 +74,14 @@ class Settings(BaseSettings):
     )
 
     AUDIO_DIR: Path = Field(
-        default_factory=_create_audio_dir,
+        default_factory=_create_tmp_audio_dir,
         description=(
             "Where to save output audio files. "
             "If not set, creates a directory in the platform's temporary directory."
         ),
     )
     AUDIO_CACHE_SIZE: int = Field(
-        default=50, gt=0, description="Max number of audio files to cache."
+        default=100, gt=0, description="Max number of audio files to cache."
     )
 
     KEYS_DIR: Path = Field(

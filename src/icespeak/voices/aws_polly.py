@@ -41,29 +41,23 @@ if TYPE_CHECKING:
 
 _LOG = getLogger(__file__)
 
+assert API_KEYS.aws, "AWS Polly API key missing."
 VOICES: VoiceMap = {
     "Karl": {"id": "Karl", "lang": "is-IS"},
     "Dora": {"id": "Dora", "lang": "is-IS"},
 }
 AUDIO_FORMATS = frozenset(("mp3", "pcm", "ogg_vorbis"))
-
-with Lock():
-    assert API_KEYS.aws, "AWS Polly API key missing."
-    # See boto3.Session.client for arguments
-    _AWS_CLIENT: Any = boto3.client(
-        "polly",
-        region_name=API_KEYS.aws.region_name.get_secret_value(),
-        aws_access_key_id=API_KEYS.aws.aws_access_key_id.get_secret_value(),
-        aws_secret_access_key=API_KEYS.aws.aws_secret_access_key.get_secret_value(),
-    )
-
-
-# Time to live (in seconds) for synthesized text URL caching
-# Add a safe 30 second margin to ensure that clients are never provided with an
-# audio URL that is just about to expire and might do so before playback starts.
-_AWS_URL_TTL = 600  # 10 mins in seconds
-_AWS_CACHE_TTL = _AWS_URL_TTL - 30  # seconds
-_AWS_CACHE_MAXITEMS = 30
+_AWS_CLIENT: Any = None
+l = Lock()
+with l:
+    if _AWS_CLIENT is None:
+        # See boto3.Session.client for arguments
+        _AWS_CLIENT = boto3.client(
+            "polly",
+            region_name=API_KEYS.aws.region_name.get_secret_value(),
+            aws_access_key_id=API_KEYS.aws.aws_access_key_id.get_secret_value(),
+            aws_secret_access_key=API_KEYS.aws.aws_secret_access_key.get_secret_value(),
+        )
 
 
 def text_to_speech(

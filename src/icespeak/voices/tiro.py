@@ -38,7 +38,6 @@ if TYPE_CHECKING:
     from pathlib import Path
 
 _LOG = getLogger(__file__)
-NAME = "Tiro"
 VOICES: VoiceMap = {
     "Alfur": {"id": "Alfur", "lang": "is-IS"},
     "Dilja": {"id": "Dilja", "lang": "is-IS"},
@@ -91,7 +90,7 @@ def text_to_audio_data(
         r = requests.post(_TIRO_TTS_URL, json=jdict, timeout=10)
         if r.status_code != 200:
             raise Exception(
-                f"Received HTTP status code {r.status_code} from {NAME} server"
+                f"Received HTTP status code {r.status_code} from Tiro server"
             )
         return r.content
     except Exception as e:

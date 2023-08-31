@@ -21,8 +21,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Protocol, TypedDict, TypeVar, cast
-from typing_extensions import override
+from typing import TYPE_CHECKING, Protocol, TypedDict, cast
 
 import importlib
 from logging import getLogger
@@ -106,29 +105,8 @@ def _load_modules() -> VoiceMapping:
 
 AVAILABLE_VOICES: VoiceMapping = _load_modules()
 
-_T = TypeVar("_T")
 
-
-class TmpFileLFUCache(LFUCache[_T, Path]):
-    """
-    Custom version of a least-frequently-used cache
-    which deletes files upon eviction from the cache.
-
-    See docs:
-    https://cachetools.readthedocs.io/en/latest/#extending-cache-classes
-    """
-
-    @override
-    def popitem(self) -> tuple[_T, Path]:
-        """Remove audio file when evicting from cache."""
-        key, audiofile = super().popitem()
-        _LOG.debug("Removing audio file: %s", audiofile)
-        # Remove file from file system
-        audiofile.unlink(missing_ok=True)
-        return key, audiofile
-
-
-@cached(cache=TmpFileLFUCache(maxsize=SETTINGS.AUDIO_CACHE_SIZE))
+@cached(LFUCache(maxsize=SETTINGS.AUDIO_CACHE_SIZE))
 def text_to_speech(
     text: str,
     *,

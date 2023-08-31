@@ -42,7 +42,7 @@ if TYPE_CHECKING:
     from pathlib import Path
 
 _LOG = getLogger(__file__)
-NAME = "Google"
+
 VOICES: VoiceMap = {"Anna": {"id": "is-IS-Standard-A", "lang": "is-IS"}}
 AUDIO_FORMATS = frozenset(("mp3",))
 

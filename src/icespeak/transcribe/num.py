@@ -23,10 +23,14 @@
 """
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from typing_extensions import Literal
 
 import re
+
+CaseType = Literal["nf", "þf", "þgf", "ef"]
+GenderType = Literal["kk", "kvk", "hk"]
+NumberType = Literal["et", "ft"]
 
 _SUB_20_NEUTRAL: Mapping[int, str] = {
     1: "eitt",
@@ -61,7 +65,7 @@ _TENS_NEUTRAL: Mapping[int, str] = {
     90: "níutíu",
 }
 
-_DeclensionMapping = Mapping[str, Mapping[str, Mapping[str, str]]]
+_DeclensionMapping = Mapping[str, Mapping[GenderType, Mapping[CaseType, str]]]
 _NUM_NEUT_TO_DECL: _DeclensionMapping = {
     "eitt": {
         "kk": {"nf": "einn", "þf": "einn", "þgf": "einum", "ef": "eins"},
@@ -85,7 +89,7 @@ _NUM_NEUT_TO_DECL: _DeclensionMapping = {
     },
 }
 
-_LARGE_NUMBERS: tuple[tuple[int, str, str], ...] = (
+_LARGE_NUMBERS: Sequence[tuple[int, str, GenderType]] = (
     (10**48, "oktilljón", "kvk"),
     (10**42, "septilljón", "kvk"),
     (10**36, "sextilljón", "kvk"),
@@ -130,7 +134,7 @@ def number_to_neutral(n: int = 0, *, one_hundred: bool = False) -> str:
 
     # Very large numbers
     while n >= _MILLION:
-        large_num, isl_num, gender = 1, "", ""
+        large_num, isl_num, gender = _LARGE_NUMBERS[0]
         for large_num, isl_num, gender in _LARGE_NUMBERS:  # noqa: B007
             if large_num <= n:
                 break
@@ -211,16 +215,11 @@ def number_to_neutral(n: int = 0, *, one_hundred: bool = False) -> str:
     return number_string
 
 
-CaseType = Literal["nf", "þf", "þgf", "ef"]
-GenderType = Literal["kk", "kvk", "hk"]
-NumberType = Literal["et", "ft"]
-
-
 def number_to_text(
     n: int | str,
     *,
-    case: str = "nf",
-    gender: str = "hk",
+    case: CaseType = "nf",
+    gender: GenderType = "hk",
     one_hundred: bool = False,
 ) -> str:
     """
@@ -247,8 +246,8 @@ def numbers_to_text(
     *,
     regex: str = r"((?<!\d)-)?\b\d+\b",
     # ^ matches "15" & "-15", but matches "1-5" as "1" and "5"
-    case: str = "nf",
-    gender: str = "hk",
+    case: CaseType = "nf",
+    gender: GenderType = "hk",
     one_hundred: bool = False,
 ) -> str:
     """
@@ -269,8 +268,8 @@ def numbers_to_text(
 def float_to_text(
     f: float | str,
     *,
-    case: str = "nf",
-    gender: str = "hk",
+    case: CaseType = "nf",
+    gender: GenderType = "hk",
     comma_null: bool = False,
     one_hundred: bool = False,
 ) -> str:
@@ -341,8 +340,8 @@ def floats_to_text(
     s: str,
     *,
     regex: str = r"((?<!\d)-)?\b(\d{1,3}\.)*\d+(,\d+)?\b",
-    case: str = "nf",
-    gender: str = "hk",
+    case: CaseType = "nf",
+    gender: GenderType = "hk",
     comma_null: bool = False,
     one_hundred: bool = False,
 ) -> str:
@@ -368,14 +367,14 @@ def floats_to_text(
 def year_to_text(year: int | str) -> str:
     """
     Write year as text in Icelandic.
-    Negative years automatically append "fyrir Krist" to the text.
+    Negative years automatically append "fyrir okkar tímatal" to the text.
     """
     year = int(year)
     suffix: str = ""
     text: list[str] = []
 
     if year < 0:
-        suffix = " fyrir Krist"
+        suffix = " fyrir okkar tímatal"
         year = -year
 
     # People say e.g. "nítján hundruð þrjátíu og tvö"
@@ -447,67 +446,22 @@ _SUB_20_NEUT_TO_ORDINAL: Mapping[str, str] = {
 
 _ANNAR_TABLE: _DeclensionMapping = {
     "et": {
-        "kk": {
-            "nf": "annar",
-            "þf": "annan",
-            "þgf": "öðrum",
-            "ef": "annars",
-        },
-        "kvk": {
-            "nf": "önnur",
-            "þf": "aðra",
-            "þgf": "annarri",
-            "ef": "annarrar",
-        },
-        "hk": {
-            "nf": "annað",
-            "þf": "annað",
-            "þgf": "öðru",
-            "ef": "annars",
-        },
+        "kk": {"nf": "annar", "þf": "annan", "þgf": "öðrum", "ef": "annars"},
+        "kvk": {"nf": "önnur", "þf": "aðra", "þgf": "annarri", "ef": "annarrar"},
+        "hk": {"nf": "annað", "þf": "annað", "þgf": "öðru", "ef": "annars"},
     },
     "ft": {
-        "kk": {
-            "nf": "aðrir",
-            "þf": "aðra",
-            "þgf": "öðrum",
-            "ef": "annarra",
-        },
-        "kvk": {
-            "nf": "aðrar",
-            "þf": "aðrar",
-            "þgf": "öðrum",
-            "ef": "annarra",
-        },
-        "hk": {
-            "nf": "önnur",
-            "þf": "önnur",
-            "þgf": "öðrum",
-            "ef": "annarra",
-        },
+        "kk": {"nf": "aðrir", "þf": "aðra", "þgf": "öðrum", "ef": "annarra"},
+        "kvk": {"nf": "aðrar", "þf": "aðrar", "þgf": "öðrum", "ef": "annarra"},
+        "hk": {"nf": "önnur", "þf": "önnur", "þgf": "öðrum", "ef": "annarra"},
     },
 }
 
-_SuffixMapping = Mapping[str, Mapping[str, str]]
+_SuffixMapping = Mapping[GenderType, Mapping[CaseType, str]]
 _SUB_20_ORDINAL_SUFFIX: _SuffixMapping = {
-    "kk": {
-        "nf": "i",
-        "þf": "a",
-        "þgf": "a",
-        "ef": "a",
-    },
-    "kvk": {
-        "nf": "a",
-        "þf": "u",
-        "þgf": "u",
-        "ef": "u",
-    },
-    "hk": {
-        "nf": "a",
-        "þf": "a",
-        "þgf": "a",
-        "ef": "a",
-    },
+    "kk": {"nf": "i", "þf": "a", "þgf": "a", "ef": "a"},
+    "kvk": {"nf": "a", "þf": "u", "þgf": "u", "ef": "u"},
+    "hk": {"nf": "a", "þf": "a", "þgf": "a", "ef": "a"},
 }
 
 _TENS_NEUT_TO_ORDINAL: Mapping[str, str] = {
@@ -545,8 +499,8 @@ _LARGE_ORDINAL_SUFFIX: _SuffixMapping = {
 
 def _num_to_ordinal(
     word: str,
-    case: str = "nf",
-    gender: str = "kk",
+    case: CaseType = "nf",
+    gender: GenderType = "kk",
     number: str = "et",
 ) -> str:
     """
@@ -608,7 +562,7 @@ def _num_to_ordinal(
 
 
 def neutral_text_to_ordinal(
-    s: str, *, case: str = "nf", gender: str = "kk", number: str = "et"
+    s: str, *, case: CaseType = "nf", gender: GenderType = "kk", number: str = "et"
 ) -> str:
     """
     Takes Icelandic text representation of number
@@ -640,7 +594,11 @@ def neutral_text_to_ordinal(
 
 
 def number_to_ordinal(
-    n: int | str, *, case: str = "nf", gender: str = "kk", number: str = "et"
+    n: int | str,
+    *,
+    case: CaseType = "nf",
+    gender: GenderType = "kk",
+    number: str = "et",
 ) -> str:
     """
     Takes number and returns it as an ordinal
@@ -658,8 +616,8 @@ def numbers_to_ordinal(
     s: str,
     *,
     regex: str | None = None,
-    case: str = "nf",
-    gender: str = "kk",
+    case: CaseType = "nf",
+    gender: GenderType = "kk",
     number: str = "et",
 ) -> str:
     """
@@ -739,7 +697,7 @@ def _roman_numeral_to_int(n: str) -> int:
 
 
 def roman_numeral_to_ordinal(
-    n: str, *, case: str = "nf", gender: str = "kk", number: str = "et"
+    n: str, *, case: CaseType = "nf", gender: GenderType = "kk", number: str = "et"
 ):
     """
     Change a roman numeral into a written Icelandic ordinal.
