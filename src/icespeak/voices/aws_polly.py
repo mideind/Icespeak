@@ -47,12 +47,12 @@ VOICES: VoiceMap = {
     "Dora": {"id": "Dora", "lang": "is-IS"},
 }
 AUDIO_FORMATS = frozenset(("mp3", "pcm", "ogg_vorbis"))
-_AWS_CLIENT: Any = None
-l = Lock()
-with l:
-    if _AWS_CLIENT is None:
+_aws_client: Any = None
+_lock = Lock()
+with _lock:
+    if _aws_client is None:
         # See boto3.Session.client for arguments
-        _AWS_CLIENT = boto3.client(
+        _aws_client = boto3.client(
             "polly",
             region_name=API_KEYS.aws.region_name.get_secret_value(),
             aws_access_key_id=API_KEYS.aws.aws_access_key_id.get_secret_value(),
@@ -89,7 +89,7 @@ def text_to_speech(
             text = f"<speak>{text}</speak>"
 
     try:
-        response: dict[str, Any] = _AWS_CLIENT.synthesize_speech(
+        response: dict[str, Any] = _aws_client.synthesize_speech(
             Text=text,
             TextType=text_format,
             VoiceId=VOICES[voice]["id"],

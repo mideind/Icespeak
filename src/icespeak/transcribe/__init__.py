@@ -490,7 +490,7 @@ def _date_to_text(
     if day:
         out += number_to_ordinal(day, gender="kk", case=case, number="et") + " "
     # Month names don't change in different declensions
-    out += _MONTH_NAMES[month]
+    out += _MONTH_NAMES[month - 1]
     if year:
         out += " " + year_to_text(year)
     return out
@@ -837,7 +837,7 @@ class DefaultTranscriber:
 
             # The year is optional
             if mon and d:
-                m = int(mon) if mon.isdecimal() else _MONTH_ABBREVS.index(mon[:3])
+                m = int(mon) if mon.isdecimal() else _MONTH_ABBREVS.index(mon[:3]) + 1
                 fmt_date = _date_to_text(
                     year=int(y) if y else None,
                     month=m,
