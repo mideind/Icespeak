@@ -21,23 +21,24 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Protocol, TypedDict, cast
+from typing import TYPE_CHECKING, Any, Protocol, TypedDict, TypeVar, cast
+from typing_extensions import override
 
+import atexit
 import importlib
-from logging import getLogger
+import queue
+import threading
 from pathlib import Path
 
 from cachetools import LFUCache, cached
 from pydantic import BaseModel, Field
 
-from .settings import MAX_SPEED, MIN_SPEED, SETTINGS, AudioFormatsT, TextFormatsT
+from .settings import LOG, MAX_SPEED, MIN_SPEED, SETTINGS, AudioFormatsT, TextFormatsT
 from .transcribe import TRANSCRIBER_CLASS, DefaultTranscriber, TranscriptionOptions
 from .voices import TTSOptions, VoiceStyleT
 
 if TYPE_CHECKING:
     from .voices import ModuleVoiceInfoT
-
-_LOG = getLogger(__file__)
 
 
 class TTSFuncT(Protocol):
@@ -102,7 +103,7 @@ def _load_voice_modules() -> tuple[VoicesT, Mapping[str, _ServiceImpl]]:
             transcriber = getattr(m, TRANSCRIBER_CLASS, DefaultTranscriber)
             for v, info in voices.items():
                 if v in voice_info:
-                    _LOG.warning(f"Voice {v} is already defined in another module!")
+                    LOG.warning(f"Voice {v} is already defined in another module!")
                 voice_info[v] = {
                     "service": name,
                     "lang": info["lang"],
@@ -114,7 +115,7 @@ def _load_voice_modules() -> tuple[VoicesT, Mapping[str, _ServiceImpl]]:
                     TRANSCRIBER_CLASS: transcriber,
                 }
         except Exception:
-            _LOG.exception("Error importing voice module %r.", modname)
+            LOG.exception("Error importing voice module %r.", modname)
             continue
 
     return voice_info, service_impl
@@ -141,7 +142,63 @@ class TTSInput(BaseModel):
     )
 
 
-@cached(LFUCache(maxsize=SETTINGS.AUDIO_CACHE_SIZE))
+_T = TypeVar("_T")
+
+
+class TmpFileLFUCache(LFUCache[_T, Path]):
+    """
+    Custom version of a least-frequently-used cache which,
+    if the clean cache setting is True,
+    schedules files for deletion upon eviction from the cache.
+    See docs:
+    https://cachetools.readthedocs.io/en/latest/#extending-cache-classes
+    """
+
+    @override
+    def popitem(self) -> tuple[_T, Path]:
+        """Schedule audio file for deletion upon evicting from cache."""
+        key, audiofile = super().popitem()
+        LOG.debug("Expired audio file: %s", audiofile)
+        # Schedule for deletion, if cleaning the cache
+        if SETTINGS.AUDIO_CACHE_CLEAN:
+            _EXPIRED_QUEUE.put(audiofile)
+        return key, audiofile
+
+
+_AUDIO_CACHE: TmpFileLFUCache[Any] = TmpFileLFUCache(maxsize=SETTINGS.AUDIO_CACHE_SIZE)
+
+# Cleanup functionality, if cleaning cache setting is turned on
+if SETTINGS.AUDIO_CACHE_CLEAN:
+    _EXPIRED_QUEUE: queue.Queue[Path | None] = queue.Queue()
+
+    def _cleanup():
+        while audiofile := _EXPIRED_QUEUE.get():
+            audiofile.unlink(missing_ok=True)
+
+    _cleanup_thread = threading.Thread(
+        target=_cleanup, name="audio_cleanup", daemon=True
+    )
+    _cleanup_thread.start()
+
+    def _evict_all():
+        LOG.debug("Evicting everything from cache...")
+        _EXPIRED_QUEUE.put(None)  # Signal to thread to stop
+        try:
+            while _AUDIO_CACHE.currsize > 0:
+                # Remove all files currently in cache
+                _AUDIO_CACHE.popitem()[1].unlink(missing_ok=True)
+        except Exception:
+            LOG.exception("Error when cleaning cache.")
+        # Give the thread a little bit of time to join,
+        # not too much harm if it simply gets killed though
+        _cleanup_thread.join(0.1)
+        LOG.debug("Finished evicting.")
+
+    # This function runs upon clean exit from program
+    atexit.register(_evict_all)
+
+
+@cached(_AUDIO_CACHE)
 def text_to_speech(
     text: str,
     *,

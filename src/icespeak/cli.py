@@ -31,20 +31,17 @@ import string
 import subprocess
 import sys
 import wave
-from logging import getLogger
 from pathlib import Path
 from shutil import which
 from urllib.request import urlopen
 
 import requests
 
-from .settings import SETTINGS
+from .settings import LOG, SETTINGS
 from .tts import VOICES, text_to_speech
 from .voices import suffix_for_audiofmt
 
 # from .utility import sanitize_filename
-
-_LOG = getLogger(__file__)
 
 
 def _die(msg: str, exit_code: int = 1) -> None:
@@ -100,7 +97,7 @@ def _fetch_audio_bytes(url: str) -> bytes | None:
             )
         return r.content
     except Exception:
-        _LOG.exception("Error fetching audio file.")
+        LOG.exception("Error fetching audio file.")
 
 
 def _write_wav(

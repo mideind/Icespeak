@@ -25,11 +25,10 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import uuid
-from logging import getLogger
 
 import requests
 
-from icespeak.settings import SETTINGS, AudioFormatsT, TextFormatsT
+from icespeak.settings import LOG, SETTINGS, AudioFormatsT, TextFormatsT
 from icespeak.transcribe import strip_markup
 
 from . import ModuleVoicesT, suffix_for_audiofmt
@@ -37,7 +36,6 @@ from . import ModuleVoicesT, suffix_for_audiofmt
 if TYPE_CHECKING:
     from pathlib import Path
 
-_LOG = getLogger(__file__)
 
 NAME = "Tiro"
 VOICES: ModuleVoicesT = {
@@ -71,7 +69,7 @@ def text_to_audio_data(
     text_format = "text"
 
     if audio_format not in AUDIO_FORMATS:
-        _LOG.warn(
+        LOG.warn(
             "Unsupported audio format for Tiro speech synthesis: %s."
             + " Falling back to mp3",
             audio_format,
@@ -96,7 +94,7 @@ def text_to_audio_data(
             )
         return r.content
     except Exception as e:
-        _LOG.error("Error communicating with Tiro API at %s: %s", _TIRO_TTS_URL, e)
+        LOG.error("Error communicating with Tiro API at %s: %s", _TIRO_TTS_URL, e)
         raise
 
 
@@ -123,7 +121,7 @@ def text_to_speech(
     try:
         outfile.write_bytes(data)
     except Exception:
-        _LOG.exception("Error writing audio file %s.", outfile)
+        LOG.exception("Error writing audio file %s.", outfile)
 
     # Generate and return file:// URL to audio file
     return outfile

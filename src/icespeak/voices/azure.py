@@ -25,11 +25,10 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import uuid
-from logging import getLogger
 
 import azure.cognitiveservices.speech as speechsdk
 
-from icespeak.settings import API_KEYS, SETTINGS, AudioFormatsT, TextFormatsT
+from icespeak.settings import API_KEYS, LOG, SETTINGS, AudioFormatsT, TextFormatsT
 from icespeak.transcribe import DefaultTranscriber, strip_markup
 
 from . import ModuleVoicesT, suffix_for_audiofmt
@@ -37,7 +36,6 @@ from . import ModuleVoicesT, suffix_for_audiofmt
 if TYPE_CHECKING:
     from pathlib import Path
 
-_LOG = getLogger(__file__)
 
 NAME = "Azure"
 VOICES: ModuleVoicesT = {
@@ -94,7 +92,7 @@ def text_to_speech(
     """Synthesizes text via Azure and returns path to generated audio file."""
 
     if audio_format not in AUDIO_FORMATS:
-        _LOG.warn(
+        LOG.warn(
             "Unsupported audio format for Azure speech synthesis: %s."
             + " Falling back to mp3",
             audio_format,
@@ -160,7 +158,7 @@ def text_to_speech(
             f"TTS with Azure failed: {cancellation_details.error_details}"
         )
     except Exception:
-        _LOG.exception("Error communicating with Azure Speech API.")
+        LOG.exception("Error communicating with Azure Speech API.")
         raise
 
 

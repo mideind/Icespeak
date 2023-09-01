@@ -25,9 +25,8 @@ from typing_extensions import override
 from collections import deque
 from html.parser import HTMLParser
 from inspect import ismethod
-from logging import getLogger
 
-from .settings import SETTINGS
+from .settings import LOG, SETTINGS
 from .transcribe import (
     GSSML_TAG,
     TRANSCRIBER_CLASS,
@@ -36,8 +35,6 @@ from .transcribe import (
     TranscriptionOptions,
 )
 from .tts import SERVICE2IMPL, VOICES
-
-_LOG = getLogger(__file__)
 
 
 def fast_transcribe(
@@ -81,7 +78,7 @@ class GreynirSSMLParser(HTMLParser):
         """
         super().__init__()
         if voice not in VOICES:
-            _LOG.warning(
+            LOG.warning(
                 "Voice %r not in supported voices, reverting to default: %r",
                 voice,
                 SETTINGS.DEFAULT_VOICE,

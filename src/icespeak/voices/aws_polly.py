@@ -25,12 +25,11 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 import uuid
-from logging import getLogger
 from threading import Lock
 
 import boto3
 
-from icespeak.settings import API_KEYS, SETTINGS, AudioFormatsT, TextFormatsT
+from icespeak.settings import API_KEYS, LOG, SETTINGS, AudioFormatsT, TextFormatsT
 
 from . import suffix_for_audiofmt
 
@@ -39,7 +38,6 @@ if TYPE_CHECKING:
 
     from . import ModuleVoicesT
 
-_LOG = getLogger(__file__)
 
 assert API_KEYS.aws, "AWS Polly API key missing."
 NAME = "AWS Polly"
@@ -72,7 +70,7 @@ def text_to_speech(
     """Returns Amazon Polly URL to audio file with speech-synthesized text."""
 
     if audio_format not in AUDIO_FORMATS:
-        _LOG.warn(
+        LOG.warn(
             "Unsupported audio format for Amazon Polly speech synthesis: %s."
             + " Falling back to mp3",
             audio_format,
@@ -99,7 +97,7 @@ def text_to_speech(
             OutputFormat=audio_format,
         )
     except Exception:
-        _LOG.exception("Error synthesizing speech.")
+        LOG.exception("Error synthesizing speech.")
         raise
 
     suffix = suffix_for_audiofmt(audio_format)

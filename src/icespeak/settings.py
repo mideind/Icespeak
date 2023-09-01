@@ -23,15 +23,19 @@
 # pyright: reportConstantRedefinition=false
 # We dont import annotations from __future__ here
 # due to pydantic
-from typing import Any, Literal, Optional
+from typing import Any, Literal, Optional, Union
 
 import json
 import tempfile
 from logging import getLogger
 from pathlib import Path
 
-from pydantic import BaseModel, Field, SecretStr
+from pydantic import BaseModel, Field, SecretStr, validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# Library wide logger instance
+__logger__ = "icespeak"
+LOG = getLogger(__logger__)
 
 # For details about SSML markup, see:
 # https://developer.amazon.com/en-US/docs/alexa/custom-skills/speech-synthesis-markup-language-ssml-reference.html
@@ -73,6 +77,9 @@ class Settings(BaseSettings):
     AUDIO_CACHE_SIZE: int = Field(
         default=300, gt=0, description="Max number of audio files to cache."
     )
+    AUDIO_CACHE_CLEAN: bool = Field(
+        default=True, description="If True, cleans up generated audio files upon exit."
+    )
 
     KEYS_DIR: Path = Field(
         default=Path("keys"), description="Where to look for API keys."
@@ -89,6 +96,16 @@ class Settings(BaseSettings):
         default="GoogleServiceAccount.json",
         description="Name of the Google API key file.",
     )
+
+    # Logging settings
+    LOG_LEVEL: Union[str, int] = Field(default="INFO", description="Logging level.")
+
+    @validator("LOG_LEVEL")
+    def set_log_level(cls, lvl: Union[str, int]) -> Union[str, int]:
+        # Set logging level for root Ratatoskur logger,
+        # this raises a ValueError if the provided level is invalid
+        LOG.setLevel(lvl)
+        return lvl
 
     def get_audio_dir(self) -> Path:
         """
@@ -130,11 +147,10 @@ class Keys(BaseModel):
 
 
 API_KEYS = Keys()
-_LOG = getLogger(__file__)
 
 _kd = SETTINGS.KEYS_DIR
 if not (_kd.exists() and _kd.is_dir()):
-    _LOG.warning("Keys directory missing or incorrect, TTS will not work!")
+    LOG.warning("Keys directory missing or incorrect, TTS will not work!")
 else:
     # Load API keys
     try:
@@ -142,7 +158,7 @@ else:
             (_kd / SETTINGS.AWSPOLLY_KEY_FILENAME).read_text().strip()
         )
     except Exception:
-        _LOG.exception(
+        LOG.exception(
             "Could not load AWS Polly API key, ASR with AWS Polly will not work."
         )
     try:
@@ -150,10 +166,10 @@ else:
             (_kd / SETTINGS.AZURE_KEY_FILENAME).read_text().strip()
         )
     except Exception:
-        _LOG.exception("Could not load Azure API key, ASR with Azure will not work.")
+        LOG.exception("Could not load Azure API key, ASR with Azure will not work.")
     try:
         API_KEYS.google = json.loads(
             (_kd / SETTINGS.GOOGLE_KEY_FILENAME).read_text().strip()
         )
     except Exception:
-        _LOG.exception("Could not load Google API key, ASR with Google will not work.")
+        LOG.exception("Could not load Google API key, ASR with Google will not work.")

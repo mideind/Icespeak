@@ -20,7 +20,7 @@
 """
 
 from .parser import GreynirSSMLParser, fast_transcribe
-from .settings import SETTINGS
+from .settings import SETTINGS, __logger__
 from .transcribe import DefaultTranscriber, TranscriptionOptions, gssml
 from .tts import VOICES, TTSInput, text_to_speech
 from .voices import TTSOptions
@@ -36,4 +36,5 @@ __all__ = (
     "fast_transcribe",
     "gssml",
     "text_to_speech",
+    "__logger__",
 )
