@@ -32,19 +32,21 @@ import requests
 from icespeak.settings import SETTINGS, AudioFormatsT, TextFormatsT
 from icespeak.transcribe import strip_markup
 
-from . import VoiceMap, suffix_for_audiofmt
+from . import ModuleVoicesT, suffix_for_audiofmt
 
 if TYPE_CHECKING:
     from pathlib import Path
 
 _LOG = getLogger(__file__)
-VOICES: VoiceMap = {
-    "Alfur": {"id": "Alfur", "lang": "is-IS"},
-    "Dilja": {"id": "Dilja", "lang": "is-IS"},
-    "Bjartur": {"id": "Bjartur", "lang": "is-IS"},
-    "Rosa": {"id": "Rosa", "lang": "is-IS"},
-    "Alfur_v2": {"id": "Alfur_v2", "lang": "is-IS"},
-    "Dilja_v2": {"id": "Dilja_v2", "lang": "is-IS"},
+
+NAME = "Tiro"
+VOICES: ModuleVoicesT = {
+    "Alfur": {"id": "Alfur", "lang": "is-IS", "style": "male"},
+    "Dilja": {"id": "Dilja", "lang": "is-IS", "style": "female"},
+    "Bjartur": {"id": "Bjartur", "lang": "is-IS", "style": "male"},
+    "Rosa": {"id": "Rosa", "lang": "is-IS", "style": "female"},
+    "Alfur_v2": {"id": "Alfur_v2", "lang": "is-IS", "style": "male"},
+    "Dilja_v2": {"id": "Dilja_v2", "lang": "is-IS", "style": "female"},
 }
 AUDIO_FORMATS = frozenset(("mp3", "pcm", "ogg_vorbis"))
 
@@ -117,7 +119,7 @@ def text_to_speech(
     )
 
     suffix = suffix_for_audiofmt(audio_format)
-    outfile: Path = SETTINGS.AUDIO_DIR / f"{uuid.uuid4()}.{suffix}"
+    outfile: Path = SETTINGS.get_audio_dir() / f"{uuid.uuid4()}.{suffix}"
     try:
         outfile.write_bytes(data)
     except Exception:

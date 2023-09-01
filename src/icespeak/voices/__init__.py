@@ -18,12 +18,21 @@
 
 
 """
-from __future__ import annotations
-
 from collections.abc import Mapping
 from typing import TypedDict
+from typing_extensions import Literal
 
 from base64 import b64encode
+
+from pydantic import BaseModel, Extra, Field
+
+from icespeak.settings import (
+    MAX_SPEED,
+    MIN_SPEED,
+    SETTINGS,
+    AudioFormatsT,
+    TextFormatsT,
+)
 
 # Mime types and suffixes
 BINARY_MIMETYPE = "application/octet-stream"
@@ -46,13 +55,16 @@ AUDIOFMT_TO_SUFFIX = {
     "opus": "opus",
 }
 
+VoiceStyleT = Literal["female", "male", "female, child", "male, child"]
 
-class VoiceT(TypedDict):
+
+class ModuleVoiceInfoT(TypedDict):
     id: str
     lang: str
+    style: VoiceStyleT
 
 
-VoiceMap = Mapping[str, VoiceT]
+ModuleVoicesT = Mapping[str, ModuleVoiceInfoT]
 
 
 def mimetype_for_audiofmt(fmt: str) -> str:
@@ -71,33 +83,23 @@ def generate_data_uri(data: bytes, mime_type: str = BINARY_MIMETYPE) -> str:
     return f"data:{mime_type};base64,{b64str}"
 
 
-# TODO: allow user to pass in a audio file directory when doing TTS,
-# so we can use e.g. tempfile.TemporaryDirectory if we don't want persistence
-# Example could be: icespeak.set_audio_directory(dir), or have keyword arg in some context manager
+class TTSOptions(BaseModel):
+    """Text-to-speech options."""
 
+    model_config = {"frozen": True, "extra": Extra.forbid}
 
-DEFAULT_LOCALE = "is_IS"
-
-
-# Map locales to default voices
-LOCALE_TO_VOICE = {
-    "is_IS": "Gudrun",
-    "en_US": "Jenny",
-    "en_GB": "Abbi",
-    "de_DE": "Amala",
-    "fr_FR": "Brigitte",
-    "da_DK": "Christel",
-    "sv_SE": "Sofie",
-    "nb_NO": "Finn",
-    "no_NO": "Finn",
-    "es_ES": "Abril",
-    "pl_PL": "Agnieszka",
-}
-assert DEFAULT_LOCALE in LOCALE_TO_VOICE
-
-
-def voice_for_locale(locale: str) -> str:
-    """Returns default voice ID for the given locale. If locale is not
-    supported, returns the default voice ID for the default locale."""
-    vid = LOCALE_TO_VOICE.get(locale)
-    return vid or LOCALE_TO_VOICE[DEFAULT_LOCALE]
+    voice: str = Field(default=SETTINGS.DEFAULT_VOICE, description="TTS voice.")
+    speed: float = Field(
+        default=SETTINGS.DEFAULT_VOICE_SPEED,
+        ge=MIN_SPEED,
+        le=MAX_SPEED,
+        description="TTS speed.",
+    )
+    text_format: TextFormatsT = Field(
+        default=SETTINGS.DEFAULT_TEXT_FORMAT,
+        description="Format of text (plaintext or SSML).",
+    )
+    audio_format: AudioFormatsT = Field(
+        default=SETTINGS.DEFAULT_AUDIO_FORMAT,
+        description="Audio format for TTS output.",
+    )

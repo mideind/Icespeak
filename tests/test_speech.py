@@ -33,7 +33,7 @@ from icespeak import text_to_speech
 from icespeak.settings import API_KEYS
 from icespeak.transcribe import DefaultTranscriber as DT
 from icespeak.transcribe import TranscriptionOptions
-from icespeak.tts import AVAILABLE_VOICES
+from icespeak.tts import VOICES
 
 
 def test_voices_utils():
@@ -196,7 +196,7 @@ def test_greynirssmlparser():
     # -------------------------
     # Test voice engine specific transcription
 
-    assert "Dora" in AVAILABLE_VOICES
+    assert "Dora" in VOICES
     # Gudrun, the default voice, and Dora don't spell things the same
     gp2 = GreynirSSMLParser("Dora")
     alphabet = "aábcdðeéfghiíjklmnoópqrstuúvwxyýþæöz"

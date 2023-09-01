@@ -30,26 +30,31 @@ from logging import getLogger
 from .settings import SETTINGS
 from .transcribe import (
     GSSML_TAG,
+    TRANSCRIBER_CLASS,
     DefaultTranscriber,
     TranscriptionMethod,
     TranscriptionOptions,
 )
-from .tts import AVAILABLE_VOICES
+from .tts import SERVICE2IMPL, VOICES
 
 _LOG = getLogger(__file__)
 
 
 def fast_transcribe(
     text: str,
-    voice: str = SETTINGS.DEFAULT_VOICE,
+    voice: str | None = None,
     options: TranscriptionOptions | None = None,
 ):
     """
     Simple wrapper for token-based transcription
     of text for a specific TTS voice.
+
+    If `voice` or `options` argument are `None`,
+    falls back to the default voice and default transcriber.
     """
-    t = AVAILABLE_VOICES[voice]["Transcriber"] or DefaultTranscriber
-    return t.token_transcribe(text, options)
+    service = VOICES[voice or SETTINGS.DEFAULT_VOICE]["service"]
+    transcriber = SERVICE2IMPL[service][TRANSCRIBER_CLASS]
+    return transcriber.token_transcribe(text, options)
 
 
 class GreynirSSMLParser(HTMLParser):
@@ -61,10 +66,12 @@ class GreynirSSMLParser(HTMLParser):
           can interfere with the voice engines.
 
     Example:
-        # Provide voice engine ID
-        gp = GreynirSSMLParser(voice)
-        # Transcribe voice string
-        voice_string = gp.transcribe(voice_string)
+    ```python3
+    # Provide voice
+    gp = GreynirSSMLParser(voice)
+    # Transcribe voice string
+    voice_string = gp.transcribe(voice_string)
+    ```
     """
 
     def __init__(self, voice: str = SETTINGS.DEFAULT_VOICE) -> None:
@@ -73,7 +80,7 @@ class GreynirSSMLParser(HTMLParser):
         for the provided speech synthesis engine.
         """
         super().__init__()
-        if voice not in AVAILABLE_VOICES:
+        if voice not in VOICES:
             _LOG.warning(
                 "Voice %r not in supported voices, reverting to default: %r",
                 voice,
@@ -81,14 +88,10 @@ class GreynirSSMLParser(HTMLParser):
             )
             voice = SETTINGS.DEFAULT_VOICE
 
-        # Get data for this voice
-        vd = AVAILABLE_VOICES[voice]
-
-        # Fetch transcriber for this voice module,
-        # using DefaultTranscriber as fallback
-        self._handler: type[DefaultTranscriber] = (
-            vd["Transcriber"] or DefaultTranscriber
-        )
+        # Fetch transcriber for this voice
+        service = VOICES[voice]["service"]
+        self._handler: type[DefaultTranscriber]
+        self._handler = SERVICE2IMPL[service][TRANSCRIBER_CLASS]
 
         self._str_stack: deque[str] = deque()
         self._attr_stack: deque[dict[str, str | None]] = deque()

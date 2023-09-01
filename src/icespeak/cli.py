@@ -39,7 +39,7 @@ from urllib.request import urlopen
 import requests
 
 from .settings import SETTINGS
-from .tts import AVAILABLE_VOICES, text_to_speech
+from .tts import VOICES, text_to_speech
 from .voices import suffix_for_audiofmt
 
 # from .utility import sanitize_filename
@@ -158,7 +158,7 @@ def main() -> None:
         "--voice",
         help="specify which voice to use",
         default=SETTINGS.DEFAULT_VOICE,
-        choices=list(AVAILABLE_VOICES.keys()),
+        choices=list(VOICES.keys()),
     )
     parser.add_argument(
         "-l",
@@ -214,7 +214,7 @@ def main() -> None:
     args = parser.parse_args()
 
     if args.list_voices:
-        for voice in AVAILABLE_VOICES:
+        for voice in VOICES:
             print(voice)
         sys.exit(0)
 

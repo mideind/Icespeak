@@ -29,21 +29,19 @@ from logging import getLogger
 
 from google.cloud import texttospeech
 
-from icespeak.settings import (
-    API_KEYS,
-    SETTINGS,
-    AudioFormatsT,
-    TextFormatsT,
-)
+from icespeak.settings import API_KEYS, SETTINGS, AudioFormatsT, TextFormatsT
 
-from . import VoiceMap, suffix_for_audiofmt
+from . import ModuleVoicesT, suffix_for_audiofmt
 
 if TYPE_CHECKING:
     from pathlib import Path
 
 _LOG = getLogger(__file__)
 
-VOICES: VoiceMap = {"Anna": {"id": "is-IS-Standard-A", "lang": "is-IS"}}
+NAME = "Google"
+VOICES: ModuleVoicesT = {
+    "Anna": {"id": "is-IS-Standard-A", "lang": "is-IS", "style": "female"}
+}
 AUDIO_FORMATS = frozenset(("mp3",))
 
 
@@ -106,7 +104,7 @@ def text_to_speech(
     )
 
     suffix = suffix_for_audiofmt(audio_format)
-    out_file = SETTINGS.AUDIO_DIR / f"{uuid.uuid4()}.{suffix}"
+    out_file = SETTINGS.get_audio_dir() / f"{uuid.uuid4()}.{suffix}"
     try:
         assert data is not None, "No data."
         out_file.write_bytes(data)

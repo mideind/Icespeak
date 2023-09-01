@@ -22,15 +22,18 @@
 from .parser import GreynirSSMLParser, fast_transcribe
 from .settings import SETTINGS
 from .transcribe import DefaultTranscriber, TranscriptionOptions, gssml
-from .tts import AVAILABLE_VOICES, text_to_speech
+from .tts import VOICES, TTSInput, text_to_speech
+from .voices import TTSOptions
 
 __all__ = (
-    "GreynirSSMLParser",
-    "text_to_speech",
-    "gssml",
     "DefaultTranscriber",
-    "AVAILABLE_VOICES",
-    "TranscriptionOptions",
-    "fast_transcribe",
+    "GreynirSSMLParser",
     "SETTINGS",
+    "TTSInput",
+    "TTSOptions",
+    "TranscriptionOptions",
+    "VOICES",
+    "fast_transcribe",
+    "gssml",
+    "text_to_speech",
 )

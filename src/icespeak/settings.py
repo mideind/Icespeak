@@ -20,6 +20,7 @@
     Shared settings for the Icespeak package.
 
 """
+# pyright: reportConstantRedefinition=false
 # We dont import annotations from __future__ here
 # due to pydantic
 from typing import Any, Literal, Optional
@@ -38,30 +39,19 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 # https://learn.microsoft.com/en-us/azure/cognitive-services/speech-service/speech-synthesis-markup
 TextFormatsT = Literal["ssml", "text"]
 AudioFormatsT = Literal["mp3", "ogg_vorbis", "pcm", "opus"]
-RecVoicesT = Literal["Gudrun", "Gunnar"]
 MAX_SPEED = 2.0
 MIN_SPEED = 0.5
-
-
-def _create_tmp_audio_dir() -> Path:
-    """
-    Called when the user doesn't specify an output audio directory.
-    Creates and returns path to directory in the temporary directory.
-    """
-    dir = Path(tempfile.gettempdir()) / "icespeak"
-    dir.mkdir(exist_ok=True)
-    return dir
 
 
 class Settings(BaseSettings):
     """
     Settings for Icespeak.
-    The attributes are read from the environment.
+    Attributes are read from environment variables or `.env` file.
     """
 
     model_config = SettingsConfigDict(env_prefix="ICESPEAK_")
 
-    DEFAULT_VOICE: RecVoicesT = Field(
+    DEFAULT_VOICE: str = Field(
         default="Gudrun", description="Default TTS voice if none is requested."
     )
     DEFAULT_VOICE_SPEED: float = Field(default=1.0, le=MAX_SPEED, ge=MIN_SPEED)
@@ -73,15 +63,15 @@ class Settings(BaseSettings):
         default="mp3", description="Default audio output format."
     )
 
-    AUDIO_DIR: Path = Field(
-        default_factory=_create_tmp_audio_dir,
+    AUDIO_DIR: Optional[Path] = Field(
+        default=None,
         description=(
             "Where to save output audio files. "
             "If not set, creates a directory in the platform's temporary directory."
         ),
     )
     AUDIO_CACHE_SIZE: int = Field(
-        default=100, gt=0, description="Max number of audio files to cache."
+        default=300, gt=0, description="Max number of audio files to cache."
     )
 
     KEYS_DIR: Path = Field(
@@ -99,6 +89,17 @@ class Settings(BaseSettings):
         default="GoogleServiceAccount.json",
         description="Name of the Google API key file.",
     )
+
+    def get_audio_dir(self) -> Path:
+        """
+        Return directory for saving output audio files.
+        If no audio dir was set, create temporary directory.
+        """
+        if self.AUDIO_DIR is None:
+            dir = Path(tempfile.gettempdir()) / "icespeak"
+            dir.mkdir(exist_ok=True)
+            self.AUDIO_DIR = dir
+        return self.AUDIO_DIR
 
 
 # Read settings from environment
@@ -123,8 +124,8 @@ class Keys(BaseModel):
 
     azure: Optional[AzureKey] = Field(default=None, description="Azure API key.")
     aws: Optional[AWSPollyKey] = Field(default=None, description="AWS Polly API key.")
-    google: Optional[dict[Any, Any]] = Field(
-        default=None, description="Path to Google API key file."
+    google: Optional[dict[str, Any]] = Field(
+        default=None, description="Google API key."
     )
 
 

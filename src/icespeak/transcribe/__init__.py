@@ -112,7 +112,7 @@ def gssml(data: Any = None, *, type: str, **kwargs: str | float) -> str:
 
 
 class TranscriptionOptions(BaseModel):
-    """Settings for transcription."""
+    """Transcription options."""
 
     model_config = {"frozen": True, "extra": Extra.forbid}
 

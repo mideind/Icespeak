@@ -37,14 +37,15 @@ from . import suffix_for_audiofmt
 if TYPE_CHECKING:
     from pathlib import Path
 
-    from . import VoiceMap
+    from . import ModuleVoicesT
 
 _LOG = getLogger(__file__)
 
 assert API_KEYS.aws, "AWS Polly API key missing."
-VOICES: VoiceMap = {
-    "Karl": {"id": "Karl", "lang": "is-IS"},
-    "Dora": {"id": "Dora", "lang": "is-IS"},
+NAME = "AWS Polly"
+VOICES: ModuleVoicesT = {
+    "Karl": {"id": "Karl", "lang": "is-IS", "style": "male"},
+    "Dora": {"id": "Dora", "lang": "is-IS", "style": "female"},
 }
 AUDIO_FORMATS = frozenset(("mp3", "pcm", "ogg_vorbis"))
 _aws_client: Any = None
@@ -102,6 +103,6 @@ def text_to_speech(
         raise
 
     suffix = suffix_for_audiofmt(audio_format)
-    outfile = SETTINGS.AUDIO_DIR / f"{uuid.uuid4()}.{suffix}"
+    outfile = SETTINGS.get_audio_dir() / f"{uuid.uuid4()}.{suffix}"
     outfile.write_bytes(response["AudioStream"].read())
     return outfile

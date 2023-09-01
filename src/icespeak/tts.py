@@ -28,12 +28,14 @@ from logging import getLogger
 from pathlib import Path
 
 from cachetools import LFUCache, cached
+from pydantic import BaseModel, Field
 
 from .settings import MAX_SPEED, MIN_SPEED, SETTINGS, AudioFormatsT, TextFormatsT
-from .transcribe import TRANSCRIBER_CLASS, DefaultTranscriber
+from .transcribe import TRANSCRIBER_CLASS, DefaultTranscriber, TranscriptionOptions
+from .voices import TTSOptions, VoiceStyleT
 
 if TYPE_CHECKING:
-    from .voices import VoiceT
+    from .voices import ModuleVoiceInfoT
 
 _LOG = getLogger(__file__)
 
@@ -54,56 +56,89 @@ class TTSFuncT(Protocol):
 
 
 class VoiceModuleT(Protocol):
-    """Protocol for a voice module."""
+    """Contents of a voice module."""
 
-    VOICES: Mapping[str, VoiceT]
+    NAME: str
+    VOICES: Mapping[str, ModuleVoiceInfoT]
     text_to_speech: TTSFuncT
     Transcriber: type[DefaultTranscriber] | None
 
 
-class VoiceDict(TypedDict):
-    text_to_speech: TTSFuncT
-    Transcriber: type[DefaultTranscriber] | None
+class VoiceInfoT(TypedDict):
     lang: str
+    style: VoiceStyleT
+    service: str
+    id: str
 
 
-VoiceMapping = Mapping[str, VoiceDict]
+class _ServiceImpl(TypedDict):
+    text_to_speech: TTSFuncT
+    Transcriber: type[DefaultTranscriber]
 
 
-def _load_modules() -> VoiceMapping:
+VoicesT = Mapping[str, VoiceInfoT]
+
+
+def _load_voice_modules() -> tuple[VoicesT, Mapping[str, _ServiceImpl]]:
     """
     Dynamically load all voice modules, map
     voice ID strings to the relevant functions.
     """
 
-    v2m: VoiceMapping = {}
+    voice_info: VoicesT = {}
+    service_impl: Mapping[str, _ServiceImpl] = {}
 
     vm_dir = Path(__file__).parent / "voices"
     for file in vm_dir.glob("*.py"):
-        if file.name == "__init__.py":
+        if file.name.startswith("_"):
             continue
         modname = f".{vm_dir.name}.{file.with_suffix('').name}"
         try:
             m: VoiceModuleT = cast(
                 VoiceModuleT, importlib.import_module(modname, package="icespeak")
             )
+            name = m.NAME
+            voices = m.VOICES
+            transcriber = getattr(m, TRANSCRIBER_CLASS, DefaultTranscriber)
+            for v, info in voices.items():
+                if v in voice_info:
+                    _LOG.warning(f"Voice {v} is already defined in another module!")
+                voice_info[v] = {
+                    "service": name,
+                    "lang": info["lang"],
+                    "style": info["style"],
+                    "id": info["id"],
+                }
+                service_impl[name] = {
+                    "text_to_speech": m.text_to_speech,
+                    TRANSCRIBER_CLASS: transcriber,
+                }
         except Exception:
             _LOG.exception("Error importing voice module %r.", modname)
             continue
-        voices = m.VOICES
-        for v, info in voices.items():
-            if v in v2m:
-                raise ValueError(f"Voice {v} is already defined in another module.")
-            v2m[v] = {
-                "text_to_speech": m.text_to_speech,
-                "Transcriber": getattr(m, TRANSCRIBER_CLASS, None),
-                "lang": info["lang"],
-            }
 
-    return v2m
+    return voice_info, service_impl
 
 
-AVAILABLE_VOICES: VoiceMapping = _load_modules()
+_vm = _load_voice_modules()
+VOICES: VoicesT = _vm[0]
+SERVICE2IMPL: Mapping[str, _ServiceImpl] = _vm[1]
+
+
+class TTSInput(BaseModel):
+    """Input into text-to-speech."""
+
+    text: str = Field(description="Text to synthesize.")
+
+    tts_options: TTSOptions = Field(default_factory=TTSOptions)
+
+    transcribe: bool = Field(
+        default=True,
+        description="Whether to transcribe text before speech synthesis or not.",
+    )
+    transcribe_options: TranscriptionOptions = Field(
+        default_factory=TranscriptionOptions
+    )
 
 
 @cached(LFUCache(maxsize=SETTINGS.AUDIO_CACHE_SIZE))
@@ -116,20 +151,22 @@ def text_to_speech(
     audio_format: AudioFormatsT = SETTINGS.DEFAULT_AUDIO_FORMAT,
 ) -> Path:
     """
-    Text-to-speech
-    ==============
+    # Text-to-speech
 
     Request speech synthesis for the provided text.
-    Returns an instance of :py:class:`pathlib.Path` pointing to the output audio file.
+    Returns an instance of `pathlib.Path` pointing to the output audio file.
     """
-    if voice not in AVAILABLE_VOICES:
-        raise ValueError(
-            f"Voice {voice} is not a supported voice: {AVAILABLE_VOICES.keys()}"
-        )
-    if speed < MIN_SPEED or speed > MAX_SPEED:
-        raise ValueError(f"Speed {speed} is outside the range 0.5-2.0")
 
-    return AVAILABLE_VOICES[voice]["text_to_speech"](
+    if voice not in VOICES:
+        raise ValueError(
+            f"Voice {voice} is not a supported voice: {list(VOICES.keys())}"
+        )
+
+    if speed < MIN_SPEED or speed > MAX_SPEED:
+        raise ValueError(f"Speed {speed} is outside the range {MIN_SPEED}-{MAX_SPEED}")
+
+    service_tts_func = SERVICE2IMPL[VOICES[voice]["service"]]["text_to_speech"]
+    return service_tts_func(
         text,
         voice=voice,
         speed=speed,

@@ -32,44 +32,45 @@ import azure.cognitiveservices.speech as speechsdk
 from icespeak.settings import API_KEYS, SETTINGS, AudioFormatsT, TextFormatsT
 from icespeak.transcribe import DefaultTranscriber, strip_markup
 
-from . import VoiceMap, suffix_for_audiofmt
+from . import ModuleVoicesT, suffix_for_audiofmt
 
 if TYPE_CHECKING:
     from pathlib import Path
 
 _LOG = getLogger(__file__)
 
-
-VOICES: VoiceMap = {
+NAME = "Azure"
+VOICES: ModuleVoicesT = {
     # Icelandic
-    "Gudrun": {"id": "is-IS-GudrunNeural", "lang": "is-IS"},
-    "Gunnar": {"id": "is-IS-GunnarNeural", "lang": "is-IS"},
+    "Gudrun": {"id": "is-IS-GudrunNeural", "lang": "is-IS", "style": "female"},
+    "Gunnar": {"id": "is-IS-GunnarNeural", "lang": "is-IS", "style": "male"},
     # English (UK)
-    "Abbi": {"id": "en-GB-AbbiNeural", "lang": "en-GB"},
-    "Alfie": {"id": "en-GB-AlfieNeural", "lang": "en-GB"},
+    "Abbi": {"id": "en-GB-AbbiNeural", "lang": "en-GB", "style": "female"},
+    "Alfie": {"id": "en-GB-AlfieNeural", "lang": "en-GB", "style": "male"},
     # English (US)
-    "Jenny": {"id": "en-US-JennyNeural", "lang": "en-US"},
-    "Brandon": {"id": "en-US-BrandonNeural", "lang": "en-US"},
+    "Jenny": {"id": "en-US-JennyNeural", "lang": "en-US", "style": "female"},
+    "Brandon": {"id": "en-US-BrandonNeural", "lang": "en-US", "style": "male"},
     # French
-    "Brigitte": {"id": "fr-FR-BrigitteNeural", "lang": "fr-FR"},
-    "Alain": {"id": "fr-FR-AlainNeural", "lang": "fr-FR"},
+    "Brigitte": {"id": "fr-FR-BrigitteNeural", "lang": "fr-FR", "style": "female"},
+    "Alain": {"id": "fr-FR-AlainNeural", "lang": "fr-FR", "style": "male"},
     # German
-    "Amala": {"id": "de-DE-AmalaNeural", "lang": "de-DE"},
+    "Elke": {"id": "de-DE-ElkeNeural", "lang": "de-DE", "style": "female"},
+    "Conrad": {"id": "de-DE-ConradNeural", "lang": "de-DE", "style": "male"},
     # Danish
-    "Christel": {"id": "da-DK-ChristelNeural", "lang": "da-DK"},
-    "Jeppe": {"id": "da-DK-JeppeNeural", "lang": "da-DK"},
+    "Christel": {"id": "da-DK-ChristelNeural", "lang": "da-DK", "style": "female"},
+    "Jeppe": {"id": "da-DK-JeppeNeural", "lang": "da-DK", "style": "male"},
     # Swedish
-    "Sofie": {"id": "sv-SE-SofieNeural", "lang": "sv-SE"},
-    "Mattias": {"id": "sv-SE-MattiasNeural", "lang": "sv-SE"},
+    "Sofie": {"id": "sv-SE-SofieNeural", "lang": "sv-SE", "style": "female"},
+    "Mattias": {"id": "sv-SE-MattiasNeural", "lang": "sv-SE", "style": "male"},
     # Norwegian
-    "Finn": {"id": "nb-NO-FinnNeural", "lang": "nb-NO"},
-    "Iselin": {"id": "nb-NO-IselinNeural", "lang": "nb-NO"},
+    "Iselin": {"id": "nb-NO-IselinNeural", "lang": "nb-NO", "style": "female"},
+    "Finn": {"id": "nb-NO-FinnNeural", "lang": "nb-NO", "style": "male"},
     # Spanish
-    "Abril": {"id": "es-ES-AbrilNeural", "lang": "es-ES"},
-    "Alvaro": {"id": "es-ES-AlvaroNeural", "lang": "es-ES"},
+    "Abril": {"id": "es-ES-AbrilNeural", "lang": "es-ES", "style": "female"},
+    "Alvaro": {"id": "es-ES-AlvaroNeural", "lang": "es-ES", "style": "male"},
     # Polish
-    "Agnieszka": {"id": "pl-PL-AgnieszkaNeural", "lang": "pl-PL"},
-    "Marek": {"id": "pl-PL-MarekNeural", "lang": "pl-PL"},
+    "Agnieszka": {"id": "pl-PL-AgnieszkaNeural", "lang": "pl-PL", "style": "female"},
+    "Marek": {"id": "pl-PL-MarekNeural", "lang": "pl-PL", "style": "male"},
     # Many more voices available, see:
     # https://learn.microsoft.com/en-us/azure/cognitive-services/speech-service/language-support
 }
@@ -118,7 +119,7 @@ def text_to_speech(
 
     # Generate a unique filename for the audio output file
     suffix = suffix_for_audiofmt(audio_format)
-    out_file = SETTINGS.AUDIO_DIR / f"{uuid.uuid4()}.{suffix}"
+    out_file = SETTINGS.get_audio_dir() / f"{uuid.uuid4()}.{suffix}"
     try:
         audio_config = speechsdk.audio.AudioOutputConfig(
             filename=str(out_file)
