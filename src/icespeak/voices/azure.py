@@ -24,6 +24,8 @@ from __future__ import annotations
 
 from typing_extensions import override
 
+from ssl import OPENSSL_VERSION_INFO
+
 import azure.cognitiveservices.speech as speechsdk
 
 from icespeak.settings import API_KEYS, LOG, SETTINGS
@@ -158,6 +160,14 @@ class AzureVoice(BaseVoice):
 
     @override
     def load_api_keys(self):
+        if OPENSSL_VERSION_INFO[0] != 1:
+            # Azure only works with legacy OpenSSL
+            # See issues regarding compatibility with OpenSSL version >=3:
+            # https://github.com/Azure-Samples/cognitive-services-speech-sdk/issues/1747
+            # https://github.com/Azure-Samples/cognitive-services-speech-sdk/issues/1986
+            LOG.warning("OpenSSL version not compatible with Azure Cognitive Services.")
+            raise RuntimeError("Incompatible OpenSSL version.")
+
         if API_KEYS.azure is None:
             raise RuntimeError("Azure API keys missing.")
 
