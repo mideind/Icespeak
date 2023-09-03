@@ -27,31 +27,8 @@ from html.parser import HTMLParser
 from inspect import ismethod
 
 from .settings import LOG, SETTINGS
-from .transcribe import (
-    GSSML_TAG,
-    TRANSCRIBER_CLASS,
-    DefaultTranscriber,
-    TranscriptionMethod,
-    TranscriptionOptions,
-)
-from .tts import SERVICE2IMPL, VOICES
-
-
-def fast_transcribe(
-    text: str,
-    voice: str | None = None,
-    options: TranscriptionOptions | None = None,
-):
-    """
-    Simple wrapper for token-based transcription
-    of text for a specific TTS voice.
-
-    If `voice` or `options` argument are `None`,
-    falls back to the default voice and default transcriber.
-    """
-    service = VOICES[voice or SETTINGS.DEFAULT_VOICE]["service"]
-    transcriber = SERVICE2IMPL[service][TRANSCRIBER_CLASS]
-    return transcriber.token_transcribe(text, options)
+from .transcribe import GSSML_TAG, DefaultTranscriber, TranscriptionMethod
+from .tts import SERVICES, VOICES
 
 
 class GreynirSSMLParser(HTMLParser):
@@ -88,7 +65,7 @@ class GreynirSSMLParser(HTMLParser):
         # Fetch transcriber for this voice
         service = VOICES[voice]["service"]
         self._handler: type[DefaultTranscriber]
-        self._handler = SERVICE2IMPL[service][TRANSCRIBER_CLASS]
+        self._handler = SERVICES[service].Transcriber
 
         self._str_stack: deque[str] = deque()
         self._attr_stack: deque[dict[str, str | None]] = deque()

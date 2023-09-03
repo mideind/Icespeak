@@ -27,6 +27,7 @@ from typing import Any, Literal, Optional, Union
 
 import json
 import tempfile
+import uuid
 from logging import getLogger
 from pathlib import Path
 
@@ -45,6 +46,21 @@ TextFormatsT = Literal["ssml", "text"]
 AudioFormatsT = Literal["mp3", "ogg_vorbis", "pcm", "opus"]
 MAX_SPEED = 2.0
 MIN_SPEED = 0.5
+
+FALLBACK_SUFFIX = "data"
+AUDIOFMT_TO_SUFFIX = {
+    "mp3": "mp3",
+    "wav": "wav",
+    "ogg_vorbis": "ogg",
+    "pcm": "pcm",
+    # Recommended filename extension for Ogg Opus files is '.opus'.
+    "opus": "opus",
+}
+
+
+def suffix_for_audiofmt(fmt: str) -> str:
+    """Returns file suffix for the given audio format."""
+    return AUDIOFMT_TO_SUFFIX.get(fmt, FALLBACK_SUFFIX)
 
 
 class Settings(BaseSettings):
@@ -117,6 +133,11 @@ class Settings(BaseSettings):
             dir.mkdir(exist_ok=True)
             self.AUDIO_DIR = dir
         return self.AUDIO_DIR
+
+    def get_empty_file(self, audio_format: str) -> Path:
+        """Get empty file in `AUDIO_DIR`."""
+        suffix = suffix_for_audiofmt(audio_format)
+        return self.get_audio_dir() / f"{uuid.uuid4()}.{suffix}"
 
 
 # Read settings from environment

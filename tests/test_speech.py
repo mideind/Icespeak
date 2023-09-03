@@ -29,24 +29,23 @@ from itertools import product
 
 import pytest
 
-from icespeak import text_to_speech
-from icespeak.settings import API_KEYS
-from icespeak.transcribe import DefaultTranscriber as DT
-from icespeak.transcribe import TranscriptionOptions
-from icespeak.tts import VOICES
+from icespeak import (
+    VOICES,
+    GreynirSSMLParser,
+    TranscriptionOptions,
+    TTSOptions,
+    gssml,
+    text_to_speech,
+)
+from icespeak import (
+    DefaultTranscriber as DT,
+)
+from icespeak.settings import API_KEYS, suffix_for_audiofmt
+from icespeak.transcribe import strip_markup
 
 
 def test_voices_utils():
     """Test utility functions in speech.voices."""
-    from icespeak.transcribe import strip_markup
-    from icespeak.voices import (
-        generate_data_uri,
-        mimetype_for_audiofmt,
-        suffix_for_audiofmt,
-    )
-
-    assert mimetype_for_audiofmt("mp3") == "audio/mpeg"
-    assert mimetype_for_audiofmt("blergh") == "application/octet-stream"
 
     assert suffix_for_audiofmt("mp3") == "mp3"
     assert suffix_for_audiofmt("blergh") == "data"
@@ -55,14 +54,6 @@ def test_voices_utils():
     assert strip_markup("<dajs dsajl>hello") == "hello"
     assert strip_markup("<a>hello</a>") == "hello"
     assert strip_markup("<prefer:something>hello</else>") == "hello"
-
-    assert (
-        generate_data_uri(b"hello") == "data:application/octet-stream;base64,aGVsbG8="
-    )
-    assert (
-        generate_data_uri(b"hello", mime_type="text/plain")
-        == "data:text/plain;base64,aGVsbG8="
-    )
 
 
 @pytest.mark.network()
@@ -74,10 +65,8 @@ def test_speech_synthesis():
 
     assert API_KEYS.aws
     url = text_to_speech(
-        text=_TEXT,
-        text_format="text",
-        audio_format="mp3",
-        voice="Dora",
+        _TEXT,
+        TTSOptions(text_format="text", audio_format="mp3", voice="Dora"),
     )
     assert url.is_file(), "Expected audio file to exist"
     assert url.stat().st_size > _MIN_AUDIO_SIZE, "Expected longer audio data"
@@ -86,10 +75,8 @@ def test_speech_synthesis():
     # Test Azure Cognitive Services
     assert API_KEYS.azure
     url = text_to_speech(
-        text=_TEXT,
-        text_format="text",
-        audio_format="mp3",
-        voice="Gudrun",
+        _TEXT,
+        TTSOptions(text_format="text", audio_format="mp3", voice="Gudrun"),
     )
     assert url.is_file(), "Expected audio file to exist"
     assert url.stat().st_size > _MIN_AUDIO_SIZE, "Expected longer audio data"
@@ -97,8 +84,6 @@ def test_speech_synthesis():
 
 
 def test_gssml():
-    from icespeak.transcribe import gssml
-
     gv = gssml("5", type="number")
     assert gv == '<greynir type="number">5</greynir>'
     gv = gssml(type="vbreak")
@@ -113,8 +98,6 @@ def test_gssml():
 
 
 def test_greynirssmlparser():
-    from icespeak import GreynirSSMLParser, gssml
-
     gp = GreynirSSMLParser()
     n = gp.transcribe(f"Ég vel töluna {gssml(244, type='number', gender='kk')}")
     assert "tvö hundruð fjörutíu og fjórir" in n

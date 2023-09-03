@@ -22,106 +22,82 @@
 """
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
-import uuid
+from typing_extensions import override
 
 import requests
 
-from icespeak.settings import LOG, SETTINGS, AudioFormatsT, TextFormatsT
+from icespeak.settings import LOG, SETTINGS
 from icespeak.transcribe import strip_markup
 
-from . import ModuleVoicesT, suffix_for_audiofmt
-
-if TYPE_CHECKING:
-    from pathlib import Path
-
-
-NAME = "Tiro"
-VOICES: ModuleVoicesT = {
-    "Alfur": {"id": "Alfur", "lang": "is-IS", "style": "male"},
-    "Dilja": {"id": "Dilja", "lang": "is-IS", "style": "female"},
-    "Bjartur": {"id": "Bjartur", "lang": "is-IS", "style": "male"},
-    "Rosa": {"id": "Rosa", "lang": "is-IS", "style": "female"},
-    "Alfur_v2": {"id": "Alfur_v2", "lang": "is-IS", "style": "male"},
-    "Dilja_v2": {"id": "Dilja_v2", "lang": "is-IS", "style": "female"},
-}
-AUDIO_FORMATS = frozenset(("mp3", "pcm", "ogg_vorbis"))
-
+from . import BaseVoice, ModuleAudioFormatsT, ModuleVoicesT, TTSOptions
 
 _TIRO_TTS_URL = "https://tts.tiro.is/v0/speech"
 
 
-def text_to_audio_data(
-    text: str,
-    *,
-    voice: str,
-    speed: float = 1.0,
-    text_format: str,
-    audio_format: str,
-) -> bytes:
-    """Feeds text to Tiro's TTS API and returns audio data received from server."""
-
-    # Tiro's API supports a subset of SSML tags
-    # See https://tts.tiro.is/#tag/speech/paths/~1v0~1speech/post
-    # However, for now, we just strip all markup
-    text = strip_markup(text)
-    text_format = "text"
-
-    if audio_format not in AUDIO_FORMATS:
-        LOG.warn(
-            "Unsupported audio format for Tiro speech synthesis: %s."
-            + " Falling back to mp3",
-            audio_format,
-        )
-        audio_format = "mp3"
-
-    jdict = {
-        "Engine": "standard",
-        "LanguageCode": "is-IS",
-        "OutputFormat": audio_format,
-        "SampleRate": "16000",
-        "Text": text,
-        "TextType": text_format,
-        "VoiceId": voice,
+class TiroVoice(BaseVoice):
+    _NAME: str = "Tiro"
+    _VOICES: ModuleVoicesT = {
+        "Alfur": {"id": "Alfur", "lang": "is-IS", "style": "male"},
+        "Dilja": {"id": "Dilja", "lang": "is-IS", "style": "female"},
+        "Bjartur": {"id": "Bjartur", "lang": "is-IS", "style": "male"},
+        "Rosa": {"id": "Rosa", "lang": "is-IS", "style": "female"},
+        "Alfur_v2": {"id": "Alfur_v2", "lang": "is-IS", "style": "male"},
+        "Dilja_v2": {"id": "Dilja_v2", "lang": "is-IS", "style": "female"},
     }
+    _AUDIO_FORMATS: ModuleAudioFormatsT = frozenset(("mp3", "pcm", "ogg_vorbis"))
 
-    try:
-        r = requests.post(_TIRO_TTS_URL, json=jdict, timeout=10)
-        if r.status_code != 200:
-            raise Exception(
-                f"Received HTTP status code {r.status_code} from Tiro server"
-            )
-        return r.content
-    except Exception as e:
-        LOG.error("Error communicating with Tiro API at %s: %s", _TIRO_TTS_URL, e)
-        raise
+    @property
+    @override
+    def name(self):
+        return TiroVoice._NAME
 
+    @property
+    @override
+    def voices(self) -> ModuleVoicesT:
+        return TiroVoice._VOICES
 
-def text_to_speech(
-    text: str,
-    *,
-    voice: str,
-    speed: float,
-    text_format: TextFormatsT,
-    audio_format: AudioFormatsT,
-) -> Path:
-    """Returns URL for speech-synthesized text."""
+    @property
+    @override
+    def audio_formats(self):
+        return TiroVoice._AUDIO_FORMATS
 
-    data = text_to_audio_data(
-        text,
-        voice=voice,
-        speed=speed,
-        text_format=text_format,
-        audio_format=audio_format,
-    )
+    @override
+    def load_api_keys(self):
+        pass
 
-    suffix = suffix_for_audiofmt(audio_format)
-    outfile: Path = SETTINGS.get_audio_dir() / f"{uuid.uuid4()}.{suffix}"
-    try:
-        outfile.write_bytes(data)
-    except Exception:
-        LOG.exception("Error writing audio file %s.", outfile)
+    @override
+    def text_to_speech(self, text: str, options: TTSOptions):
+        # Tiro's API supports a subset of SSML tags
+        # See https://tts.tiro.is/#tag/speech/paths/~1v0~1speech/post
+        # However, for now, we just strip all markup
+        text = strip_markup(text)
+        options.text_format = "text"
 
-    # Generate and return file:// URL to audio file
-    return outfile
+        jdict = {
+            "Engine": "standard",
+            "LanguageCode": "is-IS",
+            "OutputFormat": options.audio_format,
+            "SampleRate": "16000",
+            "Text": text,
+            "TextType": options.text_format,
+            "VoiceId": options.voice,
+        }
+
+        try:
+            r = requests.post(_TIRO_TTS_URL, json=jdict, timeout=10)
+            if r.status_code != 200:
+                raise Exception(
+                    f"Received HTTP status code {r.status_code} from Tiro server"
+                )
+            data = r.content
+        except Exception as e:
+            LOG.error("Error communicating with Tiro API at %s: %s", _TIRO_TTS_URL, e)
+            raise
+
+        outfile = SETTINGS.get_empty_file(options.audio_format)
+        try:
+            outfile.write_bytes(data)
+        except Exception:
+            LOG.exception("Error writing audio file %s.", outfile)
+
+        return outfile

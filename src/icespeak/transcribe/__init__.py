@@ -140,6 +140,7 @@ class TranscriptionOptions(BaseModel):
     ordinals: bool = Field(
         default=False, description="Whether to transcribe ordinal numbers."
     )
+    # TODO: Add slower option which parses text
 
 
 def _currency_to_gender(code: str) -> GenderType:

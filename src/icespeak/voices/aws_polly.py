@@ -22,85 +22,83 @@
 """
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import Any
+from typing_extensions import override
 
-import uuid
 from threading import Lock
 
 import boto3
 
-from icespeak.settings import API_KEYS, LOG, SETTINGS, AudioFormatsT, TextFormatsT
+from icespeak.settings import API_KEYS, LOG, SETTINGS
 
-from . import suffix_for_audiofmt
-
-if TYPE_CHECKING:
-    from pathlib import Path
-
-    from . import ModuleVoicesT
+from . import BaseVoice, ModuleAudioFormatsT, ModuleVoicesT, TTSOptions
 
 
-assert API_KEYS.aws, "AWS Polly API key missing."
-NAME = "AWS Polly"
-VOICES: ModuleVoicesT = {
-    "Karl": {"id": "Karl", "lang": "is-IS", "style": "male"},
-    "Dora": {"id": "Dora", "lang": "is-IS", "style": "female"},
-}
-AUDIO_FORMATS = frozenset(("mp3", "pcm", "ogg_vorbis"))
-_aws_client: Any = None
-_lock = Lock()
-with _lock:
-    if _aws_client is None:
-        # See boto3.Session.client for arguments
-        _aws_client = boto3.client(
-            "polly",
-            region_name=API_KEYS.aws.region_name.get_secret_value(),
-            aws_access_key_id=API_KEYS.aws.aws_access_key_id.get_secret_value(),
-            aws_secret_access_key=API_KEYS.aws.aws_secret_access_key.get_secret_value(),
-        )
+class AWSPollyVoice(BaseVoice):
+    _NAME: str = "AWS Polly"
+    _VOICES: ModuleVoicesT = {
+        "Karl": {"id": "Karl", "lang": "is-IS", "style": "male"},
+        "Dora": {"id": "Dora", "lang": "is-IS", "style": "female"},
+    }
+    _AUDIO_FORMATS: ModuleAudioFormatsT = frozenset(("mp3", "pcm", "ogg_vorbis"))
 
+    _lock = Lock()
 
-def text_to_speech(
-    text: str,
-    *,
-    voice: str,
-    speed: float,
-    text_format: TextFormatsT,
-    audio_format: AudioFormatsT,
-) -> Path:
-    """Returns Amazon Polly URL to audio file with speech-synthesized text."""
+    @property
+    @override
+    def name(self):
+        return AWSPollyVoice._NAME
 
-    if audio_format not in AUDIO_FORMATS:
-        LOG.warn(
-            "Unsupported audio format for Amazon Polly speech synthesis: %s."
-            + " Falling back to mp3",
-            audio_format,
-        )
-        audio_format = "mp3"
+    @property
+    @override
+    def voices(self) -> ModuleVoicesT:
+        return AWSPollyVoice._VOICES
 
-    # Special preprocessing for SSML markup
-    if text_format == "ssml":
-        # Adjust voice speed as appropriate
-        if speed != 1.0:
-            perc = int(speed * 100)
-            text = f'<prosody rate="{perc}%">{text}</prosody>'
-        # Wrap text in the required <speak> tag
-        if not text.startswith("<speak>"):
-            text = f"<speak>{text}</speak>"
+    @property
+    @override
+    def audio_formats(self):
+        return AWSPollyVoice._AUDIO_FORMATS
 
-    try:
-        response: dict[str, Any] = _aws_client.synthesize_speech(
-            Text=text,
-            TextType=text_format,
-            VoiceId=VOICES[voice]["id"],
-            LanguageCode=VOICES[voice]["lang"],
-            SampleRate="16000",
-            OutputFormat=audio_format,
-        )
-    except Exception:
-        LOG.exception("Error synthesizing speech.")
-        raise
+    @override
+    def load_api_keys(self):
+        assert API_KEYS.aws, "AWS Polly API key missing."
 
-    suffix = suffix_for_audiofmt(audio_format)
-    outfile = SETTINGS.get_audio_dir() / f"{uuid.uuid4()}.{suffix}"
-    outfile.write_bytes(response["AudioStream"].read())
-    return outfile
+        self._aws_client: Any = None
+        with AWSPollyVoice._lock:
+            if self._aws_client is None:
+                # See boto3.Session.client for arguments
+                self._aws_client = boto3.client(
+                    "polly",
+                    region_name=API_KEYS.aws.region_name.get_secret_value(),
+                    aws_access_key_id=API_KEYS.aws.aws_access_key_id.get_secret_value(),
+                    aws_secret_access_key=API_KEYS.aws.aws_secret_access_key.get_secret_value(),
+                )
+
+    @override
+    def text_to_speech(self, text: str, options: TTSOptions):
+        # Special preprocessing for SSML markup
+        if options.text_format == "ssml":
+            # Adjust voice speed as appropriate
+            if options.speed != 1.0:
+                perc = int(options.speed * 100)
+                text = f'<prosody rate="{perc}%">{text}</prosody>'
+            # Wrap text in the required <speak> tag
+            if not text.startswith("<speak>"):
+                text = f"<speak>{text}</speak>"
+
+        try:
+            response: dict[str, Any] = self._aws_client.synthesize_speech(
+                Text=text,
+                TextType=options.text_format,
+                VoiceId=AWSPollyVoice._VOICES[options.voice]["id"],
+                LanguageCode=AWSPollyVoice._VOICES[options.voice]["lang"],
+                SampleRate="16000",
+                OutputFormat=options.audio_format,
+            )
+        except Exception:
+            LOG.exception("Error synthesizing speech.")
+            raise
+
+        outfile = SETTINGS.get_empty_file(options.audio_format)
+        outfile.write_bytes(response["AudioStream"].read())
+        return outfile
