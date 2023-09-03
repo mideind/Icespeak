@@ -18,7 +18,8 @@
 
 
     This file contains phonetic transcription functionality
-    specifically intended for Icelandic speech synthesis engines.
+    turning data/text into text specifically intended
+    for Icelandic speech synthesis engines.
 
 """
 from __future__ import annotations
@@ -70,50 +71,16 @@ if TYPE_CHECKING:
 # Ensure abbreviations have been loaded
 Abbreviations.initialize()
 
-# Each voice module in the directory `../voices` can define a
-# 'Transcriber' class, as a subclass of 'DefaultTranscriber', in
-# order to override transcription methods for a particular voice
-TRANSCRIBER_CLASS = "Transcriber"
-
 
 def strip_markup(text: str) -> str:
     """Remove HTML/SSML tags from a string."""
     return re.sub(r"<.*?>", "", text)
 
 
-GSSML_TAG = "greynir"
-
-
-def gssml(data: Any = None, *, type: str, **kwargs: str | float) -> str:
-    """
-    Utility function, surrounds data with Greynir-specific
-    voice transcription tags.
-    E.g. '<greynir ...>{data}</greynir>'
-      or '<greynir ... />' if data is None.
-
-    Type specifies the type of handling needed when the tags are parsed.
-    The kwargs are then passed to the handler functions as appropriate.
-
-    The greynir tags can be transcribed
-    in different ways depending on the voice engine used.
-
-    Example:
-        gssml(43, type="number", gender="kk") -> '<greynir type="number" gender="kk">43</greynir>'
-    """
-    assert type, "Type keyword cannot be empty."
-    assert isinstance(
-        type, str
-    ), f"type keyword arg must be string in function gssml; data: {data}"
-    return (
-        f'<{GSSML_TAG} type="{type}"'
-        + "".join(f' {k}="{v}"' for k, v in kwargs.items())
-        + (f">{data}</{GSSML_TAG}>" if data is not None else " />")
-    )
-
-
 class TranscriptionOptions(BaseModel):
     """Transcription options."""
 
+    # frozen=True makes this hashable which enables caching
     model_config = {"frozen": True, "extra": Extra.forbid}
 
     emails: bool = Field(default=True, description="Whether to transcribe emails.")
@@ -1516,7 +1483,7 @@ class DefaultTranscriber:
 
             elif token.kind == TOK.MEASUREMENT and opt.measurements:
                 # We can't use token.val here because
-                # the tokenization converts everything to SI units :/
+                # the tokenization converts everything to SI units
                 # unit, num = cast(MeasurementTuple, token.val)
 
                 # HACK: Deal correctly with messes such as "-1.234,56km"

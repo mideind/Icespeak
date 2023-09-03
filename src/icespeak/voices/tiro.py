@@ -67,11 +67,11 @@ class TiroVoice(BaseVoice):
 
     @override
     def text_to_speech(self, text: str, options: TTSOptions):
-        # Tiro's API supports a subset of SSML tags
+        # TODO: Tiro's API supports a subset of SSML tags
         # See https://tts.tiro.is/#tag/speech/paths/~1v0~1speech/post
+
         # However, for now, we just strip all markup
         text = strip_markup(text)
-        options.text_format = "text"
 
         jdict = {
             "Engine": "standard",
@@ -79,7 +79,7 @@ class TiroVoice(BaseVoice):
             "OutputFormat": options.audio_format,
             "SampleRate": "16000",
             "Text": text,
-            "TextType": options.text_format,
+            "TextType": "text",
             "VoiceId": options.voice,
         }
 

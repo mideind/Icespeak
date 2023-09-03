@@ -17,6 +17,9 @@
     along with this program.  If not, see http://www.gnu.org/licenses/.
 
 
+    This file contains wrappers for the entire text-to-speech pipeline
+    (phonetic transcription -> TTS with a specific voice/service).
+
 """
 from __future__ import annotations
 

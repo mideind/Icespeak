@@ -17,9 +17,15 @@
     along with this program.  If not, see http://www.gnu.org/licenses/.
 
 
+    This file contains functionality which simplifies composing text
+    with data that should be transcribed for TTS engines,
+    along with a parser which parses the composed text and
+    calls the appropriate transcription method from `./transcribe`.
+
 """
 from __future__ import annotations
 
+from typing import TYPE_CHECKING, Any
 from typing_extensions import override
 
 from collections import deque
@@ -27,8 +33,39 @@ from html.parser import HTMLParser
 from inspect import ismethod
 
 from .settings import LOG, SETTINGS
-from .transcribe import GSSML_TAG, DefaultTranscriber, TranscriptionMethod
 from .tts import SERVICES, VOICES
+
+if TYPE_CHECKING:
+    from .transcribe import DefaultTranscriber, TranscriptionMethod
+
+GSSML_TAG = "greynir"
+
+
+def gssml(data: Any = None, *, type: str, **kwargs: str | float) -> str:
+    """
+    Utility function, surrounds data with Greynir-specific
+    voice transcription tags.
+    E.g. '<greynir ...>{data}</greynir>'
+      or '<greynir ... />' if data is None.
+
+    Type specifies the type of handling needed when the tags are parsed.
+    The kwargs are then passed to the handler functions as appropriate.
+
+    The greynir tags can be transcribed
+    in different ways depending on the voice engine used.
+
+    Example:
+        gssml(43, type="number", gender="kk") -> '<greynir type="number" gender="kk">43</greynir>'
+    """
+    assert type, "Type keyword cannot be empty."
+    assert isinstance(
+        type, str
+    ), f"type keyword arg must be string in function gssml; data: {data}"
+    return (
+        f'<{GSSML_TAG} type="{type}"'
+        + "".join(f' {k}="{v}"' for k, v in kwargs.items())
+        + (f">{data}</{GSSML_TAG}>" if data is not None else " />")
+    )
 
 
 class GreynirSSMLParser(HTMLParser):

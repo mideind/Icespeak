@@ -19,9 +19,9 @@
 
 """
 
-from .parser import GreynirSSMLParser
+from .parser import GreynirSSMLParser, gssml
 from .settings import SETTINGS, __logger__
-from .transcribe import DefaultTranscriber, TranscriptionOptions, gssml
+from .transcribe import DefaultTranscriber, TranscriptionOptions
 from .tts import VOICES, text_to_speech
 from .voices import TTSOptions
 

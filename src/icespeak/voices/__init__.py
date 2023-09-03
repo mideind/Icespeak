@@ -47,6 +47,7 @@ ModuleAudioFormatsT = Collection[str]
 
 
 class TTSOptions(BaseModel):
+    # frozen=True makes this hashable which enables caching
     model_config = {"frozen": True, "extra": Extra.forbid}
 
     voice: str = Field(
@@ -74,7 +75,7 @@ class BaseVoice(ABC):
     Transcriber: type[DefaultTranscriber] = DefaultTranscriber
     _NAME: str
     _VOICES: ModuleVoicesT
-    _AUDIO_FORMATS: Collection[str]
+    _AUDIO_FORMATS: ModuleAudioFormatsT
 
     def __init__(self) -> None:
         try:
@@ -89,19 +90,19 @@ class BaseVoice(ABC):
     @property
     @abstractmethod
     def name(self) -> str:
-        """Name of the TTS service."""
+        """TTS service name."""
         raise NotImplementedError
 
     @property
     @abstractmethod
     def voices(self) -> ModuleVoicesT:
-        """List of available voices."""
+        """Available voices."""
         raise NotImplementedError
 
     @property
     @abstractmethod
     def audio_formats(self) -> Collection[str]:
-        """List of available output audio formats."""
+        """Collection of available output audio formats."""
         raise NotImplementedError
 
     @abstractmethod
@@ -115,5 +116,4 @@ class BaseVoice(ABC):
 
     @abstractmethod
     def text_to_speech(self, text: str, options: TTSOptions) -> Path:
-        """Text-to-speech."""
         raise NotImplementedError
