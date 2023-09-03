@@ -18,77 +18,41 @@
 
 
 """
-from collections.abc import Mapping
-from typing import TypedDict
-from typing_extensions import Literal
+from __future__ import annotations
 
-from base64 import b64encode
+from collections.abc import Collection, Mapping
+from typing import TYPE_CHECKING, TypedDict
+
+from abc import ABC, abstractmethod
 
 from pydantic import BaseModel, Extra, Field
 
-from icespeak.settings import (
-    MAX_SPEED,
-    MIN_SPEED,
-    SETTINGS,
-    AudioFormatsT,
-    TextFormatsT,
-)
+from icespeak.settings import LOG, MAX_SPEED, MIN_SPEED, SETTINGS, TextFormatsT
+from icespeak.transcribe import DefaultTranscriber
 
-# Mime types and suffixes
-BINARY_MIMETYPE = "application/octet-stream"
-AUDIOFMT_TO_MIMETYPE = {
-    "mp3": "audio/mpeg",
-    "wav": "audio/wav",
-    "ogg_vorbis": "audio/ogg",
-    "pcm": BINARY_MIMETYPE,
-    # Uses an Ogg container. See https://www.rfc-editor.org/rfc/rfc7845
-    "opus": "audio/ogg",
-}
+if TYPE_CHECKING:
+    from typing_extensions import Literal
 
-FALLBACK_SUFFIX = "data"
-AUDIOFMT_TO_SUFFIX = {
-    "mp3": "mp3",
-    "wav": "wav",
-    "ogg_vorbis": "ogg",
-    "pcm": "pcm",
-    # Recommended filename extension for Ogg Opus files is '.opus'.
-    "opus": "opus",
-}
-
-VoiceStyleT = Literal["female", "male", "female, child", "male, child"]
+    from pathlib import Path
 
 
 class ModuleVoiceInfoT(TypedDict):
     id: str
     lang: str
-    style: VoiceStyleT
+    style: Literal["female", "male"]
 
 
 ModuleVoicesT = Mapping[str, ModuleVoiceInfoT]
-
-
-def mimetype_for_audiofmt(fmt: str) -> str:
-    """Returns mime type for the given audio format."""
-    return AUDIOFMT_TO_MIMETYPE.get(fmt, BINARY_MIMETYPE)
-
-
-def suffix_for_audiofmt(fmt: str) -> str:
-    """Returns file suffix for the given audio format."""
-    return AUDIOFMT_TO_SUFFIX.get(fmt, FALLBACK_SUFFIX)
-
-
-def generate_data_uri(data: bytes, mime_type: str = BINARY_MIMETYPE) -> str:
-    """Generate Data URI (RFC2397) from bytes."""
-    b64str = b64encode(data).decode("ascii")
-    return f"data:{mime_type};base64,{b64str}"
+ModuleAudioFormatsT = Collection[str]
 
 
 class TTSOptions(BaseModel):
-    """Text-to-speech options."""
-
+    # frozen=True makes this hashable which enables caching
     model_config = {"frozen": True, "extra": Extra.forbid}
 
-    voice: str = Field(default=SETTINGS.DEFAULT_VOICE, description="TTS voice.")
+    voice: str = Field(
+        default=SETTINGS.DEFAULT_VOICE, description="Speech synthesis voice."
+    )
     speed: float = Field(
         default=SETTINGS.DEFAULT_VOICE_SPEED,
         ge=MIN_SPEED,
@@ -99,7 +63,57 @@ class TTSOptions(BaseModel):
         default=SETTINGS.DEFAULT_TEXT_FORMAT,
         description="Format of text (plaintext or SSML).",
     )
-    audio_format: AudioFormatsT = Field(
+    audio_format: str = Field(
         default=SETTINGS.DEFAULT_AUDIO_FORMAT,
         description="Audio format for TTS output.",
     )
+
+
+class BaseVoice(ABC):
+    """Base class for TTS voice implementations"""
+
+    Transcriber: type[DefaultTranscriber] = DefaultTranscriber
+    _NAME: str
+    _VOICES: ModuleVoicesT
+    _AUDIO_FORMATS: ModuleAudioFormatsT
+
+    def __init__(self) -> None:
+        try:
+            self.load_api_keys()
+        except Exception as e:
+            LOG.warning(
+                "Error loading API keys, TTS with service %s will not work! Error: %s",
+                self.name,
+                e,
+            )
+
+    @property
+    @abstractmethod
+    def name(self) -> str:
+        """TTS service name."""
+        raise NotImplementedError
+
+    @property
+    @abstractmethod
+    def voices(self) -> ModuleVoicesT:
+        """Available voices."""
+        raise NotImplementedError
+
+    @property
+    @abstractmethod
+    def audio_formats(self) -> Collection[str]:
+        """Collection of available output audio formats."""
+        raise NotImplementedError
+
+    @abstractmethod
+    def load_api_keys(self) -> None:
+        """
+        Load API keys needed for TTS.
+        Access to the `text_to_speech` is disabled
+        if this method raises an exception.
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def text_to_speech(self, text: str, options: TTSOptions) -> Path:
+        raise NotImplementedError

@@ -17,129 +17,55 @@
     along with this program.  If not, see http://www.gnu.org/licenses/.
 
 
+    This file contains wrappers for the entire text-to-speech pipeline
+    (phonetic transcription -> TTS with a specific voice/service).
+
 """
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, Protocol, TypedDict, TypeVar, cast
+from typing import Any, TypeVar
 from typing_extensions import override
 
 import atexit
-import importlib
 import queue
 import threading
 from pathlib import Path
 
 from cachetools import LFUCache, cached
-from pydantic import BaseModel, Field
 
-from .settings import LOG, MAX_SPEED, MIN_SPEED, SETTINGS, AudioFormatsT, TextFormatsT
-from .transcribe import TRANSCRIBER_CLASS, DefaultTranscriber, TranscriptionOptions
-from .voices import TTSOptions, VoiceStyleT
+from .settings import LOG, SETTINGS
+from .transcribe import TranscriptionOptions
+from .voices import BaseVoice, TTSOptions, aws_polly, azure, google, tiro
 
-if TYPE_CHECKING:
-    from .voices import ModuleVoiceInfoT
-
-
-class TTSFuncT(Protocol):
-    """Type signature for a text-to-speech function."""
-
-    def __call__(
-        self,
-        text: str,
-        *,
-        voice: str,
-        speed: float,
-        text_format: TextFormatsT,
-        audio_format: AudioFormatsT,
-    ) -> Path:
-        ...
+VoicesT = Mapping[str, Mapping[str, str]]
+ServicesT = Mapping[str, BaseVoice]
 
 
-class VoiceModuleT(Protocol):
-    """Contents of a voice module."""
-
-    NAME: str
-    VOICES: Mapping[str, ModuleVoiceInfoT]
-    text_to_speech: TTSFuncT
-    Transcriber: type[DefaultTranscriber] | None
-
-
-class VoiceInfoT(TypedDict):
-    lang: str
-    style: VoiceStyleT
-    service: str
-    id: str
-
-
-class _ServiceImpl(TypedDict):
-    text_to_speech: TTSFuncT
-    Transcriber: type[DefaultTranscriber]
-
-
-VoicesT = Mapping[str, VoiceInfoT]
-
-
-def _load_voice_modules() -> tuple[VoicesT, Mapping[str, _ServiceImpl]]:
-    """
-    Dynamically load all voice modules, map
-    voice ID strings to the relevant functions.
-    """
-
-    voice_info: VoicesT = {}
-    service_impl: Mapping[str, _ServiceImpl] = {}
-
-    vm_dir = Path(__file__).parent / "voices"
-    for file in vm_dir.glob("*.py"):
-        if file.name.startswith("_"):
-            continue
-        modname = f".{vm_dir.name}.{file.with_suffix('').name}"
-        try:
-            m: VoiceModuleT = cast(
-                VoiceModuleT, importlib.import_module(modname, package="icespeak")
-            )
-            name = m.NAME
-            voices = m.VOICES
-            transcriber = getattr(m, TRANSCRIBER_CLASS, DefaultTranscriber)
-            for v, info in voices.items():
-                if v in voice_info:
-                    LOG.warning(f"Voice {v} is already defined in another module!")
-                voice_info[v] = {
-                    "service": name,
-                    "lang": info["lang"],
-                    "style": info["style"],
-                    "id": info["id"],
-                }
-                service_impl[name] = {
-                    "text_to_speech": m.text_to_speech,
-                    TRANSCRIBER_CLASS: transcriber,
-                }
-        except Exception:
-            LOG.exception("Error importing voice module %r.", modname)
-            continue
-
-    return voice_info, service_impl
-
-
-_vm = _load_voice_modules()
-VOICES: VoicesT = _vm[0]
-SERVICE2IMPL: Mapping[str, _ServiceImpl] = _vm[1]
-
-
-class TTSInput(BaseModel):
-    """Input into text-to-speech."""
-
-    text: str = Field(description="Text to synthesize.")
-
-    tts_options: TTSOptions = Field(default_factory=TTSOptions)
-
-    transcribe: bool = Field(
-        default=True,
-        description="Whether to transcribe text before speech synthesis or not.",
+def _setup_voices() -> tuple[VoicesT, ServicesT]:
+    services = (
+        aws_polly.AWSPollyVoice(),
+        azure.AzureVoice(),
+        google.GoogleVoice(),
+        tiro.TiroVoice(),
     )
-    transcribe_options: TranscriptionOptions = Field(
-        default_factory=TranscriptionOptions
-    )
+    voices: VoicesT = {}
+    for service in services:
+        for voice, info in service.voices.items():
+            # Info about each voice
+            if voice in voices:
+                LOG.warning(
+                    "Voice named %r already exists! "
+                    + "Skipping the one defined in module %s.",
+                    voice,
+                    service.name,
+                )
+            else:
+                voices[voice] = {"service": service.name, **info}
+    return voices, {k.name: k for k in services}
+
+
+VOICES, SERVICES = _setup_voices()
 
 
 _T = TypeVar("_T")
@@ -175,6 +101,7 @@ if SETTINGS.AUDIO_CACHE_CLEAN:
         while audiofile := _EXPIRED_QUEUE.get():
             audiofile.unlink(missing_ok=True)
 
+    # Small daemon thread which deletes files sent to the expired queue
     _cleanup_thread = threading.Thread(
         target=_cleanup, name="audio_cleanup", daemon=True
     )
@@ -190,8 +117,8 @@ if SETTINGS.AUDIO_CACHE_CLEAN:
         except Exception:
             LOG.exception("Error when cleaning cache.")
         # Give the thread a little bit of time to join,
-        # not too much harm if it simply gets killed though
-        _cleanup_thread.join(0.1)
+        # not much harm if it simply gets killed though
+        _cleanup_thread.join(0.3)
         LOG.debug("Finished evicting.")
 
     # This function runs upon clean exit from program
@@ -201,32 +128,35 @@ if SETTINGS.AUDIO_CACHE_CLEAN:
 @cached(_AUDIO_CACHE)
 def text_to_speech(
     text: str,
+    tts_options: TTSOptions | None = None,
+    transcription_options: TranscriptionOptions | None = None,
     *,
-    voice: str = SETTINGS.DEFAULT_VOICE,
-    speed: float = SETTINGS.DEFAULT_VOICE_SPEED,
-    text_format: TextFormatsT = SETTINGS.DEFAULT_TEXT_FORMAT,
-    audio_format: AudioFormatsT = SETTINGS.DEFAULT_AUDIO_FORMAT,
+    transcribe: bool = True,
 ) -> Path:
     """
     # Text-to-speech
 
-    Request speech synthesis for the provided text.
+    Synthesize speech for the given text.
+
+    Audio/voice settings can be supplied in `tts_options`,
+    transcription turned on/off via the `transcribe` flag
+    and its options supplied in `transcription_options`
+
     Returns an instance of `pathlib.Path` pointing to the output audio file.
     """
+    tts_options = tts_options or TTSOptions()
+    try:
+        service = SERVICES[VOICES[tts_options.voice]["service"]]
+    except KeyError as e:
+        raise ValueError(f"Voice {tts_options.voice!r} not available.") from e
 
-    if voice not in VOICES:
+    if tts_options.audio_format not in service.audio_formats:
         raise ValueError(
-            f"Voice {voice} is not a supported voice: {list(VOICES.keys())}"
+            f"Service {service.name} doesn't support audio format {tts_options.audio_format}."
         )
 
-    if speed < MIN_SPEED or speed > MAX_SPEED:
-        raise ValueError(f"Speed {speed} is outside the range {MIN_SPEED}-{MAX_SPEED}")
+    if transcribe:
+        transcription_options = transcription_options or TranscriptionOptions()
+        text = service.Transcriber.token_transcribe(text, transcription_options)
 
-    service_tts_func = SERVICE2IMPL[VOICES[voice]["service"]]["text_to_speech"]
-    return service_tts_func(
-        text,
-        voice=voice,
-        speed=speed,
-        text_format=text_format,
-        audio_format=audio_format,
-    )
+    return service.text_to_speech(text, tts_options)

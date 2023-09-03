@@ -6,15 +6,50 @@
 
 # Icespeak
 
-*Icespeak* is a Python library that makes Icelandic-language speech synthesis easy.
+_Icespeak_ is a Python library that makes Icelandic-language speech synthesis easy.
 
 ## Installation
 
-_WIP_
+> _Note: The Azure package currently only supports the very out-dated OpenSSL version 1.\*._
+
+Clone the repository and cd into the folder. Then create and activate
+a Python virtual environment, and install all required dependencies:
+
+```sh
+python3 -m venv venv
+source venv/bin/activate
+python3 -m pip install .
+# Alternatively, to install in editable mode with extra dev dependencies:
+python3 -m pip install -e '.[dev]'
+```
 
 ## Usage
 
-_WIP_
+### Text-to-speech
+
+Simple example of TTS, which includes phonetic transcription:
+
+```python
+from icespeak import text_to_speech, TTSOptions
+audio_file = text_to_speech(
+    "Hér kemur texti fyrir talgervingu. Ýmislegir textabútar eru hljóðritaðir eins og t.d. ekki.til@vefsida.is, 48,3% o.fl.",
+    TTSOptions(
+        text_format="text", # Set to 'ssml' if ssml tags in text should be interpreted
+        audio_format="mp3", # Output audio will be in mp3 format
+        voice="Gudrun" # Azure TTS voice
+    ),
+    trancribe=True # Default is True
+)
+print(audio_file) # pathlib.Path instance pointing to file on local file system
+```
+
+### Transcription
+
+_Documentation still in progress._
+
+### Text composition via GSSML
+
+_Documentation still in progress._
 
 ## License
 
@@ -44,4 +79,3 @@ GNU GPLv3 license, please contact us at [mideind@mideind.is](mailto:mideind@mide
 to negotiate a custom license. This applies for instance if you want to include or use
 this software, in part or in full, in other software that is not licensed under
 GNU GPLv3 or other compatible licenses.
-

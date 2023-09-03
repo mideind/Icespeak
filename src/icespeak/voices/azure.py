@@ -22,23 +22,26 @@
 """
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing_extensions import override
 
-import uuid
+from ssl import OPENSSL_VERSION_INFO
 
 import azure.cognitiveservices.speech as speechsdk
 
-from icespeak.settings import API_KEYS, LOG, SETTINGS, AudioFormatsT, TextFormatsT
+from icespeak.settings import API_KEYS, LOG, SETTINGS
 from icespeak.transcribe import DefaultTranscriber, strip_markup
 
-from . import ModuleVoicesT, suffix_for_audiofmt
+from . import BaseVoice, ModuleAudioFormatsT, ModuleVoicesT, TTSOptions
 
-if TYPE_CHECKING:
-    from pathlib import Path
-
-
-NAME = "Azure"
-VOICES: ModuleVoicesT = {
+# Audio format enums for Azure Speech API
+# https://learn.microsoft.com/en-us/javascript/api/microsoft-cognitiveservices-speech-sdk/speechsynthesisoutputformat
+_AzureSDKAudioFmts = speechsdk.SpeechSynthesisOutputFormat
+_fmt2enum: dict[str, _AzureSDKAudioFmts] = {
+    "mp3": _AzureSDKAudioFmts.Audio16Khz32KBitRateMonoMp3,
+    "pcm": _AzureSDKAudioFmts.Raw16Khz16BitMonoPcm,
+    "opus": _AzureSDKAudioFmts.Ogg16Khz16BitMonoOpus,
+}
+_AZURE_VOICES: ModuleVoicesT = {
     # Icelandic
     "Gudrun": {"id": "is-IS-GudrunNeural", "lang": "is-IS", "style": "female"},
     "Gunnar": {"id": "is-IS-GunnarNeural", "lang": "is-IS", "style": "male"},
@@ -72,152 +75,157 @@ VOICES: ModuleVoicesT = {
     # Many more voices available, see:
     # https://learn.microsoft.com/en-us/azure/cognitive-services/speech-service/language-support
 }
-AUDIO_FORMATS = frozenset(("mp3", "pcm", "opus"))
-
-if API_KEYS.azure is None:
-    raise RuntimeError("Azure API key missing.")
-
-AZURE_KEY = API_KEYS.azure.key.get_secret_value()
-AZURE_REGION = API_KEYS.azure.region.get_secret_value()
 
 
-def text_to_speech(
-    text: str,
-    *,
-    voice: str,
-    speed: float,
-    text_format: TextFormatsT,
-    audio_format: AudioFormatsT,
-) -> Path:
-    """Synthesizes text via Azure and returns path to generated audio file."""
+class AzureVoice(BaseVoice):
+    _NAME: str = "Azure"
+    _VOICES: ModuleVoicesT = _AZURE_VOICES
+    _AUDIO_FORMATS: ModuleAudioFormatsT = frozenset(_fmt2enum.keys())
 
-    if audio_format not in AUDIO_FORMATS:
-        LOG.warn(
-            "Unsupported audio format for Azure speech synthesis: %s."
-            + " Falling back to mp3",
-            audio_format,
+    class Transcriber(DefaultTranscriber):
+        """
+        Transcription handler class,
+        specific to the Azure voice engine.
+        """
+
+        # Override some character pronunciations during
+        # transcription (custom for this voice)
+        _CHAR_PRONUNCIATION = {
+            **DefaultTranscriber._CHAR_PRONUNCIATION,
+            "b": "bjé",
+            "c": "sjé",
+            "d": "djé",
+            "ð": "eeð",
+            "e": "eeh",
+            "é": "jé",
+            "g": "gjéé",
+            "i": "ii",
+            "j": "íoð",
+            "o": "úa",
+            "ó": "oú",
+            "u": "uu",
+            "r": "errr",
+            "t": "tjéé",
+            "ú": "úúu",
+            "ý": "ufsilon íí",
+            "þ": "þodn",
+            "æ": "æí",
+            "ö": "öö",
+        }
+
+        # Weird entity pronunciations can be added here
+        # when they're encountered
+        _ENTITY_PRONUNCIATIONS = {
+            **DefaultTranscriber._ENTITY_PRONUNCIATIONS,
+            "BYKO": "Býkó",
+            "ELKO": "Elkó",
+            "FIDE": "fídeh",
+            "FIFA": "fííffah",
+            "GIRL": "görl",
+            "LEGO": "llegó",
+            "MIT": "emm æí tíí",
+            "NEW": "njúú",
+            "NOVA": "Nóva",
+            "PLUS": "plöss",
+            "SHAH": "Sjah",
+            "TIME": "tæm",
+            "UEFA": "júei fa",
+            "UENO": "júeenó",
+            "UKIP": "júkipp",
+            "VISA": "vísa",
+            "XBOX": "ex box",
+        }
+
+        # Override some weird name pronunciations
+        _PERSON_PRONUNCIATION = {
+            "Joe": "Djó",
+            "Biden": "Bæden",
+        }
+
+    @property
+    @override
+    def name(self):
+        return AzureVoice._NAME
+
+    @property
+    @override
+    def voices(self) -> ModuleVoicesT:
+        # Add voice languages, based on their ID
+        return AzureVoice._VOICES
+
+    @property
+    @override
+    def audio_formats(self):
+        return AzureVoice._AUDIO_FORMATS
+
+    @override
+    def load_api_keys(self):
+        if OPENSSL_VERSION_INFO[0] != 1:
+            # Azure only works with legacy OpenSSL
+            # See issues regarding compatibility with OpenSSL version >=3:
+            # https://github.com/Azure-Samples/cognitive-services-speech-sdk/issues/1747
+            # https://github.com/Azure-Samples/cognitive-services-speech-sdk/issues/1986
+            LOG.warning("OpenSSL version not compatible with Azure Cognitive Services.")
+            raise RuntimeError("Incompatible OpenSSL version.")
+
+        if API_KEYS.azure is None:
+            raise RuntimeError("Azure API keys missing.")
+
+        AzureVoice.AZURE_KEY = API_KEYS.azure.key.get_secret_value()
+        AzureVoice.AZURE_REGION = API_KEYS.azure.region.get_secret_value()
+
+    @override
+    def text_to_speech(self, text: str, options: TTSOptions):
+        speech_conf = speechsdk.SpeechConfig(
+            subscription=AzureVoice.AZURE_KEY, region=AzureVoice.AZURE_REGION
         )
-        audio_format = "mp3"
 
-    # Audio format enums for Azure Speech API
-    # https://learn.microsoft.com/en-us/javascript/api/microsoft-cognitiveservices-speech-sdk/speechsynthesisoutputformat
-    aof = speechsdk.SpeechSynthesisOutputFormat
-    fmt2enum: dict[AudioFormatsT, aof] = {
-        "mp3": aof.Audio16Khz32KBitRateMonoMp3,
-        "pcm": aof.Raw16Khz16BitMonoPcm,
-        "opus": aof.Ogg16Khz16BitMonoOpus,
-    }
-    speech_conf = speechsdk.SpeechConfig(subscription=AZURE_KEY, region=AZURE_REGION)
+        azure_voice_id = AzureVoice._VOICES[options.voice]["id"]
+        speech_conf.speech_synthesis_voice_name = azure_voice_id
 
-    azure_voice_id = VOICES[voice]["id"]
-    speech_conf.speech_synthesis_voice_name = azure_voice_id
+        fmt = _fmt2enum[options.audio_format]
+        speech_conf.set_speech_synthesis_output_format(fmt)
 
-    fmt = fmt2enum.get(audio_format, aof.Audio16Khz32KBitRateMonoMp3)
-    speech_conf.set_speech_synthesis_output_format(fmt)
+        outfile = SETTINGS.get_empty_file(options.audio_format)
+        try:
+            audio_config = speechsdk.audio.AudioOutputConfig(
+                filename=str(outfile)
+            )  # pyright: ignore[reportGeneralTypeIssues]
 
-    # Generate a unique filename for the audio output file
-    suffix = suffix_for_audiofmt(audio_format)
-    out_file = SETTINGS.get_audio_dir() / f"{uuid.uuid4()}.{suffix}"
-    try:
-        audio_config = speechsdk.audio.AudioOutputConfig(
-            filename=str(out_file)
-        )  # pyright: ignore[reportGeneralTypeIssues]
+            # Init synthesizer
+            synthesizer = speechsdk.SpeechSynthesizer(
+                speech_config=speech_conf, audio_config=audio_config
+            )
 
-        # Init synthesizer
-        synthesizer = speechsdk.SpeechSynthesizer(
-            speech_config=speech_conf, audio_config=audio_config
-        )
+            result: speechsdk.SpeechSynthesisResult
+            # Azure Speech API supports SSML but the notation is a bit different from Amazon Polly's
+            # See https://learn.microsoft.com/en-us/azure/cognitive-services/speech-service/speech-synthesis-markup
+            if options.text_format == "ssml":
+                # Adjust speed
+                if options.speed != 1.0:
+                    text = f'<prosody rate="{options.speed}">{text}</prosody>'
+                # Wrap text in the required <speak> and <voice> tags
+                text = f"""
+                    <speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="{azure_voice_id[:5]}">
+                    <voice name="{azure_voice_id}">
+                    {text}
+                    </voice></speak>
+                """.strip()
+                result = synthesizer.speak_ssml(text)
+            else:
+                # We're not sending SSML so strip any markup from text
+                text = strip_markup(text)
+                result = synthesizer.speak_text(text)
 
-        result: speechsdk.SpeechSynthesisResult
-        # Azure Speech API supports SSML but the notation is a bit different from Amazon Polly's
-        # See https://learn.microsoft.com/en-us/azure/cognitive-services/speech-service/speech-synthesis-markup
-        if text_format == "ssml":
-            # Adjust speed
-            if speed != 1.0:
-                text = f'<prosody rate="{speed}">{text}</prosody>'
-            # Wrap text in the required <speak> and <voice> tags
-            text = f"""
-                <speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="is-IS">
-                <voice name="{azure_voice_id}">
-                {text}
-                </voice></speak>
-            """.strip()
-            result = synthesizer.speak_ssml(text)
-        else:
-            # We're not sending SSML so strip any markup from text
-            text = strip_markup(text)
-            result = synthesizer.speak_text(text)
+            # Check result
+            if result.reason == speechsdk.ResultReason.SynthesizingAudioCompleted:
+                # Success, return path to the generated audio file
+                return outfile
 
-        # Check result
-        if result.reason == speechsdk.ResultReason.SynthesizingAudioCompleted:
-            # Success, return path to the generated audio file
-            return out_file
-
-        cancellation_details = result.cancellation_details
-        raise RuntimeError(
-            f"TTS with Azure failed: {cancellation_details.error_details}"
-        )
-    except Exception:
-        LOG.exception("Error communicating with Azure Speech API.")
-        raise
-
-
-class Transcriber(DefaultTranscriber):
-    """
-    Transcription handler class,
-    specific to the Azure voice engine.
-    """
-
-    # Override some character pronunciations during
-    # transcription (custom for this voice)
-    _CHAR_PRONUNCIATION = {
-        **DefaultTranscriber._CHAR_PRONUNCIATION,
-        "b": "bjé",
-        "c": "sjé",
-        "d": "djé",
-        "ð": "eeð",
-        "e": "eeh",
-        "é": "jé",
-        "g": "gjéé",
-        "i": "ii",
-        "j": "íoð",
-        "o": "úa",
-        "ó": "oú",
-        "u": "uu",
-        "r": "errr",
-        "t": "tjéé",
-        "ú": "úúu",
-        "ý": "ufsilon íí",
-        "þ": "þodn",
-        "æ": "æí",
-        "ö": "öö",
-    }
-
-    # Weird entity pronunciations can be added here
-    # when they're encountered
-    _ENTITY_PRONUNCIATIONS = {
-        **DefaultTranscriber._ENTITY_PRONUNCIATIONS,
-        "BYKO": "Býkó",
-        "ELKO": "Elkó",
-        "FIDE": "fídeh",
-        "FIFA": "fííffah",
-        "GIRL": "görl",
-        "LEGO": "llegó",
-        "MIT": "emm æí tíí",
-        "NEW": "njúú",
-        "NOVA": "Nóva",
-        "PLUS": "plöss",
-        "SHAH": "Sjah",
-        "TIME": "tæm",
-        "UEFA": "júei fa",
-        "UENO": "júeenó",
-        "UKIP": "júkipp",
-        "VISA": "vísa",
-        "XBOX": "ex box",
-    }
-
-    # Override some weird name pronunciations
-    _PERSON_PRONUNCIATION = {
-        "Joe": "Djó",
-        "Biden": "Bæden",
-    }
+            cancellation_details = result.cancellation_details
+            raise RuntimeError(
+                f"TTS with Azure failed: {cancellation_details.error_details}"
+            )
+        except Exception:
+            LOG.exception("Error communicating with Azure Speech API.")
+            raise

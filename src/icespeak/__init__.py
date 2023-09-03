@@ -19,21 +19,19 @@
 
 """
 
-from .parser import GreynirSSMLParser, fast_transcribe
+from .parser import GreynirSSMLParser, gssml
 from .settings import SETTINGS, __logger__
-from .transcribe import DefaultTranscriber, TranscriptionOptions, gssml
-from .tts import VOICES, TTSInput, text_to_speech
+from .transcribe import DefaultTranscriber, TranscriptionOptions
+from .tts import VOICES, text_to_speech
 from .voices import TTSOptions
 
 __all__ = (
     "DefaultTranscriber",
     "GreynirSSMLParser",
     "SETTINGS",
-    "TTSInput",
     "TTSOptions",
     "TranscriptionOptions",
     "VOICES",
-    "fast_transcribe",
     "gssml",
     "text_to_speech",
     "__logger__",

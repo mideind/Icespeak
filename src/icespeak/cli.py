@@ -37,11 +37,8 @@ from urllib.request import urlopen
 
 import requests
 
-from .settings import LOG, SETTINGS
-from .tts import VOICES, text_to_speech
-from .voices import suffix_for_audiofmt
-
-# from .utility import sanitize_filename
+from .settings import LOG, SETTINGS, suffix_for_audiofmt
+from .tts import VOICES, TTSOptions, text_to_speech
 
 
 def _die(msg: str, exit_code: int = 1) -> None:
@@ -227,10 +224,12 @@ def main() -> None:
     # Synthesize the text according to CLI options
     url = text_to_speech(
         text,
-        text_format=args.textformat,
-        audio_format=args.audioformat,
-        voice=args.voice,
-        speed=args.speed,
+        TTSOptions(
+            text_format=args.textformat,
+            audio_format=args.audioformat,
+            voice=args.voice,
+            speed=args.speed,
+        ),
     ).as_uri()
     if not url:
         _die("Error synthesizing speech.")
