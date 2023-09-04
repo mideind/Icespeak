@@ -24,13 +24,12 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import Any, TypeVar
+from typing import TYPE_CHECKING, Any, NamedTuple, TypeVar
 from typing_extensions import override
 
 import atexit
 import queue
 import threading
-from pathlib import Path
 
 from cachetools import LFUCache, cached
 
@@ -38,8 +37,16 @@ from .settings import LOG, SETTINGS
 from .transcribe import TranscriptionOptions
 from .voices import BaseVoice, TTSOptions, aws_polly, azure, google, tiro
 
+if TYPE_CHECKING:
+    from pathlib import Path
+
 VoicesT = Mapping[str, Mapping[str, str]]
 ServicesT = Mapping[str, BaseVoice]
+
+
+class TTSOutput(NamedTuple):
+    file: Path
+    text: str
 
 
 def _setup_voices() -> tuple[VoicesT, ServicesT]:
@@ -71,7 +78,7 @@ VOICES, SERVICES = _setup_voices()
 _T = TypeVar("_T")
 
 
-class TmpFileLFUCache(LFUCache[_T, Path]):
+class TmpFileLFUCache(LFUCache[_T, TTSOutput]):
     """
     Custom version of a least-frequently-used cache which,
     if the clean cache setting is True,
@@ -81,13 +88,13 @@ class TmpFileLFUCache(LFUCache[_T, Path]):
     """
 
     @override
-    def popitem(self) -> tuple[_T, Path]:
+    def popitem(self) -> tuple[_T, TTSOutput]:
         """Schedule audio file for deletion upon evicting from cache."""
         key, audiofile = super().popitem()
         LOG.debug("Expired audio file: %s", audiofile)
         # Schedule for deletion, if cleaning the cache
         if SETTINGS.AUDIO_CACHE_CLEAN:
-            _EXPIRED_QUEUE.put(audiofile)
+            _EXPIRED_QUEUE.put(audiofile.file)
         return key, audiofile
 
 
@@ -113,7 +120,8 @@ if SETTINGS.AUDIO_CACHE_CLEAN:
         try:
             while _AUDIO_CACHE.currsize > 0:
                 # Remove all files currently in cache
-                _AUDIO_CACHE.popitem()[1].unlink(missing_ok=True)
+                _, v = _AUDIO_CACHE.popitem()
+                v.file.unlink(missing_ok=True)
         except Exception:
             LOG.exception("Error when cleaning cache.")
         # Give the thread a little bit of time to join,
@@ -126,23 +134,24 @@ if SETTINGS.AUDIO_CACHE_CLEAN:
 
 
 @cached(_AUDIO_CACHE)
-def text_to_speech(
+def tts_to_file(
     text: str,
     tts_options: TTSOptions | None = None,
     transcription_options: TranscriptionOptions | None = None,
     *,
     transcribe: bool = True,
-) -> Path:
+) -> TTSOutput:
     """
     # Text-to-speech
 
-    Synthesize speech for the given text.
+    Synthesize speech for the given text and write to local file.
 
     Audio/voice settings can be supplied in `tts_options`,
     transcription turned on/off via the `transcribe` flag
     and its options supplied in `transcription_options`
 
-    Returns an instance of `pathlib.Path` pointing to the output audio file.
+    Returns a named tuple containing a path to the output audio file,
+    along with the text that was sent to the TTS service.
     """
     tts_options = tts_options or TTSOptions()
     try:
@@ -159,4 +168,7 @@ def text_to_speech(
         transcription_options = transcription_options or TranscriptionOptions()
         text = service.Transcriber.token_transcribe(text, transcription_options)
 
-    return service.text_to_speech(text, tts_options)
+    return TTSOutput(
+        file=service.text_to_speech(text, tts_options),
+        text=text,
+    )

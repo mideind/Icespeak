@@ -38,7 +38,7 @@ from urllib.request import urlopen
 import requests
 
 from .settings import LOG, SETTINGS, suffix_for_audiofmt
-from .tts import VOICES, TTSOptions, text_to_speech
+from .tts import VOICES, TTSOptions, tts_to_file
 
 
 def _die(msg: str, exit_code: int = 1) -> None:
@@ -222,7 +222,7 @@ def main() -> None:
         _die("WAV output flag only supported for PCM format.")
 
     # Synthesize the text according to CLI options
-    url = text_to_speech(
+    tts_out = tts_to_file(
         text,
         TTSOptions(
             text_format=args.textformat,
@@ -230,7 +230,8 @@ def main() -> None:
             voice=args.voice,
             speed=args.speed,
         ),
-    ).as_uri()
+    )
+    url = tts_out.file.as_uri()
     if not url:
         _die("Error synthesizing speech.")
 
@@ -239,6 +240,7 @@ def main() -> None:
         print(url)
         sys.exit(0)
 
+    # TODO: This isn't needed anymore
     # Download
     urldesc = f"data URI ({len(url)} bytes)" if _is_data_uri(url) else url
     print(f"Fetching {urldesc}")

@@ -22,7 +22,7 @@
 from .parser import GreynirSSMLParser, gssml
 from .settings import SETTINGS, __logger__
 from .transcribe import DefaultTranscriber, TranscriptionOptions
-from .tts import VOICES, text_to_speech
+from .tts import VOICES, tts_to_file
 from .voices import TTSOptions
 
 __all__ = (
@@ -33,6 +33,6 @@ __all__ = (
     "TranscriptionOptions",
     "VOICES",
     "gssml",
-    "text_to_speech",
+    "tts_to_file",
     "__logger__",
 )

@@ -20,7 +20,6 @@
     Shared settings for the Icespeak package.
 
 """
-# pyright: reportConstantRedefinition=false
 # We dont import annotations from __future__ here
 # due to pydantic
 from typing import Any, Literal, Optional, Union
@@ -131,7 +130,7 @@ class Settings(BaseSettings):
         if self.AUDIO_DIR is None:
             dir = Path(tempfile.gettempdir()) / "icespeak"
             dir.mkdir(exist_ok=True)
-            self.AUDIO_DIR = dir
+            self.AUDIO_DIR = dir  # pyright: ignore[reportConstantRedefinition]
         return self.AUDIO_DIR
 
     def get_empty_file(self, audio_format: str) -> Path:
@@ -178,19 +177,25 @@ else:
         API_KEYS.aws = AWSPollyKey.model_validate_json(
             (_kd / SETTINGS.AWSPOLLY_KEY_FILENAME).read_text().strip()
         )
-    except Exception:
-        LOG.exception(
-            "Could not load AWS Polly API key, ASR with AWS Polly will not work."
+    except Exception as err:
+        LOG.warning(
+            "Could not load AWS Polly API key, ASR with AWS Polly will not work. Error: %s",
+            err,
         )
     try:
         API_KEYS.azure = AzureKey.model_validate_json(
             (_kd / SETTINGS.AZURE_KEY_FILENAME).read_text().strip()
         )
-    except Exception:
-        LOG.exception("Could not load Azure API key, ASR with Azure will not work.")
+    except Exception as err:
+        LOG.warning(
+            "Could not load Azure API key, ASR with Azure will not work. Error: %s", err
+        )
     try:
         API_KEYS.google = json.loads(
             (_kd / SETTINGS.GOOGLE_KEY_FILENAME).read_text().strip()
         )
-    except Exception:
-        LOG.exception("Could not load Google API key, ASR with Google will not work.")
+    except Exception as err:
+        LOG.warning(
+            "Could not load Google API key, ASR with Google will not work. Error: %s",
+            err,
+        )

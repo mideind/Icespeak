@@ -6,50 +6,73 @@
 
 # Icespeak
 
-_Icespeak_ is a Python library that makes Icelandic-language speech synthesis easy.
+_Icespeak_ is a Python 3.9+ library that makes Icelandic-language speech synthesis easy.
 
-## Installation
+## Local installation
 
-> _Note: The Azure package currently only supports the very out-dated OpenSSL version 1.\*._
+> _Note: The Azure TTS package currently only supports the very out-dated OpenSSL version 1.\*_
 
-Clone the repository and cd into the folder. Then create and activate
-a Python virtual environment, and install all required dependencies:
+Clone the repository and cd into the folder.
+Then create and activate a virtual environment:
 
 ```sh
 python3 -m venv venv
 source venv/bin/activate
+```
+
+Install minimal set of dependencies to use the library:
+
+```sh
 python3 -m pip install .
-# Alternatively, to install in editable mode with extra dev dependencies:
+```
+
+Alternatively, to install in editable mode with extra dev dependencies:
+
+```sh
 python3 -m pip install -e '.[dev]'
 ```
 
 ## Usage
 
+Before using, place API keys for the relevant services in the `/keys` folder
+(or a folder specified by the `ICESPEAK_KEYS_DIR` environment variable).
+
+Output audio files are saved to the directory specified
+by the `ICESPEAK_AUDIO_DIR` environment variable.
+By default Icespeak creates the directory `<TEMP DIR>/icespeak`
+where `<TEMP DIR>` is the temporary directory on your platform,
+fetched via `tempfile.gettempdir()`.
+
+By default, generated audio files are removed upon a clean exit,
+but this can be disabled by setting `ICESPEAK_AUDIO_CACHE_CLEAN=0`.
+
 ### Text-to-speech
 
 Simple example of TTS, which includes phonetic transcription:
 
-```python
-from icespeak import text_to_speech, TTSOptions
-audio_file = text_to_speech(
-    "Hér kemur texti fyrir talgervingu. Ýmislegir textabútar eru hljóðritaðir eins og t.d. ekki.til@vefsida.is, 48,3% o.fl.",
+```py
+from icespeak import tts_to_file, TTSOptions
+text = """\
+Þetta er texti fyrir talgervingu. \
+Í honum er ýmislegt sem mætti vera hljóðritað, \
+t.d. ræður talgerving oft illa við íslenskar skammstafanir, \
+tölvupósta eins og ekki.tolvupostur@vefsida.is,
+eða prósentur eins og 48,3%, o.fl.\
+"""
+tts_out = tts_to_file(
+    text,
     TTSOptions(
-        text_format="text", # Set to 'ssml' if ssml tags in text should be interpreted
+        text_format="text", # Set to 'ssml' if SSML tags in text should be interpreted
         audio_format="mp3", # Output audio will be in mp3 format
         voice="Gudrun" # Azure TTS voice
     ),
-    trancribe=True # Default is True
+    transcribe=True # Default is True
 )
-print(audio_file) # pathlib.Path instance pointing to file on local file system
+print(tts_out.file) # pathlib.Path instance pointing to file on local file system
+print(tts_out.text) # text that was sent to the TTS service (after the phonetic transcription)
 ```
 
-### Transcription
-
-_Documentation still in progress._
-
-### Text composition via GSSML
-
-_Documentation still in progress._
+Results are cached, so subsequent calls with the same arguments should be fast.
 
 ## License
 

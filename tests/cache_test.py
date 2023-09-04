@@ -58,22 +58,22 @@ if __name__ == "__main__":
     nprint("Current number of files in audio directory:", START_NUM_FILES)
 
     start = time.monotonic_ns()
-    p1 = icespeak.text_to_speech(t1)
+    file1 = icespeak.tts_to_file(t1).file
     duration = time.monotonic_ns() - start
 
-    nprint("Audio file:", p1)
+    nprint("Audio file:", file1)
     nprint("Files in audio dir:", len(list(AUDIO_DIR.iterdir())))
     nprint(f"Took {duration / 1e6:.3f} milliseconds.")
 
     nprint("This should be cached...")
 
     start = time.monotonic_ns()
-    p2 = icespeak.text_to_speech(t1)
+    file2 = icespeak.tts_to_file(t1).file
     duration = time.monotonic_ns() - start
 
-    nprint("Audio file:", p2)
+    nprint("Audio file:", file2)
     nprint("Files in audio dir:", len(list(AUDIO_DIR.iterdir())))
-    assert p1 == p2, "This wasn't cached correctly!"
+    assert file1 == file2, "This wasn't cached correctly!"
     nprint(
         f"Took {duration / 1e6:.3f} milliseconds. (Should be a lot faster than above.)"
     )
@@ -84,14 +84,14 @@ if __name__ == "__main__":
         for n in range(1, CACHE_SIZE + 1):
             print(".", end="")
             # Fill cache with uncacheable stuff, if CACHE_SIZE > 1
-            icespeak.text_to_speech(f"Texti númer {n+1}.")
+            _ = icespeak.tts_to_file(f"Texti númer {n+1}.")
         print()
         nprint("Cache filled.")
 
     nprint("Now we should see an eviction!")
 
-    p3 = icespeak.text_to_speech("Þetta er allt annar texti!")
-    nprint("Audio file:", p3)
+    last_file = icespeak.tts_to_file("Þetta er allt annar texti!").file
+    nprint("Audio file:", last_file)
     nprint("Files in audio dir:", len(list(AUDIO_DIR.iterdir())))
 
     nprint("Sleeping a bit, allow cleanup thread to remove files...")
@@ -99,16 +99,16 @@ if __name__ == "__main__":
 
     if CACHE_SIZE == 1:
         # Here we only cache one file, so even the most frequently used one gets evicted
-        assert not p1.is_file(), f"Audio file {p1} wasn't evicted!"
-        assert not p2.is_file(), f"Audio file {p2} wasn't evicted!"
+        assert not file1.is_file(), f"Audio file {file1} wasn't evicted!"
+        assert not file2.is_file(), f"Audio file {file2} wasn't evicted!"
     else:
         assert (
-            p1.is_file()
-        ), f"Audio file {p1} shouldn't be evicted, it is most frequent!"
+            file1.is_file()
+        ), f"Audio file {file1} shouldn't be evicted, it is most frequent!"
         assert (
-            p2.is_file()
-        ), f"Audio file {p2} shouldn't be evicted, it is most frequent!"
+            file2.is_file()
+        ), f"Audio file {file2} shouldn't be evicted, it is most frequent!"
 
-    assert p3.is_file(), f"Audio file {p3} should exist!"
+    assert last_file.is_file(), f"Audio file {last_file} should exist!"
 
     nprint("Caching seems to work!")

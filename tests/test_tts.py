@@ -22,7 +22,7 @@ from __future__ import annotations
 
 import pytest
 
-from icespeak import TTSOptions, text_to_speech
+from icespeak import TTSOptions, tts_to_file
 from icespeak.settings import API_KEYS, suffix_for_audiofmt
 from icespeak.transcribe import strip_markup
 
@@ -46,48 +46,52 @@ _MIN_AUDIO_SIZE = 1000
 @pytest.mark.skipif(API_KEYS.aws is None, reason="Missing AWS Polly API Key.")
 @pytest.mark.network()
 def test_AWSPolly_speech_synthesis():
-    url = text_to_speech(
+    tts_out = tts_to_file(
         _TEXT,
         TTSOptions(text_format="text", audio_format="mp3", voice="Dora"),
     )
-    assert url.is_file(), "Expected audio file to exist"
-    assert url.stat().st_size > _MIN_AUDIO_SIZE, "Expected longer audio data"
-    url.unlink()
+    path = tts_out.file
+    assert path.is_file(), "Expected audio file to exist"
+    assert path.stat().st_size > _MIN_AUDIO_SIZE, "Expected longer audio data"
+    path.unlink()
 
 
 @pytest.mark.skipif(API_KEYS.azure is None, reason="Missing Azure API Key.")
 @pytest.mark.network()
 def test_Azure_speech_synthesis():
     # Test Azure Cognitive Services
-    url = text_to_speech(
+    tts_out = tts_to_file(
         _TEXT,
         TTSOptions(text_format="text", audio_format="mp3", voice="Gudrun"),
     )
-    assert url.is_file(), "Expected audio file to exist"
-    assert url.stat().st_size > _MIN_AUDIO_SIZE, "Expected longer audio data"
-    url.unlink()
+    path = tts_out.file
+    assert path.is_file(), "Expected audio file to exist"
+    assert path.stat().st_size > _MIN_AUDIO_SIZE, "Expected longer audio data"
+    path.unlink()
 
 
 @pytest.mark.skipif(API_KEYS.google is None, reason="Missing Google API Key.")
 @pytest.mark.network()
 def test_Google_speech_synthesis():
     # Test Google Cloud
-    url = text_to_speech(
+    tts_out = tts_to_file(
         _TEXT,
         TTSOptions(text_format="text", audio_format="mp3", voice="Anna"),
     )
-    assert url.is_file(), "Expected audio file to exist"
-    assert url.stat().st_size > _MIN_AUDIO_SIZE, "Expected longer audio data"
-    url.unlink()
+    path = tts_out.file
+    assert path.is_file(), "Expected audio file to exist"
+    assert path.stat().st_size > _MIN_AUDIO_SIZE, "Expected longer audio data"
+    path.unlink()
 
 
 @pytest.mark.network()
 def test_Tiro_speech_synthesis():
     # Test Tiro
-    url = text_to_speech(
+    tts_out = tts_to_file(
         _TEXT,
         TTSOptions(text_format="text", audio_format="mp3", voice="Alfur"),
     )
-    assert url.is_file(), "Expected audio file to exist"
-    assert url.stat().st_size > _MIN_AUDIO_SIZE, "Expected longer audio data"
-    url.unlink()
+    path = tts_out.file
+    assert path.is_file(), "Expected audio file to exist"
+    assert path.stat().st_size > _MIN_AUDIO_SIZE, "Expected longer audio data"
+    path.unlink()
