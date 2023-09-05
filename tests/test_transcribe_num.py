@@ -18,9 +18,12 @@
 
 
 """
+# pyright: reportPrivateUsage=false
 from __future__ import annotations
 
 from icespeak.transcribe.num import (
+    _SUB_20_NEUTRAL,
+    _TENS_NEUTRAL,
     digits_to_text,
     float_to_text,
     floats_to_text,
@@ -33,38 +36,83 @@ from icespeak.transcribe.num import (
     years_to_text,
 )
 
+oktilljón = 10**48
+septilljón = 10**42
+sextilljón = 10**36
+kvintilljón = 10**30
+kvaðrilljarður = 10**27
+kvaðrilljón = 10**24
+trilljarður = 10**21
+trilljón = 10**18
+billjarður = 10**15
+billjón = 10**12
+milljarður = 10**9
+milljón = 10**6
+þúsund = 1000
+
+_NEUT_1_to_100 = (
+    # 1-19
+    *[(k, v) for k, v in _SUB_20_NEUTRAL.items()],
+    # 20, 30
+    *[(k, v) for k, v in _TENS_NEUTRAL.items()],
+    # 21-29, 31-39, ..., 91-99
+    *[
+        (ten + digit, f"{tenstr} og {dstr}")
+        for ten, tenstr in _TENS_NEUTRAL.items()
+        for digit, dstr in list(_SUB_20_NEUTRAL.items())[:9]
+    ],
+    (100, "hundrað"),
+)
+
 
 def test_number_to_neutral() -> None:
     test_cases = (
-        (2, "tvö"),
+        (0, "núll"),
+        *_NEUT_1_to_100,
+        (101, "hundrað og eitt"),
+        (201, "tvö hundruð og eitt"),
         (1100, "eitt þúsund og eitt hundrað"),
         (
-            -42178249,
-            "mínus fjörutíu og tvær milljónir eitt hundrað sjötíu og átta þúsund tvö hundruð fjörutíu og níu",
+            -42_178_249,
+            (
+                "mínus fjörutíu og tvær milljónir eitt hundrað "
+                "sjötíu og átta þúsund tvö hundruð fjörutíu og níu"
+            ),
         ),
-        (241000000000, "tvö hundruð fjörutíu og einn milljarður"),
-        (100000000, "eitt hundrað milljónir"),
-        (1000001000, "einn milljarður og eitt þúsund"),
-        (1000000011, "einn milljarður og ellefu"),
-        (1001000000, "einn milljarður og ein milljón"),
-        (1002000000, "einn milljarður og tvær milljónir"),
-        (200000000000, "tvö hundruð milljarðar"),
+        (241 * milljarður, "tvö hundruð fjörutíu og einn milljarður"),
+        (100 * milljón, "eitt hundrað milljónir"),
+        (milljarður + þúsund, "einn milljarður og eitt þúsund"),
+        (milljarður + 11, "einn milljarður og ellefu"),
+        (milljarður + 1 * milljón, "einn milljarður og ein milljón"),
+        (milljarður + 2 * milljón, "einn milljarður og tvær milljónir"),
+        (200 * milljarður, "tvö hundruð milljarðar"),
+        (3 * milljarður + 400 * þúsund, "þrír milljarðar og fjögur hundruð þúsund"),
         (
-            10000000000000000000000000000000000000000000000000000000,
+            10 * milljón * oktilljón,
             "tíu milljónir oktilljóna",
         ),
         (
-            1000000000000000000000000000000000000001000000000,
+            oktilljón + milljarður,
             "ein oktilljón og einn milljarður",
         ),
         (
-            1000000000000000000000000000000000000003000000000,
+            oktilljón + 2 * milljarður,
+            "ein oktilljón og tveir milljarðar",
+        ),
+        (
+            oktilljón + 3 * milljarður,
             "ein oktilljón og þrír milljarðar",
         ),
-        (3000400000, "þrír milljarðar og fjögur hundruð þúsund"),
         (
-            2000000000000000000000000000000000100000000000000,
+            2 * oktilljón + 100 * billjón,
             "tvær oktilljónir og eitt hundrað billjónir",
+        ),
+        (
+            1_010_101_010_101_010,
+            (
+                "einn billjarður tíu billjónir eitt hundrað og einn milljarður "
+                "tíu milljónir eitt hundrað og eitt þúsund og tíu"
+            ),
         ),
     )
     for n, expected in test_cases:
@@ -72,40 +120,40 @@ def test_number_to_neutral() -> None:
 
 
 def test_number_to_text():
+    # Shorten name for tests
+    nt = number_to_text
     assert (
-        number_to_text(1000200200)
+        nt(milljarður + 200 * þúsund + 200)
         == "einn milljarður tvö hundruð þúsund og tvö hundruð"
     )
-    assert number_to_text(320) == "þrjú hundruð og tuttugu"
-    assert number_to_text(320000) == "þrjú hundruð og tuttugu þúsund"
-    assert (
-        number_to_text(3202020202020)
-        == "þrjár billjónir tvö hundruð og tveir milljarðar tuttugu milljónir tvö hundruð og tvö þúsund og tuttugu"
+    assert nt(320) == "þrjú hundruð og tuttugu"
+    assert nt(320 * þúsund) == "þrjú hundruð og tuttugu þúsund"
+    assert nt(320 * þúsund + 1, gender="kk") == "þrjú hundruð og tuttugu þúsund og einn"
+    assert nt(320 * þúsund + 1, gender="kvk") == "þrjú hundruð og tuttugu þúsund og ein"
+    assert nt(320 * þúsund + 1, gender="hk") == "þrjú hundruð og tuttugu þúsund og eitt"
+    assert nt(3202020202020) == (
+        "þrjár billjónir tvö hundruð og tveir milljarðar "
+        "tuttugu milljónir tvö hundruð og tvö þúsund og tuttugu"
     )
-    assert (
-        number_to_text(320202020)
-        == "þrjú hundruð og tuttugu milljónir tvö hundruð og tvö þúsund og tuttugu"
+    assert nt(320202020) == (
+        "þrjú hundruð og tuttugu milljónir tvö hundruð og tvö þúsund og tuttugu"
     )
 
-    assert number_to_text(101, gender="kk") == "hundrað og einn"
-    assert number_to_text(-102, gender="kvk") == "mínus hundrað og tvær"
+    assert nt(101, gender="kk") == "hundrað og einn"
+    assert nt(-102, gender="kvk") == "mínus hundrað og tvær"
+    assert nt(-102, gender="kvk", one_hundred=True) == "mínus eitt hundrað og tvær"
+    assert nt(5, gender="kk") == "fimm"
+    assert nt(10001, gender="kvk") == "tíu þúsund og ein"
     assert (
-        number_to_text(-102, gender="kvk", one_hundred=True)
-        == "mínus eitt hundrað og tvær"
+        nt(113305, gender="kk") == "eitt hundrað og þrettán þúsund þrjú hundruð og fimm"
     )
-    assert number_to_text(5, gender="kk") == "fimm"
-    assert number_to_text(10001, gender="kvk") == "tíu þúsund og ein"
+    assert nt(400567, gender="hk") == number_to_neutral(400567)
     assert (
-        number_to_text(113305, gender="kk")
-        == "eitt hundrað og þrettán þúsund þrjú hundruð og fimm"
-    )
-    assert number_to_text(400567, gender="hk") == number_to_neutral(400567)
-    assert (
-        number_to_text(-11220024, gender="kvk")
+        nt(-11220024, gender="kvk")
         == "mínus ellefu milljónir tvö hundruð og tuttugu þúsund tuttugu og fjórar"
     )
     assert (
-        number_to_text(19501180)
+        nt(19501180)
         == "nítján milljónir fimm hundruð og eitt þúsund eitt hundrað og áttatíu"
     )
 
@@ -209,11 +257,11 @@ def test_number_to_ordinal() -> None:
         == "tíu þúsund tvö hundruðustu og öðrum"
     )
     assert (
-        number_to_ordinal(1000000, case="þf", gender="kvk", number="et")
+        number_to_ordinal(milljón, case="þf", gender="kvk", number="et")
         == "milljónustu"
     )
     assert (
-        number_to_ordinal(1000000002, case="þf", gender="kvk", number="et")
+        number_to_ordinal(milljarður + 2, case="þf", gender="kvk", number="et")
         == "milljörðustu og aðra"
     )
 
@@ -324,8 +372,8 @@ def test_digits_to_text() -> None:
     )
     assert digits_to_text("581 2345") == "fimm átta einn tveir þrír fjórir fimm"
     assert (
-        digits_to_text("5812345, það er síminn hjá þeim.")
-        == "fimm átta einn tveir þrír fjórir fimm, það er síminn hjá þeim."
+        digits_to_text("5812346, það er síminn hjá þeim.")
+        == "fimm átta einn tveir þrír fjórir sex, það er síminn hjá þeim."
     )
     assert (
         digits_to_text("010270-2039")
