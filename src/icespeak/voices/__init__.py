@@ -27,7 +27,7 @@ from abc import ABC, abstractmethod
 
 from pydantic import BaseModel, Extra, Field
 
-from icespeak.settings import LOG, MAX_SPEED, MIN_SPEED, SETTINGS, TextFormatsT
+from icespeak.settings import LOG, MAX_SPEED, MIN_SPEED, SETTINGS, TextFormats
 from icespeak.transcribe import DefaultTranscriber
 
 if TYPE_CHECKING:
@@ -60,7 +60,7 @@ class TTSOptions(BaseModel):
         le=MAX_SPEED,
         description="TTS speed.",
     )
-    text_format: TextFormatsT = Field(
+    text_format: TextFormats = Field(
         default=SETTINGS.DEFAULT_TEXT_FORMAT,
         description="Format of text (plaintext or SSML).",
     )
