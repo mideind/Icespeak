@@ -25,7 +25,7 @@
 """
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import Any
 from typing_extensions import override
 
 from collections import deque
@@ -33,10 +33,8 @@ from html.parser import HTMLParser
 from inspect import ismethod
 
 from .settings import LOG, SETTINGS
+from .transcribe import DefaultTranscriber, TranscriptionMethod
 from .tts import SERVICES, VOICES
-
-if TYPE_CHECKING:
-    from .transcribe import DefaultTranscriber, TranscriptionMethod
 
 GSSML_TAG = "greynir"
 
@@ -100,9 +98,9 @@ class GreynirSSMLParser(HTMLParser):
             voice = SETTINGS.DEFAULT_VOICE
 
         # Fetch transcriber for this voice
-        service = VOICES[voice]["service"]
+        service = VOICES[voice].get("service")
         self._handler: type[DefaultTranscriber]
-        self._handler = SERVICES[service].Transcriber
+        self._handler = SERVICES[service].Transcriber if service else DefaultTranscriber
 
         self._str_stack: deque[str] = deque()
         self._attr_stack: deque[dict[str, str | None]] = deque()

@@ -31,18 +31,19 @@ from icespeak.settings import LOG, MAX_SPEED, MIN_SPEED, SETTINGS, TextFormatsT
 from icespeak.transcribe import DefaultTranscriber
 
 if TYPE_CHECKING:
-    from typing_extensions import Literal
+    from typing_extensions import Literal, NotRequired
 
     from pathlib import Path
 
 
-class ModuleVoiceInfoT(TypedDict):
+class VoiceInfoT(TypedDict):
     id: str
     lang: str
     style: Literal["female", "male"]
+    service: NotRequired[str]
 
 
-ModuleVoicesT = Mapping[str, ModuleVoiceInfoT]
+ModuleVoicesT = Mapping[str, VoiceInfoT]
 ModuleAudioFormatsT = Collection[str]
 
 

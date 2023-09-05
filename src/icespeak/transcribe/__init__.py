@@ -1028,7 +1028,7 @@ class DefaultTranscriber:
     def email(cls, txt: str) -> str:
         """Voicify an email address."""
         user, at, domain = txt.partition("@")
-        return f"{cls.username(user)}{' hjá ' if at else ''}{cls.domain(domain)}"
+        return f"{cls.username(user)}{' att ' if at else ''}{cls.domain(domain)}"
 
     # Hardcoded pronounciations,
     # should be overriden based on voice engine
