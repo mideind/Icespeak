@@ -25,7 +25,8 @@
         tts --help
 
 """
-
+# TODO: Transcribe-only option
+# TODO: Add separate progress bar for transcription phase
 from typing import Annotated, Optional
 
 import shutil
@@ -83,6 +84,9 @@ def _play_audio_file(path: Path, player: Optional[str] = None) -> None:
     elif mpg123 := shutil.which("mpg123"):
         # mpg123 is a cross-platform player
         cmd = [mpg123, "--quiet"]
+    elif vlc := shutil.which("vlc"):
+        # vlc is a cross-platform player
+        cmd = [vlc]
     elif cmdmp3 := shutil.which("cmdmp3"):
         # cmdmp3 is a Windows command line mp3 player
         cmd = [cmdmp3]
@@ -237,9 +241,6 @@ def _text_to_speech(
         TextColumn("[progress.description]{task.description}"),
         transient=True,
     ) as progress:
-        # TODO: Split tts_to_file into transcribe phase and tts phase
-        # progress.add_task("Transcribing text...", total=None)
-        # transcribed = transcribe(...)
         progress.add_task("Synthesizing text...", total=None)
         # Synthesize the text according to CLI options
         tts_out = tts_to_file(
