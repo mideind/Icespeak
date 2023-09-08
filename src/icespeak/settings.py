@@ -22,7 +22,7 @@
 """
 # We dont import annotations from __future__ here
 # due to pydantic
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 import json
 import tempfile
@@ -31,7 +31,7 @@ from enum import Enum
 from logging import getLogger
 from pathlib import Path
 
-from pydantic import BaseModel, Field, SecretStr, validator
+from pydantic import BaseModel, Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # Library wide logger instance
@@ -80,12 +80,25 @@ class Settings(BaseSettings):
     Attributes are read from environment variables or `.env` file.
     """
 
-    model_config = SettingsConfigDict(env_prefix="ICESPEAK_")
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        env_prefix="ICESPEAK_",
+        env_nested_delimiter="__",
+        case_sensitive=False,
+        # Run validators when attributes are modified
+        validate_assignment=True,
+    )
 
     DEFAULT_VOICE: str = Field(
         default="Gudrun", description="Default TTS voice if none is requested."
     )
-    DEFAULT_VOICE_SPEED: float = Field(default=1.0, le=MAX_SPEED, ge=MIN_SPEED)
+    DEFAULT_VOICE_SPEED: float = Field(
+        default=1.0,
+        le=MAX_SPEED,
+        ge=MIN_SPEED,
+        description="Default TTS voice speed.",
+    )
     DEFAULT_TEXT_FORMAT: TextFormats = Field(
         default=TextFormats.SSML,
         description="Default format to interpret input text as.",
@@ -123,16 +136,6 @@ class Settings(BaseSettings):
         default="GoogleServiceAccount.json",
         description="Name of the Google API key file.",
     )
-
-    # Logging settings
-    LOG_LEVEL: Union[str, int] = Field(default="INFO", description="Logging level.")
-
-    @validator("LOG_LEVEL")
-    def set_log_level(cls, lvl: Union[str, int]) -> Union[str, int]:
-        # Set logging level for root Ratatoskur logger,
-        # this raises a ValueError if the provided level is invalid
-        LOG.setLevel(lvl)
-        return lvl
 
     def get_audio_dir(self) -> Path:
         """
@@ -182,7 +185,9 @@ API_KEYS = Keys()
 
 _kd = SETTINGS.KEYS_DIR
 if not (_kd.exists() and _kd.is_dir()):
-    LOG.warning("Keys directory missing or incorrect, TTS will not work!")
+    LOG.warning(
+        "Keys directory missing or incorrect, TTS will not work! Set to: %s", _kd
+    )
 else:
     # Load API keys, logging exceptions in level DEBUG so they aren't logged twice,
     # as exceptions are logged as warnings when voice modules are initialized
