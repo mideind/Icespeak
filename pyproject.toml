@@ -129,7 +129,7 @@ dev = [
 ]
 
 [project.urls]
-repository = "https://github.com/mideind/icespeak"
+Repository = "https://github.com/mideind/icespeak"
 
 [project.scripts]
 tts = "icespeak.cli:main"
