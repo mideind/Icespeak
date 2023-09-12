@@ -107,7 +107,7 @@ def test_dt_email() -> None:
     ):
         n = DT.email(e)
         assert "@" not in n
-        assert " hjá " in n
+        assert " att " in n
         assert "." not in re.sub(r"<break .*?/>", "", n)
         assert " punktur " in n
 

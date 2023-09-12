@@ -22,27 +22,39 @@
 """
 # We dont import annotations from __future__ here
 # due to pydantic
-from typing import Any, Literal, Optional, Union
+from typing import Any, Optional
 
 import json
 import tempfile
 import uuid
+from enum import Enum
 from logging import getLogger
 from pathlib import Path
 
-from pydantic import BaseModel, Field, SecretStr, validator
+from pydantic import BaseModel, Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # Library wide logger instance
 __logger__ = "icespeak"
 LOG = getLogger(__logger__)
 
+
 # For details about SSML markup, see:
 # https://developer.amazon.com/en-US/docs/alexa/custom-skills/speech-synthesis-markup-language-ssml-reference.html
 # or:
 # https://learn.microsoft.com/en-us/azure/cognitive-services/speech-service/speech-synthesis-markup
-TextFormatsT = Literal["ssml", "text"]
-AudioFormatsT = Literal["mp3", "ogg_vorbis", "pcm", "opus"]
+class TextFormats(str, Enum):
+    SSML = "ssml"
+    TEXT = "text"
+
+
+class AudioFormats(str, Enum):
+    MP3 = "mp3"
+    OGG_VORBIS = "ogg_vorbis"
+    PCM = "pcm"
+    OPUS = "opus"
+
+
 MAX_SPEED = 2.0
 MIN_SPEED = 0.5
 
@@ -68,18 +80,31 @@ class Settings(BaseSettings):
     Attributes are read from environment variables or `.env` file.
     """
 
-    model_config = SettingsConfigDict(env_prefix="ICESPEAK_")
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        env_prefix="ICESPEAK_",
+        env_nested_delimiter="__",
+        case_sensitive=False,
+        # Run validators when attributes are modified
+        validate_assignment=True,
+    )
 
     DEFAULT_VOICE: str = Field(
         default="Gudrun", description="Default TTS voice if none is requested."
     )
-    DEFAULT_VOICE_SPEED: float = Field(default=1.0, le=MAX_SPEED, ge=MIN_SPEED)
-    DEFAULT_TEXT_FORMAT: TextFormatsT = Field(
-        default="ssml",
+    DEFAULT_VOICE_SPEED: float = Field(
+        default=1.0,
+        le=MAX_SPEED,
+        ge=MIN_SPEED,
+        description="Default TTS voice speed.",
+    )
+    DEFAULT_TEXT_FORMAT: TextFormats = Field(
+        default=TextFormats.SSML,
         description="Default format to interpret input text as.",
     )
-    DEFAULT_AUDIO_FORMAT: AudioFormatsT = Field(
-        default="mp3", description="Default audio output format."
+    DEFAULT_AUDIO_FORMAT: AudioFormats = Field(
+        default=AudioFormats.MP3, description="Default audio output format."
     )
 
     AUDIO_DIR: Optional[Path] = Field(
@@ -111,16 +136,6 @@ class Settings(BaseSettings):
         default="GoogleServiceAccount.json",
         description="Name of the Google API key file.",
     )
-
-    # Logging settings
-    LOG_LEVEL: Union[str, int] = Field(default="INFO", description="Logging level.")
-
-    @validator("LOG_LEVEL")
-    def set_log_level(cls, lvl: Union[str, int]) -> Union[str, int]:
-        # Set logging level for root Ratatoskur logger,
-        # this raises a ValueError if the provided level is invalid
-        LOG.setLevel(lvl)
-        return lvl
 
     def get_audio_dir(self) -> Path:
         """
@@ -170,15 +185,18 @@ API_KEYS = Keys()
 
 _kd = SETTINGS.KEYS_DIR
 if not (_kd.exists() and _kd.is_dir()):
-    LOG.warning("Keys directory missing or incorrect, TTS will not work!")
+    LOG.warning(
+        "Keys directory missing or incorrect, TTS will not work! Set to: %s", _kd
+    )
 else:
-    # Load API keys
+    # Load API keys, logging exceptions in level DEBUG so they aren't logged twice,
+    # as exceptions are logged as warnings when voice modules are initialized
     try:
         API_KEYS.aws = AWSPollyKey.model_validate_json(
             (_kd / SETTINGS.AWSPOLLY_KEY_FILENAME).read_text().strip()
         )
     except Exception as err:
-        LOG.warning(
+        LOG.debug(
             "Could not load AWS Polly API key, ASR with AWS Polly will not work. Error: %s",
             err,
         )
@@ -187,7 +205,7 @@ else:
             (_kd / SETTINGS.AZURE_KEY_FILENAME).read_text().strip()
         )
     except Exception as err:
-        LOG.warning(
+        LOG.debug(
             "Could not load Azure API key, ASR with Azure will not work. Error: %s", err
         )
     try:
@@ -195,7 +213,7 @@ else:
             (_kd / SETTINGS.GOOGLE_KEY_FILENAME).read_text().strip()
         )
     except Exception as err:
-        LOG.warning(
+        LOG.debug(
             "Could not load Google API key, ASR with Google will not work. Error: %s",
             err,
         )

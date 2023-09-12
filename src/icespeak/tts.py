@@ -35,12 +35,12 @@ from cachetools import LFUCache, cached
 
 from .settings import LOG, SETTINGS
 from .transcribe import TranscriptionOptions
-from .voices import BaseVoice, TTSOptions, aws_polly, azure, google, tiro
+from .voices import BaseVoice, TTSOptions, VoiceInfoT, aws_polly, azure, google, tiro
 
 if TYPE_CHECKING:
     from pathlib import Path
 
-VoicesT = Mapping[str, Mapping[str, str]]
+VoicesT = Mapping[str, VoiceInfoT]
 ServicesT = Mapping[str, BaseVoice]
 
 
