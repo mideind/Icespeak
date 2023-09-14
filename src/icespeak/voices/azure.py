@@ -216,10 +216,13 @@ class AzureVoice(BaseVoice):
                     {text}
                     </voice></speak>
                 """.strip()
+
+                _LOG.debug("Synthesizing SSML with Azure: %r", text)
                 result = synthesizer.speak_ssml(text)
             else:
                 # We're not sending SSML so strip any markup from text
                 text = strip_markup(text)
+                _LOG.debug("Synthesizing plaintext with Azure: %r", text)
                 result = synthesizer.speak_text(text)
 
             # Check result

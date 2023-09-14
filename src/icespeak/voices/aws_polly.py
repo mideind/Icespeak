@@ -90,14 +90,16 @@ class AWSPollyVoice(BaseVoice):
                 text = f"<speak>{text}</speak>"
 
         try:
-            response: dict[str, Any] = self._aws_client.synthesize_speech(
-                Text=text,
-                TextType=options.text_format,
-                VoiceId=AWSPollyVoice._VOICES[options.voice]["id"],
-                LanguageCode=AWSPollyVoice._VOICES[options.voice]["lang"],
-                SampleRate="16000",
-                OutputFormat=options.audio_format,
-            )
+            aws_args = {
+                "Text": text,
+                "TextType": options.text_format,
+                "VoiceId": AWSPollyVoice._VOICES[options.voice]["id"],
+                "LanguageCode": AWSPollyVoice._VOICES[options.voice]["lang"],
+                "SampleRate": "16000",
+                "OutputFormat": options.audio_format,
+            }
+            _LOG.debug("Synthesizing with AWS Polly: %s", aws_args)
+            response: dict[str, Any] = self._aws_client.synthesize_speech(**aws_args)
         except Exception:
             _LOG.exception("Error synthesizing speech.")
             raise

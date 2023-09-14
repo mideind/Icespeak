@@ -471,7 +471,7 @@ def test_dt_token_transcribe_experimental():
     n = DT.token_transcribe(
         "sagðist hún vona að á næstu 10-20 árum "
         + "yrði farið að nýta tæknina 9,2-5,3 prósent meira.",
-        t_opts,
+        options=t_opts,
     )
     assert "tíu bandstrik tuttugu árum" in n
     assert "níu komma tvö bandstrik fimm komma þrjú prósent" in n
@@ -482,7 +482,7 @@ def test_dt_token_transcribe_experimental():
         sem voru sterkari og unnu þeir leikinn 2-0.
         """
     )
-    n = DT.token_transcribe(t, t_opts)
+    n = DT.token_transcribe(t, options=t_opts)
     assert "Frakkland bandstrik Marókkó" in n
     assert "tvö bandstrik núll" in n
     t = _fix_ws(
@@ -492,7 +492,7 @@ def test_dt_token_transcribe_experimental():
         í Berlín sprakk snemma í morgun.
         """
     )
-    n = DT.token_transcribe(t, t_opts)
+    n = DT.token_transcribe(t, options=t_opts)
     # assert "tveir" in n
     assert "eitt þúsund og fimm hundruð" in n
     assert "sextán" in n
@@ -521,7 +521,7 @@ def test_dt_token_transcribe_experimental():
         Hér er upphæð í eintölu: 21 kr.
         """
     )
-    n = DT.token_transcribe(t, t_opts)
+    n = DT.token_transcribe(t, options=t_opts)
     assert "%" not in n
     assert "prósent" in n
     assert not any(c.isdecimal() for c in n)
@@ -537,11 +537,11 @@ def test_dt_token_transcribe_experimental():
         úr sekúndum á undan þeim spænska í mark. Jacob Krop frá Kenýa tók bronsið á 13:12.28.
         """
     )
-    n = DT.token_transcribe(t, t_opts)
+    n = DT.token_transcribe(t, options=t_opts)
     assert "fimm þúsund metra" in n
     assert "ellefu komma þrj" in n
     t = "Í 1., 2., 3. og 4. lagi. Í 31. lagi"
-    n = DT.token_transcribe(t, t_opts)
+    n = DT.token_transcribe(t, options=t_opts)
     assert "Í fyrsta" in n
     # assert "öðru" in n
     assert "þriðja" in n

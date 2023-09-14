@@ -189,7 +189,7 @@ def tts_to_file(
 
     if transcribe:
         transcription_options = transcription_options or TranscriptionOptions()
-        text = service.Transcriber.token_transcribe(text, transcription_options)
+        text = service.Transcriber.token_transcribe(text, options=transcription_options)
 
     output = TTSOutput(
         file=service.text_to_speech(text, tts_options),

@@ -47,6 +47,8 @@ from tokenizer.definitions import (
     PunctuationTuple,
 )
 
+from icespeak.settings import TRACE
+
 from .num import (
     ROMAN_NUMERALS,
     CaseType,
@@ -544,17 +546,21 @@ def _is_plural(num: str | float) -> bool:
     return not (sn.endswith("1") and not sn.endswith("11"))
 
 
-def _empty_str(f: TranscriptionMethod) -> TranscriptionMethod:
+def _transcribe_method(f: TranscriptionMethod) -> TranscriptionMethod:
     """
-    Decorator which returns an empty string
-    if the transcription method is called
-    with an empty string.
+    Decorator which
+    - returns "" if text is ""
+    - wraps funtion with TRACE(=5) level logging
     """
 
     def _inner(cls: DefaultTranscriber, txt: str, **kwargs: _StrBool):
-        if txt == "":  # noqa
-            return ""
-        return f(cls, txt, **kwargs)
+        _LOG.log(TRACE, "Input to %s, txt: %r, kwargs: %s", f, txt, kwargs)
+        out = ""
+        # NOTE: Keep `!= ""`
+        if txt != "":  # noqa
+            out = f(cls, txt, **kwargs)
+        _LOG.log(TRACE, "Output from %s, txt: %r", f, out)
+        return out
 
     return _inner
 
@@ -603,7 +609,7 @@ class DefaultTranscriber:
     )
 
     @classmethod
-    @_empty_str
+    @_transcribe_method
     def danger_symbols(cls, txt: str) -> str:
         """
         Takes in any text and replaces the symbols that
@@ -614,12 +620,13 @@ class DefaultTranscriber:
               unicode character before this function is called.
               (GreynirSSMLParser does this automatically.)
         """
+        # TODO: Optimize this
         for symb, new in cls._DANGER_SYMBOLS:
             txt = txt.replace(symb, new)
         return txt
 
     @classmethod
-    @_empty_str
+    @_transcribe_method
     @_bool_args("one_hundred")
     def number(
         cls,
@@ -633,7 +640,7 @@ class DefaultTranscriber:
         return number_to_text(txt, case=case, gender=gender, one_hundred=one_hundred)
 
     @classmethod
-    @_empty_str
+    @_transcribe_method
     @_bool_args("one_hundred")
     def numbers(
         cls,
@@ -647,7 +654,7 @@ class DefaultTranscriber:
         return numbers_to_text(txt, case=case, gender=gender, one_hundred=one_hundred)
 
     @classmethod
-    @_empty_str
+    @_transcribe_method
     @_bool_args("comma_null", "one_hundred")
     def float(
         cls,
@@ -668,7 +675,7 @@ class DefaultTranscriber:
         )
 
     @classmethod
-    @_empty_str
+    @_transcribe_method
     @_bool_args("comma_null", "one_hundred")
     def floats(
         cls,
@@ -689,7 +696,7 @@ class DefaultTranscriber:
         )
 
     @classmethod
-    @_empty_str
+    @_transcribe_method
     def ordinal(
         cls,
         txt: str,
@@ -702,7 +709,7 @@ class DefaultTranscriber:
         return number_to_ordinal(txt, case=case, gender=gender, number=number)
 
     @classmethod
-    @_empty_str
+    @_transcribe_method
     def ordinals(
         cls,
         txt: str,
@@ -715,30 +722,32 @@ class DefaultTranscriber:
         return numbers_to_ordinal(txt, case=case, gender=gender, number=number)
 
     @classmethod
-    @_empty_str
+    @_transcribe_method
     def digits(cls, txt: str) -> str:
         """Spell out digits."""
         return digits_to_text(txt)
 
     @classmethod
-    @_empty_str
+    @_transcribe_method
     def phone(cls, txt: str) -> str:
         """Spell out a phone number."""
         return cls.digits(txt).replace("+", "plús ")
 
     @classmethod
+    @_transcribe_method
     def timespan(cls, seconds: str) -> str:
         """Voicify a span of time, specified in seconds."""
         # TODO: Replace time_period_desc in queries/util/__init__.py
         raise NotImplementedError
 
     @classmethod
+    @_transcribe_method
     def distance(cls, meters: str) -> str:
         # TODO: Replace distance_desc in queries/util/__init__.py
         raise NotImplementedError
 
     @classmethod
-    @_empty_str
+    @_transcribe_method
     def time(cls, txt: str) -> str:
         """Voicifies time of day."""
 
@@ -792,7 +801,7 @@ class DefaultTranscriber:
         return _TIME_REGEX.sub(_time_fmt, txt)
 
     @classmethod
-    @_empty_str
+    @_transcribe_method
     def date(cls, txt: str, case: CaseType = "nf") -> str:
         """Voicifies a date"""
         # TODO: This function should accept year, month, day
@@ -820,13 +829,13 @@ class DefaultTranscriber:
         return txt
 
     @classmethod
-    @_empty_str
+    @_transcribe_method
     def year(cls, txt: str) -> str:
         """Voicify a year."""
         return year_to_text(txt)
 
     @classmethod
-    @_empty_str
+    @_transcribe_method
     def years(cls, txt: str) -> str:
         """Voicify text containing multiple years."""
         return years_to_text(txt)
@@ -872,7 +881,7 @@ class DefaultTranscriber:
     }
 
     @classmethod
-    @_empty_str
+    @_transcribe_method
     @_bool_args("literal")
     def spell(
         cls,
@@ -907,7 +916,7 @@ class DefaultTranscriber:
         )
 
     @classmethod
-    @_empty_str
+    @_transcribe_method
     def abbrev(cls, txt: str) -> str:
         """Expand an abbreviation."""
         meanings = tuple(
@@ -929,19 +938,21 @@ class DefaultTranscriber:
         return txt
 
     @classmethod
+    @_transcribe_method
     def currency(cls, txt: str, *, number: NumberType = "ft") -> str:
         if txt not in _CURRENCY_NAMES:
             return cls.spell(txt)
         return _CURRENCY_NAMES[txt][number]
 
     @classmethod
+    @_transcribe_method
     def unit(cls, txt: str, *, number: NumberType = "ft") -> str:
         if txt not in _SI_UNIT_NAMES:
             return txt
         return _SI_UNIT_NAMES[txt][number]
 
     @classmethod
-    @_empty_str
+    @_transcribe_method
     def molecule(cls, txt: str) -> str:
         """Voicify the name of a molecule"""
         return " ".join(
@@ -950,7 +961,7 @@ class DefaultTranscriber:
         )
 
     @classmethod
-    @_empty_str
+    @_transcribe_method
     def numalpha(cls, txt: str) -> str:
         """Voicify a alphanumeric string, spelling each character."""
         return " ".join(
@@ -959,7 +970,7 @@ class DefaultTranscriber:
         )
 
     @classmethod
-    @_empty_str
+    @_transcribe_method
     def username(cls, txt: str) -> str:
         """Voicify a username."""
         newtext: list[str] = []
@@ -995,7 +1006,7 @@ class DefaultTranscriber:
     }
 
     @classmethod
-    @_empty_str
+    @_transcribe_method
     def domain(cls, txt: str) -> str:
         """Voicify a domain name."""
         newtext: list[str] = []
@@ -1024,7 +1035,7 @@ class DefaultTranscriber:
         return " ".join(newtext)
 
     @classmethod
-    @_empty_str
+    @_transcribe_method
     def email(cls, txt: str) -> str:
         """Voicify an email address."""
         user, at, domain = txt.partition("@")
@@ -1085,7 +1096,7 @@ class DefaultTranscriber:
     )
 
     @classmethod
-    @_empty_str
+    @_transcribe_method
     def entity(cls, txt: str) -> str:
         """Voicify an entity name."""
         parts = txt.split()
@@ -1119,7 +1130,7 @@ class DefaultTranscriber:
         return " ".join(parts)
 
     @classmethod
-    @_empty_str
+    @_transcribe_method
     @_bool_args("full_text")
     @lru_cache(maxsize=50)  # Caching, as this method could be slow
     def parser_transcribe(cls, txt: str, *, full_text: bool = False) -> str:
@@ -1284,7 +1295,7 @@ class DefaultTranscriber:
     }
 
     @classmethod
-    @_empty_str
+    @_transcribe_method
     def person(cls, txt: str) -> str:
         """Voicify the name of a person."""
         with GreynirBin.get_db() as gbin:
@@ -1340,27 +1351,27 @@ class DefaultTranscriber:
         return "<break />"
 
     @classmethod
-    @_empty_str
+    @_transcribe_method
     def paragraph(cls, txt: str) -> str:
         """Paragraph delimiter for speech synthesis."""
         return f"<p>{txt}</p>"
 
     @classmethod
-    @_empty_str
+    @_transcribe_method
     def sentence(cls, txt: str) -> str:
         """Sentence delimiter for speech synthesis."""
         return f"<s>{txt}</s>"
 
     @classmethod
+    @_transcribe_method
     def token_transcribe(
-        cls, text: str, options: TranscriptionOptions | None = None
+        cls, text: str, *, options: TranscriptionOptions | None = None
     ) -> str:
         """
         Quick transcription of Icelandic text for TTS.
         Utilizes the tokenizer library.
         """
         opt: TranscriptionOptions = options if options else TranscriptionOptions()
-        _LOG.debug("token_transcribe, text: %r, options: %r", text, opt)
         tokens: list[Tok] = list(tokenize(text))
         for token in tokens:
             # Check if abbreviation
@@ -1520,6 +1531,4 @@ class DefaultTranscriber:
             elif token.kind == TOK.SERIALNUMBER:
                 token.txt = cls.digits(token.txt)
 
-        out = detokenize(tokens)
-        _LOG.debug("token_transcribe, out: %r", out)
-        return out
+        return detokenize(tokens)
