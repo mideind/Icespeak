@@ -30,6 +30,10 @@ dependencies = [
     "typing-extensions>=4.7.1",
     "pydantic-settings>=2.0.3",
     "cachetools>=5.3.1",
+    # For parsing Icelandic text
+    "islenska<1.0.0",
+    "reynir<4.0.0",
+    "tokenizer<4.0.0",
     # Azure TTS
     "azure-cognitiveservices-speech>=1.25.0",
     # Google TTS
@@ -37,10 +41,25 @@ dependencies = [
     # AWS Polly TTS
     "botocore>=1.21.40",
     "boto3>=1.18.40",
-    # TODO: Make these optional
-    "islenska",
-    "reynir",
-    "tokenizer",
+]
+
+[project.urls]
+Repository = "https://github.com/mideind/icespeak"
+
+[project.scripts]
+tts = "icespeak.cli:main"
+
+[project.optional-dependencies]
+# Needed for CLI interface
+cli = ["typer[all]==0.9.0"]
+# Dev dependencies
+dev = [
+    "pytest>=7.2.1",
+    "coverage[toml]>=7.3.1",
+    "black>=23.7.0",
+    "ruff>=0.0.286",
+    "pre-commit>=3.3.3",
+    "mypy>=1.4.1",
 ]
 
 [tool.pytest.ini_options]
@@ -51,6 +70,19 @@ filterwarnings = [
     # as it turns warnings into errors in our code
     "error:::icespeak",
 ]
+
+[tool.coverage.run]
+branch = true
+source = ["icespeak"]
+command_line = "-m pytest --run-all"
+
+[tool.coverage.report]
+exclude_also = ["if TYPE_CHECKING:", "raise NotImplementedError"]
+skip_covered = true
+skip_empty = true
+sort = "-Cover"
+precision = 2
+fail_under = 65
 
 [tool.mypy]
 overrides = [
@@ -128,28 +160,6 @@ section-order = [
 [tool.ruff.isort.sections]
 # Have typing libraries above other imports
 typehints = ["typing", "typing_extensions", "types", "collections.abc"]
-
-[tool.ruff.per-file-ignores]
-# Allow print statements in CLI interface
-"src/icespeak/cli.py" = ["FBT001", "FBT002"]
-
-[project.optional-dependencies]
-cli = ["typer[all]==0.9.0"]
-# Dev dependencies
-dev = [
-    "pytest>=7.2.1",
-    "ruff>=0.0.286",
-    # Pre-commit hook
-    "pre-commit",
-    "black",
-    "mypy",
-]
-
-[project.urls]
-Repository = "https://github.com/mideind/icespeak"
-
-[project.scripts]
-tts = "icespeak.cli:main"
 
 # Automatic versioning and build system configuration
 

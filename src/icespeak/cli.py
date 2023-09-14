@@ -25,6 +25,7 @@
         tts --help
 
 """
+# ruff: noqa: FBT001, FBT002
 # TODO: Transcribe-only option
 # TODO: Add separate progress bar for transcription phase
 from typing import Annotated, Optional

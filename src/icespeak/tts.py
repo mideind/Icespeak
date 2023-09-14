@@ -36,7 +36,9 @@ from cachetools import LFUCache, cached
 
 from .settings import SETTINGS
 from .transcribe import TranscriptionOptions
-from .voices import BaseVoice, TTSOptions, VoiceInfoT, aws_polly, azure, google, tiro
+
+# TODO: Re implement Tiro
+from .voices import BaseVoice, TTSOptions, VoiceInfoT, aws_polly, azure, google
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -56,7 +58,7 @@ def _setup_voices() -> tuple[VoicesT, ServicesT]:
         aws_polly.AWSPollyVoice(),
         azure.AzureVoice(),
         google.GoogleVoice(),
-        tiro.TiroVoice(),
+        # tiro.TiroVoice(),
     )
     voices: VoicesT = {}
     for service in services:

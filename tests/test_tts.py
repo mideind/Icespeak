@@ -23,7 +23,7 @@ from __future__ import annotations
 import pytest
 
 from icespeak import TTSOptions, tts_to_file
-from icespeak.settings import API_KEYS, suffix_for_audiofmt
+from icespeak.settings import API_KEYS, TextFormats, suffix_for_audiofmt
 from icespeak.transcribe import strip_markup
 
 
@@ -48,7 +48,7 @@ _MIN_AUDIO_SIZE = 1000
 def test_AWSPolly_speech_synthesis():
     tts_out = tts_to_file(
         _TEXT,
-        TTSOptions(text_format="text", audio_format="mp3", voice="Dora"),
+        TTSOptions(text_format=TextFormats.TEXT, audio_format="mp3", voice="Dora"),
     )
     path = tts_out.file
     assert path.is_file(), "Expected audio file to exist"
@@ -62,7 +62,7 @@ def test_Azure_speech_synthesis():
     # Test Azure Cognitive Services
     tts_out = tts_to_file(
         _TEXT,
-        TTSOptions(text_format="text", audio_format="mp3", voice="Gudrun"),
+        TTSOptions(text_format=TextFormats.TEXT, audio_format="mp3", voice="Gudrun"),
     )
     path = tts_out.file
     assert path.is_file(), "Expected audio file to exist"
@@ -76,7 +76,7 @@ def test_Google_speech_synthesis():
     # Test Google Cloud
     tts_out = tts_to_file(
         _TEXT,
-        TTSOptions(text_format="text", audio_format="mp3", voice="Anna"),
+        TTSOptions(text_format=TextFormats.TEXT, audio_format="mp3", voice="Anna"),
     )
     path = tts_out.file
     assert path.is_file(), "Expected audio file to exist"
@@ -84,12 +84,13 @@ def test_Google_speech_synthesis():
     path.unlink()
 
 
+@pytest.mark.skipif(condition=True, reason="Missing Tiro API Key.")
 @pytest.mark.network()
 def test_Tiro_speech_synthesis():
     # Test Tiro
     tts_out = tts_to_file(
         _TEXT,
-        TTSOptions(text_format="text", audio_format="mp3", voice="Alfur"),
+        TTSOptions(text_format=TextFormats.TEXT, audio_format="mp3", voice="Alfur"),
     )
     path = tts_out.file
     assert path.is_file(), "Expected audio file to exist"

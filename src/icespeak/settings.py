@@ -23,6 +23,7 @@
 # We dont import annotations from __future__ here
 # due to pydantic
 from typing import Any, Optional
+from typing_extensions import Literal
 
 import json
 import tempfile
@@ -177,6 +178,8 @@ class Keys(BaseModel):
     google: Optional[dict[str, Any]] = Field(
         default=None, description="Google API key."
     )
+    # TODO: Re-implement TTS with Tiro
+    tiro: Literal[None] = Field(default=None)
 
 
 API_KEYS = Keys()
