@@ -60,6 +60,8 @@ def _setup_voices() -> tuple[VoicesT, ServicesT]:
     )
     voices: VoicesT = {}
     for service in services:
+        if not service.available:
+            continue
         for voice, info in service.voices.items():
             # Info about each voice
             if voice in voices:

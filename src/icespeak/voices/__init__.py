@@ -82,6 +82,7 @@ class BaseVoice(ABC):
     _AUDIO_FORMATS: ModuleAudioFormatsT
 
     def __init__(self) -> None:
+        self._avail = True
         try:
             self.load_api_keys()
         except Exception as e:
@@ -90,6 +91,11 @@ class BaseVoice(ABC):
                 self.name,
                 e,
             )
+            self._avail = False
+
+    @property
+    def available(self) -> bool:
+        return self._avail
 
     @property
     @abstractmethod
