@@ -1360,6 +1360,7 @@ class DefaultTranscriber:
         Utilizes the tokenizer library.
         """
         opt: TranscriptionOptions = options if options else TranscriptionOptions()
+        _LOG.debug("token_transcribe, text: %r, options: %r", text, opt)
         tokens: list[Tok] = list(tokenize(text))
         for token in tokens:
             # Check if abbreviation
@@ -1519,4 +1520,6 @@ class DefaultTranscriber:
             elif token.kind == TOK.SERIALNUMBER:
                 token.txt = cls.digits(token.txt)
 
-        return detokenize(tokens)
+        out = detokenize(tokens)
+        _LOG.debug("token_transcribe, out: %r", out)
+        return out

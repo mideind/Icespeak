@@ -30,11 +30,11 @@ from typing_extensions import override
 import atexit
 import queue
 import threading
-from logging import getLogger
+from logging import DEBUG, getLogger
 
 from cachetools import LFUCache, cached
 
-from .settings import SETTINGS
+from .settings import SETTINGS, TRACE
 from .transcribe import TranscriptionOptions
 
 # TODO: Re implement Tiro
@@ -62,7 +62,9 @@ def _setup_voices() -> tuple[VoicesT, ServicesT]:
     )
     voices: VoicesT = {}
     for service in services:
+        _LOG.debug("Loading voices from service: %s", service)
         if not service.available:
+            _LOG.info("Voices from service %s not availble.", service)
             continue
         for voice, info in service.voices.items():
             # Info about each voice
@@ -112,6 +114,7 @@ if SETTINGS.AUDIO_CACHE_CLEAN:
 
     def _cleanup():
         while audiofile := _EXPIRED_QUEUE.get():
+            _LOG.log(TRACE, "Unlinking file: %s", audiofile)
             audiofile.unlink(missing_ok=True)
 
     # Small daemon thread which deletes files sent to the expired queue
@@ -127,6 +130,7 @@ if SETTINGS.AUDIO_CACHE_CLEAN:
             while _AUDIO_CACHE.currsize > 0:
                 # Remove all files currently in cache
                 _, v = _AUDIO_CACHE.popitem()
+                _LOG.log(TRACE, "Unlinking file: %s", v.file)
                 v.file.unlink(missing_ok=True)
         except Exception:
             _LOG.exception("Error when cleaning cache.")
@@ -159,6 +163,19 @@ def tts_to_file(
     Returns a named tuple containing a path to the output audio file,
     along with the text that was sent to the TTS service.
     """
+    if _LOG.isEnabledFor(DEBUG):
+        _LOG.debug(
+            "tts_to_file, text: %r, TTS options: %s, "
+            + "transcribe: %r, transcription options: %s",
+            text,
+            tts_options.model_dump(exclude_defaults=True) or "<default>"
+            if tts_options
+            else "None",
+            transcribe,
+            transcription_options.model_dump(exclude_defaults=True) or "<default>"
+            if transcription_options
+            else "None",
+        )
     tts_options = tts_options or TTSOptions()
     try:
         service = SERVICES[VOICES[tts_options.voice]["service"]]
@@ -174,7 +191,9 @@ def tts_to_file(
         transcription_options = transcription_options or TranscriptionOptions()
         text = service.Transcriber.token_transcribe(text, transcription_options)
 
-    return TTSOutput(
+    output = TTSOutput(
         file=service.text_to_speech(text, tts_options),
         text=text,
     )
+    _LOG.debug("tts_to_file, out: %s", output)
+    return output
