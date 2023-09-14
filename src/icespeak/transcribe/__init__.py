@@ -33,7 +33,7 @@ from logging import getLogger
 from re import Match
 
 from islenska.basics import ALL_CASES, ALL_GENDERS, ALL_NUMBERS
-from pydantic import BaseModel, Extra, Field
+from pydantic import BaseModel, Field
 from reynir import Greynir
 from reynir.bindb import GreynirBin
 from tokenizer import TOK, Abbreviations, Tok, detokenize, tokenize
@@ -83,7 +83,7 @@ class TranscriptionOptions(BaseModel):
     """Transcription options."""
 
     # frozen=True makes this hashable which enables caching
-    model_config = {"frozen": True, "extra": Extra.forbid}
+    model_config = {"frozen": True, "extra": "forbid"}
 
     emails: bool = Field(default=True, description="Whether to transcribe emails.")
     dates: bool = Field(default=True, description="Whether to transcribe dates.")

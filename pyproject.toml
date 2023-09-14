@@ -44,7 +44,13 @@ dependencies = [
 ]
 
 [tool.pytest.ini_options]
-filterwarnings = ["ignore::DeprecationWarning"]
+filterwarnings = [
+    # Ignore deprecation warnings in libraries, their problem not ours
+    "ignore::DeprecationWarning",
+    # Make sure "error:::icespeak" is always last,
+    # as it turns warnings into errors in our code
+    "error:::icespeak",
+]
 
 [tool.mypy]
 overrides = [

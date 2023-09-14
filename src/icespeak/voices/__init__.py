@@ -26,7 +26,7 @@ from typing import TYPE_CHECKING, TypedDict
 from abc import ABC, abstractmethod
 from logging import getLogger
 
-from pydantic import BaseModel, Extra, Field
+from pydantic import BaseModel, Field
 
 from icespeak.settings import MAX_SPEED, MIN_SPEED, SETTINGS, TextFormats
 from icespeak.transcribe import DefaultTranscriber
@@ -52,7 +52,7 @@ ModuleAudioFormatsT = Collection[str]
 
 class TTSOptions(BaseModel):
     # frozen=True makes this hashable which enables caching
-    model_config = {"frozen": True, "extra": Extra.forbid}
+    model_config = {"frozen": True, "extra": "forbid"}
 
     voice: str = Field(
         default=SETTINGS.DEFAULT_VOICE, description="Speech synthesis voice."
