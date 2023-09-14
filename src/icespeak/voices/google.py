@@ -24,11 +24,15 @@ from __future__ import annotations
 
 from typing_extensions import override
 
+from logging import getLogger
+
 from google.cloud import texttospeech
 
-from icespeak.settings import API_KEYS, LOG, SETTINGS
+from icespeak.settings import API_KEYS, SETTINGS
 
 from . import BaseVoice, ModuleAudioFormatsT, ModuleVoicesT, TTSOptions
+
+_LOG = getLogger(__name__)
 
 
 class GoogleVoice(BaseVoice):
@@ -86,7 +90,7 @@ class GoogleVoice(BaseVoice):
             )
             data = response.audio_content
         except Exception:
-            LOG.exception("Error communicating with Google Cloud STT API.")
+            _LOG.exception("Error communicating with Google Cloud STT API.")
             raise
 
         outfile = SETTINGS.get_empty_file(options.audio_format)
@@ -94,6 +98,6 @@ class GoogleVoice(BaseVoice):
             assert data is not None, "No data."
             outfile.write_bytes(data)
         except Exception:
-            LOG.exception("Error writing audio file %s.", outfile)
+            _LOG.exception("Error writing audio file %s.", outfile)
 
         return outfile

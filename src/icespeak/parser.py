@@ -31,11 +31,13 @@ from typing_extensions import override
 from collections import deque
 from html.parser import HTMLParser
 from inspect import ismethod
+from logging import getLogger
 
-from .settings import LOG, SETTINGS
+from .settings import SETTINGS
 from .transcribe import DefaultTranscriber, TranscriptionMethod
 from .tts import SERVICES, VOICES
 
+_LOG = getLogger(__name__)
 GSSML_TAG = "greynir"
 
 
@@ -90,7 +92,7 @@ class GreynirSSMLParser(HTMLParser):
         """
         super().__init__()
         if voice not in VOICES:
-            LOG.warning(
+            _LOG.warning(
                 "Voice %r not in supported voices, reverting to default: %r",
                 voice,
                 SETTINGS.DEFAULT_VOICE,

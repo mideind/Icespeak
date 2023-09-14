@@ -34,9 +34,7 @@ from pathlib import Path
 from pydantic import BaseModel, Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-# Library wide logger instance
-__logger__ = "icespeak"
-LOG = getLogger(__logger__)
+_LOG = getLogger(__package__)
 
 
 # For details about SSML markup, see:
@@ -185,7 +183,7 @@ API_KEYS = Keys()
 
 _kd = SETTINGS.KEYS_DIR
 if not (_kd.exists() and _kd.is_dir()):
-    LOG.warning(
+    _LOG.warning(
         "Keys directory missing or incorrect, TTS will not work! Set to: %s", _kd
     )
 else:
@@ -196,7 +194,7 @@ else:
             (_kd / SETTINGS.AWSPOLLY_KEY_FILENAME).read_text().strip()
         )
     except Exception as err:
-        LOG.debug(
+        _LOG.debug(
             "Could not load AWS Polly API key, ASR with AWS Polly will not work. Error: %s",
             err,
         )
@@ -205,7 +203,7 @@ else:
             (_kd / SETTINGS.AZURE_KEY_FILENAME).read_text().strip()
         )
     except Exception as err:
-        LOG.debug(
+        _LOG.debug(
             "Could not load Azure API key, ASR with Azure will not work. Error: %s", err
         )
     try:
@@ -213,7 +211,7 @@ else:
             (_kd / SETTINGS.GOOGLE_KEY_FILENAME).read_text().strip()
         )
     except Exception as err:
-        LOG.debug(
+        _LOG.debug(
             "Could not load Google API key, ASR with Google will not work. Error: %s",
             err,
         )

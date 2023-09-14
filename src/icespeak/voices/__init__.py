@@ -24,16 +24,19 @@ from collections.abc import Collection, Mapping
 from typing import TYPE_CHECKING, TypedDict
 
 from abc import ABC, abstractmethod
+from logging import getLogger
 
 from pydantic import BaseModel, Extra, Field
 
-from icespeak.settings import LOG, MAX_SPEED, MIN_SPEED, SETTINGS, TextFormats
+from icespeak.settings import MAX_SPEED, MIN_SPEED, SETTINGS, TextFormats
 from icespeak.transcribe import DefaultTranscriber
 
 if TYPE_CHECKING:
     from typing_extensions import Literal, NotRequired
 
     from pathlib import Path
+
+_LOG = getLogger(__name__)
 
 
 class VoiceInfoT(TypedDict):
@@ -82,7 +85,7 @@ class BaseVoice(ABC):
         try:
             self.load_api_keys()
         except Exception as e:
-            LOG.warning(
+            _LOG.warning(
                 "Error loading API keys, TTS with service %s will not work! Error: %s",
                 self.name,
                 e,

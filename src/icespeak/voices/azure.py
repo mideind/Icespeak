@@ -24,14 +24,17 @@ from __future__ import annotations
 
 from typing_extensions import override
 
+from logging import getLogger
 from ssl import OPENSSL_VERSION_INFO
 
 import azure.cognitiveservices.speech as speechsdk
 
-from icespeak.settings import API_KEYS, LOG, SETTINGS
+from icespeak.settings import API_KEYS, SETTINGS
 from icespeak.transcribe import DefaultTranscriber, strip_markup
 
 from . import BaseVoice, ModuleAudioFormatsT, ModuleVoicesT, TTSOptions
+
+_LOG = getLogger(__name__)
 
 # Audio format enums for Azure Speech API
 # https://learn.microsoft.com/en-us/javascript/api/microsoft-cognitiveservices-speech-sdk/speechsynthesisoutputformat
@@ -165,7 +168,7 @@ class AzureVoice(BaseVoice):
             # See issues regarding compatibility with OpenSSL version >=3:
             # https://github.com/Azure-Samples/cognitive-services-speech-sdk/issues/1747
             # https://github.com/Azure-Samples/cognitive-services-speech-sdk/issues/1986
-            LOG.warning(
+            _LOG.warning(
                 "OpenSSL version not compatible with "
                 "Azure Cognitive Services, TTS might not work."
             )
@@ -229,5 +232,5 @@ class AzureVoice(BaseVoice):
                 f"TTS with Azure failed: {cancellation_details.error_details}"
             )
         except Exception:
-            LOG.exception("Error communicating with Azure Speech API.")
+            _LOG.exception("Error communicating with Azure Speech API.")
             raise

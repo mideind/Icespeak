@@ -30,16 +30,18 @@ from typing_extensions import override
 import atexit
 import queue
 import threading
+from logging import getLogger
 
 from cachetools import LFUCache, cached
 
-from .settings import LOG, SETTINGS
+from .settings import SETTINGS
 from .transcribe import TranscriptionOptions
 from .voices import BaseVoice, TTSOptions, VoiceInfoT, aws_polly, azure, google, tiro
 
 if TYPE_CHECKING:
     from pathlib import Path
 
+_LOG = getLogger(__name__)
 VoicesT = Mapping[str, VoiceInfoT]
 ServicesT = Mapping[str, BaseVoice]
 
@@ -61,7 +63,7 @@ def _setup_voices() -> tuple[VoicesT, ServicesT]:
         for voice, info in service.voices.items():
             # Info about each voice
             if voice in voices:
-                LOG.warning(
+                _LOG.warning(
                     "Voice named %r already exists! "
                     + "Skipping the one defined in module %s.",
                     voice,
@@ -91,7 +93,7 @@ class TmpFileLFUCache(LFUCache[_T, TTSOutput]):
     def popitem(self) -> tuple[_T, TTSOutput]:
         """Schedule audio file for deletion upon evicting from cache."""
         key, audiofile = super().popitem()
-        LOG.debug("Expired audio file: %s", audiofile)
+        _LOG.debug("Expired audio file: %s", audiofile)
         # Schedule for deletion, if cleaning the cache
         if SETTINGS.AUDIO_CACHE_CLEAN:
             _EXPIRED_QUEUE.put(audiofile.file)
@@ -115,7 +117,7 @@ if SETTINGS.AUDIO_CACHE_CLEAN:
     _cleanup_thread.start()
 
     def _evict_all():
-        LOG.debug("Evicting everything from cache...")
+        _LOG.debug("Evicting everything from cache...")
         _EXPIRED_QUEUE.put(None)  # Signal to thread to stop
         try:
             while _AUDIO_CACHE.currsize > 0:
@@ -123,11 +125,11 @@ if SETTINGS.AUDIO_CACHE_CLEAN:
                 _, v = _AUDIO_CACHE.popitem()
                 v.file.unlink(missing_ok=True)
         except Exception:
-            LOG.exception("Error when cleaning cache.")
+            _LOG.exception("Error when cleaning cache.")
         # Give the thread a little bit of time to join,
         # not much harm if it simply gets killed though
         _cleanup_thread.join(0.3)
-        LOG.debug("Finished evicting.")
+        _LOG.debug("Finished evicting.")
 
     # This function runs upon clean exit from program
     atexit.register(_evict_all)

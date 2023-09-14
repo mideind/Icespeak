@@ -29,6 +29,7 @@ from typing import TYPE_CHECKING, Any, Callable, Union, cast
 import itertools
 import re
 from functools import lru_cache
+from logging import getLogger
 from re import Match
 
 from islenska.basics import ALL_CASES, ALL_GENDERS, ALL_NUMBERS
@@ -70,6 +71,7 @@ if TYPE_CHECKING:
 
 # Ensure abbreviations have been loaded
 Abbreviations.initialize()
+_LOG = getLogger(__name__)
 
 
 def strip_markup(text: str) -> str:
@@ -899,9 +901,9 @@ class DefaultTranscriber:
             )
         t = tuple(map(f, txt))
         return (
-            cls.vbreak(time="0.01s")
-            + cls.vbreak(time=pause_length or "0.02s").join(t)
-            + cls.vbreak(time="0.02s" if len(t) > 1 else "0.01s")
+            cls.vbreak(time="10ms")
+            + cls.vbreak(time=pause_length or "20ms").join(t)
+            + cls.vbreak(time="20ms" if len(t) > 1 else "10ms")
         )
 
     @classmethod
@@ -916,9 +918,7 @@ class DefaultTranscriber:
         )
         if meanings:
             # Abbreviation has at least one known meaning, expand it
-            return (
-                cls.vbreak(time="0.01s") + meanings[0].stofn + cls.vbreak(time="0.05s")
-            )
+            return cls.vbreak(time="10ms") + meanings[0].stofn + cls.vbreak(time="50ms")
 
         # Fallbacks:
         # - Spell out, if any letter is uppercase (e.g. "MSc")

@@ -25,13 +25,16 @@ from __future__ import annotations
 from typing import Any
 from typing_extensions import override
 
+from logging import getLogger
 from threading import Lock
 
 import boto3
 
-from icespeak.settings import API_KEYS, LOG, SETTINGS
+from icespeak.settings import API_KEYS, SETTINGS
 
 from . import BaseVoice, ModuleAudioFormatsT, ModuleVoicesT, TTSOptions
+
+_LOG = getLogger(__name__)
 
 
 class AWSPollyVoice(BaseVoice):
@@ -96,7 +99,7 @@ class AWSPollyVoice(BaseVoice):
                 OutputFormat=options.audio_format,
             )
         except Exception:
-            LOG.exception("Error synthesizing speech.")
+            _LOG.exception("Error synthesizing speech.")
             raise
 
         outfile = SETTINGS.get_empty_file(options.audio_format)

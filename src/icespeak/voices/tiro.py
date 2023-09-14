@@ -26,12 +26,16 @@ from typing_extensions import override
 
 import requests
 
-from icespeak.settings import LOG, SETTINGS
+from icespeak.settings import SETTINGS
 from icespeak.transcribe import strip_markup
 
 from . import BaseVoice, ModuleAudioFormatsT, ModuleVoicesT, TTSOptions
 
 _TIRO_TTS_URL = "https://tts.tiro.is/v0/speech"
+
+from logging import getLogger
+
+_LOG = getLogger(__name__)
 
 
 class TiroVoice(BaseVoice):
@@ -91,13 +95,13 @@ class TiroVoice(BaseVoice):
                 )
             data = r.content
         except Exception as e:
-            LOG.error("Error communicating with Tiro API at %s: %s", _TIRO_TTS_URL, e)
+            _LOG.error("Error communicating with Tiro API at %s: %s", _TIRO_TTS_URL, e)
             raise
 
         outfile = SETTINGS.get_empty_file(options.audio_format)
         try:
             outfile.write_bytes(data)
         except Exception:
-            LOG.exception("Error writing audio file %s.", outfile)
+            _LOG.exception("Error writing audio file %s.", outfile)
 
         return outfile
