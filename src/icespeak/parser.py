@@ -33,7 +33,7 @@ from html.parser import HTMLParser
 from inspect import ismethod
 from logging import getLogger
 
-from .settings import SETTINGS
+from .settings import SETTINGS, TRACE
 from .transcribe import DefaultTranscriber, TranscriptionMethod
 from .tts import SERVICES, VOICES
 
@@ -106,6 +106,10 @@ class GreynirSSMLParser(HTMLParser):
 
         self._str_stack: deque[str] = deque()
         self._attr_stack: deque[dict[str, str | None]] = deque()
+        _LOG.debug(
+            "Initialized GreynirSSMLParser, using TranscriptionHandler: %s",
+            self._handler,
+        )
 
     def transcribe(self, voice_string: str) -> str:
         """Parse and return transcribed voice string."""
@@ -136,12 +140,21 @@ class GreynirSSMLParser(HTMLParser):
         if tag == GSSML_TAG:
             self._str_stack.append("")
             self._attr_stack.append(dict(attrs))
+            _LOG.debug("%s tag opened. Attrs: %s.", tag, attrs)
+            _LOG.log(
+                TRACE,
+                "str stack: %s. attr stack: %s",
+                self._str_stack,
+                self._attr_stack,
+            )
 
     @override
     def handle_data(self, data: str) -> None:
         """Called when data is encountered."""
         # Append string data to current string in stack
+        _LOG.log(TRACE, "Data before danger symbols stripped: %r", data)
         self._str_stack[-1] += self._handler.danger_symbols(data)
+        _LOG.log(TRACE, "Data after danger symbols stripped: %r", data)
 
     @override
     def handle_endtag(self, tag: str):
@@ -166,6 +179,14 @@ class GreynirSSMLParser(HTMLParser):
             else:
                 self._str_stack.append(s)
 
+            _LOG.debug("%s tag closed.", tag)
+            _LOG.log(
+                TRACE,
+                "str stack: %s. attr stack: %s",
+                self._str_stack,
+                self._attr_stack,
+            )
+
     @override
     def handle_startendtag(self, tag: str, attrs: list[tuple[str, str | None]]):
         """Called when a empty tag is opened (and closed), e.g. '<greynir ... />'."""
@@ -179,3 +200,10 @@ class GreynirSSMLParser(HTMLParser):
             assert ismethod(transf), f"{t} is not a transcription method."
             s: str = transf(**dattrs)
             self._str_stack[-1] += s
+            _LOG.debug("%s tag opened and closed. Attrs: %s.", tag, attrs)
+            _LOG.log(
+                TRACE,
+                "str stack: %s. attr stack: %s",
+                self._str_stack,
+                self._attr_stack,
+            )

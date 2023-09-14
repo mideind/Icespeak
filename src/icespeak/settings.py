@@ -36,6 +36,7 @@ from pydantic import BaseModel, Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 _LOG = getLogger(__package__)
+TRACE = 5
 
 
 # For details about SSML markup, see:
