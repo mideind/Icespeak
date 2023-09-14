@@ -36,17 +36,16 @@ import sys
 import wave
 from pathlib import Path
 
-_TYPER_MISSING = """
-To use the command line tool install icespeak with the 'cli' optional dependency:
-    python3 -m pip install 'icespeak[cli]'
-"""
-
 try:
     import typer
     from rich import print
     from rich.progress import Progress, SpinnerColumn, TextColumn
     from rich.table import Table
 except ModuleNotFoundError:
+    _TYPER_MISSING = """
+To use the command line tool install icespeak with the 'cli' optional dependency:
+    python3 -m pip install 'icespeak[cli]'
+"""
     print(_TYPER_MISSING, file=sys.stderr)
     sys.exit(1)
 

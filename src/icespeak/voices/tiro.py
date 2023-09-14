@@ -25,6 +25,8 @@ from __future__ import annotations
 
 from typing_extensions import override
 
+from logging import getLogger
+
 import requests
 
 from icespeak.settings import SETTINGS
@@ -33,9 +35,6 @@ from icespeak.transcribe import strip_markup
 from . import BaseVoice, ModuleAudioFormatsT, ModuleVoicesT, TTSOptions
 
 _TIRO_TTS_URL = "https://tts.tiro.is/v0/speech"
-
-from logging import getLogger
-
 _LOG = getLogger(__name__)
 
 
