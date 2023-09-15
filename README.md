@@ -28,6 +28,11 @@ Install minimal set of dependencies to use the library:
 python3 -m pip install .
 ```
 
+In order to use the CLI interface, `tts`, install with:
+```sh
+python3 -m pip install '.[cli]'
+```
+
 Alternatively, to install in editable mode with extra dev dependencies:
 
 ```sh
