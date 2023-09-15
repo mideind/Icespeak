@@ -62,6 +62,8 @@ dev = [
     "mypy>=1.4.1",
 ]
 
+# *** Configuration of tools ***
+
 [tool.pytest.ini_options]
 filterwarnings = [
     # Ignore deprecation warnings in libraries, their problem not ours
@@ -70,25 +72,35 @@ filterwarnings = [
     # as it turns warnings into errors in our code
     "error:::icespeak",
 ]
+markers = [
+    # Custom markers (add to SKIP_MARKERS in `tests/conftest.py` to skip by default)
+    "network: mark test as communicating with external services",
+    "slow: mark test as slow",
+]
+addopts = "--strict-markers" # Don't allow unrecognized markers (catches typos)
+
 
 [tool.coverage.run]
 branch = true
 source = ["icespeak"]
 command_line = "-m pytest --run-all"
+omit = ["*/icespeak/cli.py"]       # Skip CLI interface
 
 [tool.coverage.report]
 exclude_also = ["if TYPE_CHECKING:", "raise NotImplementedError"]
-skip_covered = true
-skip_empty = true
-sort = "-Cover"
-precision = 2
-fail_under = 65
+skip_covered = true                                               # Skip showing fully covered files
+skip_empty = true                                                 # Skip empty files
+sort = "-Cover"                                                   # Sort by coverage percentage
+precision = 2                                                     # Precision of output percentage
+fail_under = 65                                                   # Fail if total covered under threshold
+
 
 [tool.mypy]
 overrides = [
     { module = "google.*", ignore_missing_imports = true },
     { module = "azure.*", ignore_missing_imports = true },
 ]
+
 
 [tool.pyright]
 typeCheckingMode = "strict"
@@ -104,8 +116,9 @@ reportUnknownArgumentType = "information"
 reportMissingTypeStubs = "information"
 reportShadowedImports = "warning"
 reportUninitializedInstanceVariable = "information"
-reportUnnecessaryTypeIgnoreComment = "information"
+reportUnnecessaryTypeIgnoreComment = "warning"
 reportUnusedCallResult = "none"
+
 
 [tool.ruff]
 target-version = "py39"
@@ -157,11 +170,12 @@ section-order = [
     "first-party",
     "local-folder",
 ]
+
 [tool.ruff.isort.sections]
 # Have typing libraries above other imports
 typehints = ["typing", "typing_extensions", "types", "collections.abc"]
 
-# Automatic versioning and build system configuration
+# *** Build system configuration ***
 
 [tool.setuptools_scm]
 fallback_version = "0.0.0"
