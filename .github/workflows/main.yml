@@ -27,12 +27,6 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install '.[dev]'
-      - name: Lint with ruff
-        run: |
-          # stop the build if there are Python syntax errors or undefined names
-          ruff --format=github --select=E9,F63,F7,F82 --target-version=py39 .
-          # default set of ruff rules with GitHub Annotations
-          ruff --format=github --target-version=py39 .
       - name: Set up API keys
         env:
           AZURE_TTS_KEY: ${{ secrets.AZURE_TTS_KEY }}
@@ -48,4 +42,7 @@ jobs:
       - name: Test with pytest
         run: |
           pytest --run-slow
+      - name: Lint with pre-commit hooks
+        run: |
+          pre-commit run --all-files
 
