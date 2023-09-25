@@ -2,7 +2,7 @@
 
 """Evaluate different voices for TTS using predefined voices and text snippets.
 
-Read the text snippets from a file called 'tts_textar.txt' in the current directory.
+Read the text snippets from a file called 'tts_voice_lines.txt' in the current directory.
 Read the available voices from the Icespeak package.
 
 The text snippets are read from the file line by line, and each line is used as input
@@ -31,7 +31,7 @@ import sys
 from pathlib import Path
 
 from icespeak import VOICES, TTSOptions, tts_to_file
-from icespeak.cli import _play_audio_file
+from icespeak.cli import play_audio_file
 
 try:
     import typer
@@ -44,7 +44,7 @@ To use the command line tool install icespeak with the 'cli' optional dependency
     print(_TYPER_MISSING, file=sys.stderr)
     sys.exit(1)
 
-tts_textar_file = Path(__file__).with_name("tts_textar.txt")
+voice_lines_file = Path(__file__).with_name("tts_voice_lines.txt")
 tts_ratings_file = Path(__file__).with_name("tts_ratings.tsv")
 
 app = typer.Typer()
@@ -52,42 +52,22 @@ app = typer.Typer()
 
 def _die(msg: str, exit_code: int = 1) -> None:
     print(msg, file=sys.stderr)
-    sys.exit(exit_code)
-
-
-def read_voices() -> list[str]:
-    """Read the voices to be evaluated from a file."""
-    voices: list[str] = []
-    for key, value in VOICES.items():
-        if value["lang"] == "is-IS":
-            voices.append(key)
-    return voices
-
-
-def read_textar() -> list[str]:
-    """Read the text snippets to be evaluated from a file."""
-    textar: list[str] = []
-    with open(tts_textar_file) as f:
-        for line in f:
-            line = line.strip()
-            if line:
-                textar.append(line)
-    return textar
+    raise typer.Exit(1)
 
 
 @app.command()
 def evaluate():
     # Read the voices to be evaluated
-    voices = read_voices()
+    voices = [k for (k, v) in VOICES.items() if v["lang"] == "is-IS"]
     if not voices:
         _die("No voices to evaluate.")
-    texts = read_textar()
+    texts = [line for line in voice_lines_file.read_text().split("\n") if line.strip()]
     if not texts:
         _die("No text snippets to evaluate.")
     # read the ratings file
     ratings = {}
     try:
-        with open(tts_ratings_file) as f:
+        with tts_ratings_file.open() as f:
             for line in f:
                 line = line.strip()
                 if line:
@@ -105,14 +85,14 @@ def evaluate():
             # Synthesize speech
             fn = tts_to_file(text, TTSOptions(voice=voice)).file
             # Play it
-            _play_audio_file(fn)
+            play_audio_file(fn)
             # And display the text
             print(f"Text: '{text}'")
             # Prompt user to enter a rating
             while True:
                 naturalness = input("Naturalness (1-5): ")
                 if naturalness == "r":
-                    _play_audio_file(fn)
+                    play_audio_file(fn)
                     continue
                 if naturalness == "q":
                     return
@@ -127,7 +107,7 @@ def evaluate():
             while True:
                 correctness = input("Correctness (1-5): ")
                 if correctness == "r":
-                    _play_audio_file(fn)
+                    play_audio_file(fn)
                 if correctness == "q":
                     return
                 if correctness == "s":
@@ -139,7 +119,7 @@ def evaluate():
             if correctness == "s":
                 continue
             # Save the rating
-            with open(tts_ratings_file, "a") as f:
+            with tts_ratings_file.open("a") as f:
                 f.write(f"{voice}\t{text}\t{naturalness}\t{correctness}\n")
     # Done
     print("Done.")
@@ -151,7 +131,7 @@ def report():
     # Read the ratings file
     ratings: dict[str, Any] = {}
     try:
-        with open(tts_ratings_file) as f:
+        with tts_ratings_file.open() as f:
             for line in f:
                 line = line.strip()
                 if line:
@@ -184,7 +164,7 @@ def stats():
     ratings: dict[str, Any] = {}
     max_count_for_difficulty = 5
     try:
-        with open(tts_ratings_file) as f:
+        with tts_ratings_file.open() as f:
             for line in f:
                 line = line.strip()
                 if line:
