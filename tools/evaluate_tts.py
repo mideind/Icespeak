@@ -3,7 +3,7 @@
 """Evaluate different voices for TTS using predefined voices and text snippets.
 
 Read the text snippets from a file called 'tts_textar.txt' in the current directory.
-Read the voices to be evaluated from a file called 'tts_voices.txt' in the current directory.
+Read the available voices from the Icespeak package.
 
 The text snippets are read from the file line by line, and each line is used as input
 to the TTS engine. The text snippets are assumed to be in the Icelandic language.
@@ -25,12 +25,13 @@ interrupted, the results can be read from this file and the evaluation process c
 be resumed at a later time.
 """
 
-import sys
-from pathlib import Path
 from typing import Any
 
+import sys
+from pathlib import Path
+
+from icespeak import VOICES, TTSOptions, tts_to_file
 from icespeak.cli import _play_audio_file
-from icespeak import tts_to_file, TTSOptions, VOICES
 
 try:
     import typer
@@ -154,7 +155,7 @@ def report():
             for line in f:
                 line = line.strip()
                 if line:
-                    voice, text, naturalness, correctness = line.split("\t")
+                    voice, _, naturalness, correctness = line.split("\t")
                     naturalness = int(naturalness)
                     correctness = int(correctness)
                     if voice not in ratings:
@@ -204,19 +205,19 @@ def stats():
         print(f"{voice}: {len(texts.values())}")
     # create a better datastructure for texts
     text_raitings: dict[str, Any] = {}
-    for voice, texts in ratings.items():
+    for texts in ratings.values():
         for text, (naturalness, correctness) in texts.items():
             if text not in text_raitings:
                 text_raitings[text] = ([], [])
             text_raitings[text][0].append(sum(naturalness) / len(naturalness))
             text_raitings[text][1].append(sum(correctness) / len(correctness))
     print("Number of ratings per text snippet:")
-    for text, (naturalness, correctness) in text_raitings.items():
+    for text, (naturalness, _) in text_raitings.items():
         print(f"{text}: {len(naturalness)}")
     count = 0
     # sort the texts by correctness
     print("Most difficult (according to correctness) text snippet:")
-    for text, (naturalness, correctness) in sorted(
+    for text, (_, correctness) in sorted(
         text_raitings.items(), key=lambda x: sum(x[1][1]) / len(x[1][1]), reverse=False
     ):
         print(f"{text}: {sum(correctness) / len(correctness):.2f}")
@@ -226,7 +227,7 @@ def stats():
     count = 0
     # sort the texts by naturalness
     print("Most difficult (according to naturalness) text snippet:")
-    for text, (naturalness, correctness) in sorted(
+    for text, (naturalness, _) in sorted(
         text_raitings.items(), key=lambda x: sum(x[1][0]) / len(x[1][0]), reverse=False
     ):
         print(f"{text}: {sum(naturalness) / len(naturalness):.2f}")
