@@ -16,6 +16,6 @@ repos:
         language_version: python3.9
   # Code linting & import sorting
   - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: "v0.0.286"
+    rev: "v0.0.291"
     hooks:
       - id: ruff
