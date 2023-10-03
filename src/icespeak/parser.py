@@ -91,9 +91,11 @@ class GreynirSSMLParser(HTMLParser):
         for the provided speech synthesis engine.
         """
         super().__init__()
+        v = str(VOICES)
         if voice not in VOICES:
             _LOG.warning(
-                "Voice %r not in supported voices, reverting to default: %r",
+                "Voice %r not in supported voices (%r), reverting to default: %r",
+                v,
                 voice,
                 SETTINGS.DEFAULT_VOICE,
             )
