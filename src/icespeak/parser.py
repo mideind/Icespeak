@@ -91,6 +91,10 @@ class GreynirSSMLParser(HTMLParser):
         for the provided speech synthesis engine.
         """
         super().__init__()
+        from pprint import pprint
+
+        print(type(VOICES))
+        pprint(VOICES)
         if not len(VOICES):
             raise RuntimeError(
                 "No voices available. Please install the API key for at least one voice engine."
