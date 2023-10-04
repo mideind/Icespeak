@@ -29,6 +29,7 @@ jobs:
           pip install '.[dev]'
       - name: Set up API keys
         env:
+          ICESPEAK_KEYS_DIR: "keys"
           AZURE_TTS_KEY: ${{ secrets.AZURE_TTS_KEY }}
           AWS_POLLY_KEY: ${{ secrets.AWS_POLLY_KEY }}
           GOOGLE_TTS_KEY: ${{ secrets.GOOGLE_TTS_KEY }}

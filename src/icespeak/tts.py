@@ -82,6 +82,9 @@ def _setup_voices() -> tuple[VoicesT, ServicesT]:
 
 VOICES, SERVICES = _setup_voices()
 
+assert VOICES, """No voices available. Make sure to provide an API key \
+for at least one speech synthesis engine in your ICESPEAK_KEYS_DIR directory."""
+
 
 _T = TypeVar("_T")
 
