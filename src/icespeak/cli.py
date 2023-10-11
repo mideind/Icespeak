@@ -68,7 +68,7 @@ def _write_wav(
         wav.writeframes(data)
 
 
-def _play_audio_file(path: Path, player: Optional[str] = None) -> None:
+def play_audio_file(path: Path, player: Optional[str] = None) -> None:
     """Play audio file at path via command line player. This only works
     on systems with afplay (macOS), mpv, mpg123 or cmdmp3 installed."""
 
@@ -270,7 +270,7 @@ def _text_to_speech(
     # Play audio
 
     if play:
-        _play_audio_file(out, player)
+        play_audio_file(out, player)
 
 
 def main():
