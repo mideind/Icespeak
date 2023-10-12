@@ -219,8 +219,3 @@ else:
             "Could not load Google API key, ASR with Google will not work. Error: %s",
             err,
         )
-
-
-from pprint import pprint
-
-pprint(API_KEYS)
