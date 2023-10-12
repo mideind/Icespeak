@@ -26,22 +26,18 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip wheel setuptools
-          pip install '.[dev]'
+          pip install -e '.[dev]'
       - name: Set up API keys
-        env:
-          AZURE_TTS_KEY: ${{ secrets.AZURE_TTS_KEY }}
-          AWS_POLLY_KEY: ${{ secrets.AWS_POLLY_KEY }}
-          GOOGLE_TTS_KEY: ${{ secrets.GOOGLE_TTS_KEY }}
         run: |
           # Azure TTS key
-          echo "$AZURE_TTS_KEY" > keys/AzureSpeechServerKey.json
+          echo '${{ secrets.AZURE_TTS_KEY }}' > keys/AzureSpeechServerKey.json
           # AWS Polly API key
-          echo "$AWS_POLLY_KEY" > keys/AWSPollyServerKey.json
+          echo '${{ secrets.AWS_POLLY_KEY }}' > keys/AWSPollyServerKey.json
           # Google TTS key
-          echo "$GOOGLE_TTS_KEY" > keys/GoogleServiceAccount.json
+          echo '${{ secrets.GOOGLE_TTS_KEY }}' > keys/GoogleServiceAccount.json
       - name: Test with pytest
         run: |
-          pytest --run-slow
+          pytest --run-slow -vvvrP --log-level=DEBUG --capture=tee-sys
       - name: Lint with pre-commit hooks
         run: |
           pre-commit run --all-files

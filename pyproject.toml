@@ -28,6 +28,7 @@ dependencies = [
     # "aiohttp[speedups]>=3.8.4",
     "requests>=2.31.0",
     "typing-extensions>=4.7.1",
+    "pydantic==2.3.0",
     "pydantic-settings>=2.0.3",
     "cachetools>=5.3.1",
     # For parsing Icelandic text
@@ -84,7 +85,7 @@ addopts = "--strict-markers" # Don't allow unrecognized markers (catches typos)
 branch = true
 source = ["icespeak"]
 command_line = "-m pytest --run-all"
-omit = ["*/icespeak/cli.py"]       # Skip CLI interface
+omit = ["*/icespeak/cli.py"]         # Skip CLI interface
 
 [tool.coverage.report]
 exclude_also = ["if TYPE_CHECKING:", "raise NotImplementedError"]
