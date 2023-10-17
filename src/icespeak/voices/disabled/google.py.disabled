@@ -30,7 +30,7 @@ from google.cloud import texttospeech
 
 from icespeak.settings import API_KEYS, SETTINGS
 
-from . import BaseVoice, ModuleAudioFormatsT, ModuleVoicesT, TTSOptions
+from .. import BaseVoice, ModuleAudioFormatsT, ModuleVoicesT, TTSOptions
 
 _LOG = getLogger(__name__)
 

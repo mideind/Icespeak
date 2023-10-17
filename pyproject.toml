@@ -48,7 +48,7 @@ dependencies = [
 Repository = "https://github.com/mideind/icespeak"
 
 [project.scripts]
-tts = "icespeak.cli:main"
+speak = "icespeak.cli:main"
 
 [project.optional-dependencies]
 # Needed for CLI interface

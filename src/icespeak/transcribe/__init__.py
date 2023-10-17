@@ -1180,7 +1180,7 @@ class DefaultTranscriber:
             gender = "hk"
             n, cases, _ = cast(tuple[float, Any, Any], tok.val)
             case = "nf" if cases is None else cases[0]
-            if n.is_integer():  # type: ignore
+            if n.is_integer():
                 val = cls.number(n, case=case, gender=gender)
             else:
                 val = cls.float(n, case=case, gender=gender)

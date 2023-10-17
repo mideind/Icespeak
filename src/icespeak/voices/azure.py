@@ -169,8 +169,7 @@ class AzureVoice(BaseVoice):
             # https://github.com/Azure-Samples/cognitive-services-speech-sdk/issues/1747
             # https://github.com/Azure-Samples/cognitive-services-speech-sdk/issues/1986
             _LOG.warning(
-                "OpenSSL version not compatible with "
-                "Azure Cognitive Services, TTS might not work."
+                "OpenSSL version not compatible with Azure Cognitive Services, TTS might not work."
             )
 
         if API_KEYS.azure is None:
