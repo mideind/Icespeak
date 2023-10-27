@@ -35,6 +35,7 @@ def test_voices_utils():
 
     assert strip_markup("hello") == "hello"
     assert strip_markup("<dajs dsajl>hello") == "hello"
+    assert strip_markup("hello</jdfskfhds>") == "hello"
     assert strip_markup("<a>hello</a>") == "hello"
     assert strip_markup("<prefer:something>hello</else>") == "hello"
 

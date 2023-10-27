@@ -21,6 +21,7 @@
     Note: not run by pytest.
 
 """
+
 # ruff: noqa: T201
 if __name__ == "__main__":
     import atexit
