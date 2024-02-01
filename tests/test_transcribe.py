@@ -464,6 +464,15 @@ def test_dt_token_transcribe_basic() -> None:
     t = _fix_ws("Hvað er 0,61cm í tommum?")
     n = DT.token_transcribe(t)
     assert "núll komma sextíu og einn sentimetri í tommum" in n
+    t = "En ef við tökum mið af því hve fim hún er í fimleikum?"
+    n = DT.token_transcribe(t)
+    assert n == t
+    t = "Hann bandar frá sér höndum þegar minnst er á mao zedong."
+    n = DT.token_transcribe(t)
+    assert n == t
+    t = "maðurinn tom fékk mar eftir strembið próf í síðustu viku"
+    n = DT.token_transcribe(t)
+    assert n == t
 
 
 def test_dt_token_transcribe_experimental():
@@ -543,7 +552,13 @@ def test_dt_token_transcribe_experimental():
     t = "Í 1., 2., 3. og 4. lagi. Í 31. lagi"
     n = DT.token_transcribe(t, options=t_opts)
     assert "Í fyrsta" in n
+    # TODO: Figure out a way to quickly put expanded word in correct case
     # assert "öðru" in n
     assert "þriðja" in n
     assert "fjórða" in n
     assert "þrítugasta og fyrsta" in n
+    t = "Á mið. eða fim. verður fundur hjá okkur."
+    n = DT.token_transcribe(t)
+    # TODO: ditto the point above
+    # assert "miðvikudag " in n
+    # assert "fimmtudag " in n
