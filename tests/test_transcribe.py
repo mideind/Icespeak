@@ -473,6 +473,12 @@ def test_dt_token_transcribe_basic() -> None:
     t = "maðurinn tom fékk mar eftir strembið próf í síðustu viku"
     n = DT.token_transcribe(t)
     assert n == t
+    t = "Undirritað, próf. Jónína"
+    n = DT.token_transcribe(t)
+    assert "prófessor" in n
+    t = "Hann er bandar. ríkisborgari"
+    n = DT.token_transcribe(t)
+    assert "bandarískur" in n
 
 
 def test_dt_token_transcribe_experimental():

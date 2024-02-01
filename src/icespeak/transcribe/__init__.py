@@ -533,7 +533,7 @@ _IGNORED_TOKENS = frozenset(
     (TOK.WORD, TOK.PERSON, TOK.ENTITY, TOK.TIMESTAMP, TOK.UNKNOWN)
 )
 # These should not be interpreted as abbreviations
-# if they aren't followed by a period
+# unless they include a period
 _IGNORED_ABBREVS = frozenset(("mið", "fim", "bandar", "mao", "próf", "tom", "mar"))
 _HYPHEN_SYMBOLS = frozenset(HYPHENS)
 
