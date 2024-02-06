@@ -532,6 +532,9 @@ _SPORTS_LEMMAS: frozenset[str] = frozenset(("leikur", "vinna", "tapa", "sigra"))
 _IGNORED_TOKENS = frozenset(
     (TOK.WORD, TOK.PERSON, TOK.ENTITY, TOK.TIMESTAMP, TOK.UNKNOWN)
 )
+# These should not be interpreted as abbreviations
+# unless they include a period
+_IGNORED_ABBREVS = frozenset(("mið", "fim", "bandar", "mao", "próf", "tom", "mar"))
 _HYPHEN_SYMBOLS = frozenset(HYPHENS)
 
 _StrBool = Union[str, bool]
@@ -1379,6 +1382,7 @@ class DefaultTranscriber:
                 token.kind == TOK.WORD
                 and (meanings := Abbreviations.get_meaning(token.txt))
                 and meanings[0].fl != "erl"
+                and token.txt not in _IGNORED_ABBREVS
             ):
                 # Expand abbreviation
                 token.txt = meanings[0].stofn
