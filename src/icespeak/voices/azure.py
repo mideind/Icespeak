@@ -162,7 +162,7 @@ class AzureVoice(BaseVoice):
         return AzureVoice._AUDIO_FORMATS
 
     @override
-    def load_api_keys(self, key_override: Keys | None = None):
+    def load_api_keys(self):
         if OPENSSL_VERSION_INFO[0] != 1:
             # Azure only works with legacy OpenSSL
             # See issues regarding compatibility with OpenSSL version >=3:
@@ -172,11 +172,11 @@ class AzureVoice(BaseVoice):
                 "OpenSSL version not compatible with Azure Cognitive Services, TTS might not work."
             )
 
-        azure_key = key_override.azure if key_override and key_override.azure else API_KEYS.azure
-        assert azure_key, "Azure API key missing."
+        if API_KEYS.azure is None:
+            raise RuntimeError("Azure API keys missing.")
 
-        AzureVoice.AZURE_KEY = azure_key.key.get_secret_value()
-        AzureVoice.AZURE_REGION = azure_key.region.get_secret_value()
+        AzureVoice.AZURE_KEY = API_KEYS.azure.key.get_secret_value()
+        AzureVoice.AZURE_REGION = API_KEYS.azure.region.get_secret_value()
 
     @override
     def text_to_speech(self, text: str, options: TTSOptions, keys_override: Keys | None = None):

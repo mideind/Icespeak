@@ -71,14 +71,18 @@ class AWSPollyVoice(BaseVoice):
         return AWSPollyVoice._AUDIO_FORMATS
 
     @override
-    def load_api_keys(self, key_override: Keys | None = None):
-        aws_key = key_override.aws if key_override and key_override.aws else API_KEYS.aws
-        assert aws_key, "AWS Polly API key missing."
+    def load_api_keys(self):
+        assert API_KEYS.aws, "AWS Polly API key missing."
+
         self._aws_client: Any = None
         with AWSPollyVoice._lock:
             if self._aws_client is None:
                 # See boto3.Session.client for arguments
-                self._aws_client = self._create_client(aws_key)
+                self._aws_client = boto3.client(
+                    "polly",
+                    region_name=API_KEYS.aws.region_name.get_secret_value(),
+                    aws_access_key_id=API_KEYS.aws.aws_access_key_id.get_secret_value(),
+                    aws_secret_access_key=API_KEYS.aws.aws_secret_access_key.get_secret_value(),
 
     @override
     def text_to_speech(self, text: str, options: TTSOptions, keys_override: Keys | None = None):
