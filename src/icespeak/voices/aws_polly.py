@@ -83,6 +83,7 @@ class AWSPollyVoice(BaseVoice):
                     region_name=API_KEYS.aws.region_name.get_secret_value(),
                     aws_access_key_id=API_KEYS.aws.aws_access_key_id.get_secret_value(),
                     aws_secret_access_key=API_KEYS.aws.aws_secret_access_key.get_secret_value(),
+                )
 
     @override
     def text_to_speech(self, text: str, options: TTSOptions, keys_override: Keys | None = None):
