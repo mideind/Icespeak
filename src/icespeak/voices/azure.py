@@ -29,7 +29,7 @@ from ssl import OPENSSL_VERSION_INFO
 
 import azure.cognitiveservices.speech as speechsdk
 
-from icespeak.settings import API_KEYS, SETTINGS
+from icespeak.settings import API_KEYS, Keys, SETTINGS
 from icespeak.transcribe import DefaultTranscriber, strip_markup
 
 from . import BaseVoice, ModuleAudioFormatsT, ModuleVoicesT, TTSOptions
@@ -162,7 +162,7 @@ class AzureVoice(BaseVoice):
         return AzureVoice._AUDIO_FORMATS
 
     @override
-    def load_api_keys(self):
+    def load_api_keys(self, key_override: Keys | None = None):
         if OPENSSL_VERSION_INFO[0] != 1:
             # Azure only works with legacy OpenSSL
             # See issues regarding compatibility with OpenSSL version >=3:
@@ -172,17 +172,23 @@ class AzureVoice(BaseVoice):
                 "OpenSSL version not compatible with Azure Cognitive Services, TTS might not work."
             )
 
-        if API_KEYS.azure is None:
-            raise RuntimeError("Azure API keys missing.")
+        azure_key = key_override.azure if key_override and key_override.azure else API_KEYS.azure
+        assert azure_key, "Azure API key missing."
 
-        AzureVoice.AZURE_KEY = API_KEYS.azure.key.get_secret_value()
-        AzureVoice.AZURE_REGION = API_KEYS.azure.region.get_secret_value()
+        AzureVoice.AZURE_KEY = azure_key.key.get_secret_value()
+        AzureVoice.AZURE_REGION = azure_key.region.get_secret_value()
 
     @override
-    def text_to_speech(self, text: str, options: TTSOptions):
-        speech_conf = speechsdk.SpeechConfig(
-            subscription=AzureVoice.AZURE_KEY, region=AzureVoice.AZURE_REGION
-        )
+    def text_to_speech(self, text: str, options: TTSOptions, keys_override: Keys | None = None):
+        if keys_override and keys_override.azure:
+            _LOG.info(f"Using overridden Azure keys")
+            subscription = keys_override.azure.key
+            region = keys_override.azure.region
+        else:
+            _LOG.info(f"Using default Azure keys")
+            subscription = API_KEYS.azure.key
+            region = API_KEYS.azure.region
+        speech_conf = speechsdk.SpeechConfig(subscription=subscription, region=region)
 
         azure_voice_id = AzureVoice._VOICES[options.voice]["id"]
         speech_conf.speech_synthesis_voice_name = azure_voice_id

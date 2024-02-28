@@ -28,7 +28,7 @@ from logging import getLogger
 
 from pydantic import BaseModel, Field
 
-from icespeak.settings import MAX_SPEED, MIN_SPEED, SETTINGS, TextFormats
+from icespeak.settings import Keys, MAX_SPEED, MIN_SPEED, SETTINGS, TextFormats
 from icespeak.transcribe import DefaultTranscriber
 
 if TYPE_CHECKING:
@@ -125,5 +125,5 @@ class BaseVoice(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def text_to_speech(self, text: str, options: TTSOptions) -> Path:
+    def text_to_speech(self, text: str, options: TTSOptions, keys_override: Keys | None = None) -> Path:
         raise NotImplementedError
