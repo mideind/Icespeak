@@ -29,7 +29,7 @@ from logging import getLogger
 
 import requests
 
-from icespeak.settings import Keys, SETTINGS
+from icespeak.settings import SETTINGS, Keys
 from icespeak.transcribe import strip_markup
 
 from . import BaseVoice, ModuleAudioFormatsT, ModuleVoicesT, TTSOptions
@@ -70,7 +70,9 @@ class TiroVoice(BaseVoice):
         pass
 
     @override
-    def text_to_speech(self, text: str, options: TTSOptions, keys_override: Keys | None = None):
+    def text_to_speech(
+        self, text: str, options: TTSOptions, keys_override: Keys | None = None
+    ):
         # TODO: Tiro's API supports a subset of SSML tags
         # See https://tts.tiro.is/#tag/speech/paths/~1v0~1speech/post
 

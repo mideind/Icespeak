@@ -64,7 +64,7 @@ def _setup_voices() -> tuple[VoicesT, ServicesT]:
     for service in services:
         _LOG.debug("Loading voices from service: %s", service)
         if not service.available:
-            _LOG.info("Voices from service %s not availble.", service)
+            _LOG.info("Voices from service %s not available.", service)
             continue
         for voice, info in service.voices.items():
             # Info about each voice

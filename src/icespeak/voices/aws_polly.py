@@ -30,7 +30,7 @@ from threading import Lock
 
 import boto3
 
-from icespeak.settings import API_KEYS, Keys, SETTINGS
+from icespeak.settings import API_KEYS, SETTINGS, AWSPollyKey, Keys
 
 from . import BaseVoice, ModuleAudioFormatsT, ModuleVoicesT, TTSOptions
 
@@ -86,12 +86,14 @@ class AWSPollyVoice(BaseVoice):
                 )
 
     @override
-    def text_to_speech(self, text: str, options: TTSOptions, keys_override: Keys | None = None):
+    def text_to_speech(
+        self, text: str, options: TTSOptions, keys_override: Keys | None = None
+    ):
         if keys_override and keys_override.aws:
-            _LOG.info(f"Using overridden AWS keys")
+            _LOG.debug("Using overridden AWS keys")
             client = self._create_client(keys_override.aws)
         else:
-            _LOG.info(f"Using default AWS keys")
+            _LOG.debug("Using default AWS keys")
             client = self._aws_client
         # Special preprocessing for SSML markup
         if options.text_format == "ssml":

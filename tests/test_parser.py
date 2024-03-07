@@ -136,9 +136,9 @@ def test_greynirssmlparser():
     # -------------------------
     # Test voice engine specific transcription
 
-    assert "Dora" in VOICES
-    # Gudrun, the default voice, and Dora don't spell things the same
-    gp2 = GreynirSSMLParser("Dora")
+    assert "Karl" in VOICES
+    # Gudrun, the default voice, and Karl don't spell things the same
+    gp2 = GreynirSSMLParser("Karl")
     alphabet = "aábcdðeéfghiíjklmnoópqrstuúvwxyýþæöz"
     n1 = gp.transcribe(gssml(alphabet, type="spell"))
     n2 = gp2.transcribe(gssml(alphabet, type="spell"))
