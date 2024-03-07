@@ -21,10 +21,12 @@
 from __future__ import annotations
 
 import pytest
+from unittest.mock import patch, MagicMock
 
 from icespeak import TTSOptions, tts_to_file
-from icespeak.settings import API_KEYS, TextFormats, suffix_for_audiofmt
+from icespeak.settings import API_KEYS, AWSPollyKey, Keys, TextFormats, suffix_for_audiofmt
 from icespeak.transcribe import strip_markup
+from icespeak.tts import SERVICES, VOICES
 
 
 def test_voices_utils():
@@ -71,6 +73,20 @@ def test_Azure_speech_synthesis():
     path.unlink()
 
 
+@pytest.mark.skipif(API_KEYS.azure is None, reason="Missing Azure API Key.")
+@pytest.mark.network()
+def test_Azure_speech_synthesis_with_keys_override():
+    # Test Azure Cognitive Services
+    tts_out = tts_to_file(
+        _TEXT,
+        TTSOptions(text_format=TextFormats.TEXT, audio_format="mp3", voice="Gudrun"),
+    )
+    path = tts_out.file
+    assert path.is_file(), "Expected audio file to exist"
+    assert path.stat().st_size > _MIN_AUDIO_SIZE, "Expected longer audio data"
+    path.unlink()
+
+
 @pytest.mark.skipif(API_KEYS.google is None, reason="Missing Google API Key.")
 @pytest.mark.network()
 def test_Google_speech_synthesis():
@@ -97,3 +113,22 @@ def test_Tiro_speech_synthesis():
     assert path.is_file(), "Expected audio file to exist"
     assert path.stat().st_size > _MIN_AUDIO_SIZE, "Expected longer audio data"
     path.unlink()
+
+@patch.dict(SERVICES, {"mock_service": MagicMock()})
+@patch.dict(VOICES, {"Dora": {"service": "mock_service"}})
+def test_keys_override_in_tts_to_file():
+    """Test if keys_override is correctly passed into service.text_to_speech."""
+    _TEXT = "Test"
+    SERVICES["mock_service"].audio_formats = ["mp3"]
+    keys_override = Keys(aws=AWSPollyKey(aws_access_key_id="test", aws_secret_access_key="test", region_name="test"))
+    tts_to_file(
+        _TEXT,
+        TTSOptions(text_format=TextFormats.TEXT, audio_format="mp3", voice="Dora"),
+        transcribe=False,
+        keys_override=keys_override
+    )
+    SERVICES["mock_service"].text_to_speech.assert_called_once_with(
+        _TEXT,
+        TTSOptions(text_format=TextFormats.TEXT, audio_format="mp3", voice="Dora"),
+        keys_override
+    )

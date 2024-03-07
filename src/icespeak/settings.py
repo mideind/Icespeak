@@ -182,6 +182,14 @@ class Keys(BaseModel):
     # TODO: Re-implement TTS with Tiro
     tiro: Literal[None] = Field(default=None)
 
+    def __hash__(self):
+        return hash((self.azure, self.aws, self.google, self.tiro))
+
+    def __eq__(self, other):
+        if isinstance(other, Keys):
+            return (self.azure, self.aws, self.google, self.tiro) == (other.azure, other.aws, other.google, other.tiro)
+        return False
+
 
 API_KEYS = Keys()
 
