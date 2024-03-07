@@ -59,6 +59,20 @@ def test_AWSPolly_speech_synthesis():
     path.unlink()
 
 
+@pytest.mark.skipif(API_KEYS.aws is None, reason="Missing AWS Polly API Key.")
+@pytest.mark.network()
+def test_AWSPolly_speech_synthesis_with_keys_override():
+    tts_out = tts_to_file(
+        _TEXT,
+        TTSOptions(text_format=TextFormats.TEXT, audio_format="mp3", voice="Dora"),
+        keys_override=API_KEYS,
+    )
+    path = tts_out.file
+    assert path.is_file(), "Expected audio file to exist"
+    assert path.stat().st_size > _MIN_AUDIO_SIZE, "Expected longer audio data"
+    path.unlink()
+
+
 @pytest.mark.skipif(API_KEYS.azure is None, reason="Missing Azure API Key.")
 @pytest.mark.network()
 def test_Azure_speech_synthesis():
@@ -80,6 +94,7 @@ def test_Azure_speech_synthesis_with_keys_override():
     tts_out = tts_to_file(
         _TEXT,
         TTSOptions(text_format=TextFormats.TEXT, audio_format="mp3", voice="Gudrun"),
+        keys_override=API_KEYS,
     )
     path = tts_out.file
     assert path.is_file(), "Expected audio file to exist"
