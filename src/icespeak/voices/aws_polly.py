@@ -77,13 +77,7 @@ class AWSPollyVoice(BaseVoice):
         self._aws_client: Any = None
         with AWSPollyVoice._lock:
             if self._aws_client is None:
-                # See boto3.Session.client for arguments
-                self._aws_client = boto3.client(
-                    "polly",
-                    region_name=API_KEYS.aws.region_name.get_secret_value(),
-                    aws_access_key_id=API_KEYS.aws.aws_access_key_id.get_secret_value(),
-                    aws_secret_access_key=API_KEYS.aws.aws_secret_access_key.get_secret_value(),
-                )
+                self._aws_client = self._create_client(API_KEYS.aws)
 
     @override
     def text_to_speech(
