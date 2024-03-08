@@ -187,7 +187,12 @@ class Keys(BaseModel):
 
     def __eq__(self, other):
         if isinstance(other, Keys):
-            return (self.azure, self.aws, self.google, self.tiro) == (other.azure, other.aws, other.google, other.tiro)
+            return (self.azure, self.aws, self.google, self.tiro) == (
+                other.azure,
+                other.aws,
+                other.google,
+                other.tiro,
+            )
         return False
 
 
