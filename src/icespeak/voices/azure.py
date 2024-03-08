@@ -184,12 +184,12 @@ class AzureVoice(BaseVoice):
     ):
         if keys_override and keys_override.azure:
             _LOG.debug("Using overridden Azure keys")
-            subscription = keys_override.azure.key
-            region = keys_override.azure.region
+            subscription = keys_override.azure.key.get_secret_value()
+            region = keys_override.azure.region.get_secret_value()
         else:
             _LOG.debug("Using default Azure keys")
-            subscription = API_KEYS.azure.key
-            region = API_KEYS.azure.region
+            subscription = AzureVoice.AZURE_KEY
+            region = AzureVoice.AZURE_REGION
         speech_conf = speechsdk.SpeechConfig(subscription=subscription, region=region)
 
         azure_voice_id = AzureVoice._VOICES[options.voice]["id"]
