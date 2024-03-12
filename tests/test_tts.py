@@ -151,14 +151,15 @@ def test_keys_override_in_tts_to_file():
             region_name="test",
         )
     )
+    opts = TTSOptions(text_format=TextFormats.TEXT, audio_format="mp3", voice="Dora")
     tts_to_file(
         _TEXT,
-        TTSOptions(text_format=TextFormats.TEXT, audio_format="mp3", voice="Dora"),
+        opts,
         transcribe=False,
         keys_override=keys_override,
     )
     SERVICES["mock_service"].text_to_speech.assert_called_once_with(
         _TEXT,
-        TTSOptions(text_format=TextFormats.TEXT, audio_format="mp3", voice="Dora"),
+        opts,
         keys_override,
     )
