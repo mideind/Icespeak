@@ -34,7 +34,7 @@ from logging import DEBUG, getLogger
 
 from cachetools import LFUCache, cached
 
-from .settings import SETTINGS, TRACE
+from .settings import SETTINGS, TRACE, Keys
 from .transcribe import TranscriptionOptions
 
 # TODO: Re implement Tiro
@@ -64,7 +64,7 @@ def _setup_voices() -> tuple[VoicesT, ServicesT]:
     for service in services:
         _LOG.debug("Loading voices from service: %s", service)
         if not service.available:
-            _LOG.info("Voices from service %s not availble.", service)
+            _LOG.info("Voices from service %s not available.", service)
             continue
         for voice, info in service.voices.items():
             # Info about each voice
@@ -153,6 +153,7 @@ def tts_to_file(
     transcription_options: TranscriptionOptions | None = None,
     *,
     transcribe: bool = True,
+    keys_override: Keys | None = None,
 ) -> TTSOutput:
     """
     # Text-to-speech
@@ -195,7 +196,7 @@ def tts_to_file(
         text = service.Transcriber.token_transcribe(text, options=transcription_options)
 
     output = TTSOutput(
-        file=service.text_to_speech(text, tts_options),
+        file=service.text_to_speech(text, tts_options, keys_override),
         text=text,
     )
     _LOG.debug("tts_to_file, out: %s", output)

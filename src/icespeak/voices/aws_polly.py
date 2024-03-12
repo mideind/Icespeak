@@ -30,7 +30,7 @@ from threading import Lock
 
 import boto3
 
-from icespeak.settings import API_KEYS, SETTINGS
+from icespeak.settings import API_KEYS, SETTINGS, AWSPollyKey, Keys
 
 from . import BaseVoice, ModuleAudioFormatsT, ModuleVoicesT, TTSOptions
 
@@ -46,6 +46,14 @@ class AWSPollyVoice(BaseVoice):
     _AUDIO_FORMATS: ModuleAudioFormatsT = frozenset(("mp3", "pcm", "ogg_vorbis"))
 
     _lock = Lock()
+
+    def _create_client(self, aws_key: AWSPollyKey) -> boto3.client:
+        return boto3.client(
+            "polly",
+            region_name=aws_key.region_name.get_secret_value(),
+            aws_access_key_id=aws_key.aws_access_key_id.get_secret_value(),
+            aws_secret_access_key=aws_key.aws_secret_access_key.get_secret_value(),
+        )
 
     @property
     @override
@@ -69,16 +77,18 @@ class AWSPollyVoice(BaseVoice):
         self._aws_client: Any = None
         with AWSPollyVoice._lock:
             if self._aws_client is None:
-                # See boto3.Session.client for arguments
-                self._aws_client = boto3.client(
-                    "polly",
-                    region_name=API_KEYS.aws.region_name.get_secret_value(),
-                    aws_access_key_id=API_KEYS.aws.aws_access_key_id.get_secret_value(),
-                    aws_secret_access_key=API_KEYS.aws.aws_secret_access_key.get_secret_value(),
-                )
+                self._aws_client = self._create_client(API_KEYS.aws)
 
     @override
-    def text_to_speech(self, text: str, options: TTSOptions):
+    def text_to_speech(
+        self, text: str, options: TTSOptions, keys_override: Keys | None = None
+    ):
+        if keys_override and keys_override.aws:
+            _LOG.debug("Using overridden AWS keys")
+            client = self._create_client(keys_override.aws)
+        else:
+            _LOG.debug("Using default AWS keys")
+            client = self._aws_client
         # Special preprocessing for SSML markup
         if options.text_format == "ssml":
             # Adjust voice speed as appropriate
@@ -99,7 +109,7 @@ class AWSPollyVoice(BaseVoice):
                 "OutputFormat": options.audio_format,
             }
             _LOG.debug("Synthesizing with AWS Polly: %s", aws_args)
-            response: dict[str, Any] = self._aws_client.synthesize_speech(**aws_args)
+            response: dict[str, Any] = client.synthesize_speech(**aws_args)
         except Exception:
             _LOG.exception("Error synthesizing speech.")
             raise

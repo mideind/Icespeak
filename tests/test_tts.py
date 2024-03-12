@@ -18,13 +18,23 @@
 
 
 """
+# ruff: noqa: S106
 from __future__ import annotations
+
+from unittest.mock import MagicMock, patch
 
 import pytest
 
 from icespeak import TTSOptions, tts_to_file
-from icespeak.settings import API_KEYS, TextFormats, suffix_for_audiofmt
+from icespeak.settings import (
+    API_KEYS,
+    AWSPollyKey,
+    Keys,
+    TextFormats,
+    suffix_for_audiofmt,
+)
 from icespeak.transcribe import strip_markup
+from icespeak.tts import SERVICES, VOICES
 
 
 def test_voices_utils():
@@ -57,6 +67,20 @@ def test_AWSPolly_speech_synthesis():
     path.unlink()
 
 
+@pytest.mark.skipif(API_KEYS.aws is None, reason="Missing AWS Polly API Key.")
+@pytest.mark.network()
+def test_AWSPolly_speech_synthesis_with_keys_override():
+    tts_out = tts_to_file(
+        _TEXT,
+        TTSOptions(text_format=TextFormats.TEXT, audio_format="mp3", voice="Dora"),
+        keys_override=API_KEYS,
+    )
+    path = tts_out.file
+    assert path.is_file(), "Expected audio file to exist"
+    assert path.stat().st_size > _MIN_AUDIO_SIZE, "Expected longer audio data"
+    path.unlink()
+
+
 @pytest.mark.skipif(API_KEYS.azure is None, reason="Missing Azure API Key.")
 @pytest.mark.network()
 def test_Azure_speech_synthesis():
@@ -64,6 +88,21 @@ def test_Azure_speech_synthesis():
     tts_out = tts_to_file(
         _TEXT,
         TTSOptions(text_format=TextFormats.TEXT, audio_format="mp3", voice="Gudrun"),
+    )
+    path = tts_out.file
+    assert path.is_file(), "Expected audio file to exist"
+    assert path.stat().st_size > _MIN_AUDIO_SIZE, "Expected longer audio data"
+    path.unlink()
+
+
+@pytest.mark.skipif(API_KEYS.azure is None, reason="Missing Azure API Key.")
+@pytest.mark.network()
+def test_Azure_speech_synthesis_with_keys_override():
+    # Test Azure Cognitive Services
+    tts_out = tts_to_file(
+        _TEXT,
+        TTSOptions(text_format=TextFormats.TEXT, audio_format="mp3", voice="Gudrun"),
+        keys_override=API_KEYS,
     )
     path = tts_out.file
     assert path.is_file(), "Expected audio file to exist"
@@ -97,3 +136,30 @@ def test_Tiro_speech_synthesis():
     assert path.is_file(), "Expected audio file to exist"
     assert path.stat().st_size > _MIN_AUDIO_SIZE, "Expected longer audio data"
     path.unlink()
+
+
+@patch.dict(SERVICES, {"mock_service": MagicMock()})
+@patch.dict(VOICES, {"Dora": {"service": "mock_service"}})
+def test_keys_override_in_tts_to_file():
+    """Test if keys_override is correctly passed into service.text_to_speech."""
+    _TEXT = "Test"
+    SERVICES["mock_service"].audio_formats = ["mp3"]
+    keys_override = Keys(
+        aws=AWSPollyKey(
+            aws_access_key_id="test",
+            aws_secret_access_key="test",
+            region_name="test",
+        )
+    )
+    opts = TTSOptions(text_format=TextFormats.TEXT, audio_format="mp3", voice="Dora")
+    tts_to_file(
+        _TEXT,
+        opts,
+        transcribe=False,
+        keys_override=keys_override,
+    )
+    SERVICES["mock_service"].text_to_speech.assert_called_once_with(
+        _TEXT,
+        opts,
+        keys_override,
+    )

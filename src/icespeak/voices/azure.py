@@ -29,7 +29,7 @@ from ssl import OPENSSL_VERSION_INFO
 
 import azure.cognitiveservices.speech as speechsdk
 
-from icespeak.settings import API_KEYS, SETTINGS
+from icespeak.settings import API_KEYS, SETTINGS, Keys
 from icespeak.transcribe import DefaultTranscriber, strip_markup
 
 from . import BaseVoice, ModuleAudioFormatsT, ModuleVoicesT, TTSOptions
@@ -179,10 +179,18 @@ class AzureVoice(BaseVoice):
         AzureVoice.AZURE_REGION = API_KEYS.azure.region.get_secret_value()
 
     @override
-    def text_to_speech(self, text: str, options: TTSOptions):
-        speech_conf = speechsdk.SpeechConfig(
-            subscription=AzureVoice.AZURE_KEY, region=AzureVoice.AZURE_REGION
-        )
+    def text_to_speech(
+        self, text: str, options: TTSOptions, keys_override: Keys | None = None
+    ):
+        if keys_override and keys_override.azure:
+            _LOG.debug("Using overridden Azure keys")
+            subscription = keys_override.azure.key.get_secret_value()
+            region = keys_override.azure.region.get_secret_value()
+        else:
+            _LOG.debug("Using default Azure keys")
+            subscription = AzureVoice.AZURE_KEY
+            region = AzureVoice.AZURE_REGION
+        speech_conf = speechsdk.SpeechConfig(subscription=subscription, region=region)
 
         azure_voice_id = AzureVoice._VOICES[options.voice]["id"]
         speech_conf.speech_synthesis_voice_name = azure_voice_id

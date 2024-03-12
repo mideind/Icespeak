@@ -127,6 +127,7 @@ pypy/
 pypy*
 cpython*/
 venv
+.python-version
 
 # Installer logs
 pip-log.txt
