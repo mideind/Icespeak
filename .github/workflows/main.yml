@@ -33,8 +33,6 @@ jobs:
           echo '${{ secrets.AZURE_TTS_KEY }}' > keys/AzureSpeechServerKey.json
           # AWS Polly API key
           echo '${{ secrets.AWS_POLLY_KEY }}' > keys/AWSPollyServerKey.json
-          # Google TTS key
-          echo '${{ secrets.GOOGLE_TTS_KEY }}' > keys/GoogleServiceAccount.json
       - name: Test with pytest
         run: |
           pytest --run-slow -vvvrP --log-level=DEBUG --capture=tee-sys
@@ -42,3 +40,24 @@ jobs:
         run: |
           pre-commit run --all-files
 
+  network:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip wheel setuptools
+          pip install -e '.[dev]'
+      - name: Set up API keys
+        run: |
+          # Azure TTS key
+          echo '${{ secrets.AZURE_TTS_KEY }}' > keys/AzureSpeechServerKey.json
+          # AWS Polly API key
+          echo '${{ secrets.AWS_POLLY_KEY }}' > keys/AWSPollyServerKey.json
+      - name: Test with pytest
+        run: |
+          pytest --run-all --log-level=INFO --capture=tee-sys

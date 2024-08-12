@@ -164,11 +164,10 @@ class AzureVoice(BaseVoice):
 
     @override
     def load_api_keys(self):
-        if OPENSSL_VERSION_INFO[0] != 1:
-            # Azure only works with legacy OpenSSL
-            # See issues regarding compatibility with OpenSSL version >=3:
-            # https://github.com/Azure-Samples/cognitive-services-speech-sdk/issues/1747
-            # https://github.com/Azure-Samples/cognitive-services-speech-sdk/issues/1986
+        if not (OPENSSL_VERSION_INFO[0] == 3 and OPENSSL_VERSION_INFO[1] == 0):
+            # Azure only works with OpenSSL 3.0.*
+            # See issue:
+            # https://github.com/Azure-Samples/cognitive-services-speech-sdk/issues/2436
             _LOG.warning("OpenSSL version not compatible with Azure Cognitive Services, TTS might not work.")
 
         if API_KEYS.azure is None:
@@ -197,7 +196,7 @@ class AzureVoice(BaseVoice):
 
         outfile = SETTINGS.get_empty_file(options.audio_format)
         try:
-            audio_config = speechsdk.audio.AudioOutputConfig(filename=str(outfile))  # pyright: ignore[reportGeneralTypeIssues]
+            audio_config = speechsdk.audio.AudioOutputConfig(filename=str(outfile))  # pyright: ignore[reportArgumentType]
 
             # Init synthesizer
             synthesizer = speechsdk.SpeechSynthesizer(speech_config=speech_conf, audio_config=audio_config)
