@@ -58,7 +58,7 @@ dev = [
     "pytest>=7.2.1",
     "coverage[toml]>=7.3.1",
     "black>=23.7.0",
-    "ruff>=0.0.286",
+    "ruff>=0.5.7",
     "pre-commit>=3.3.3",
     "mypy>=1.4.1",
 ]
@@ -120,9 +120,11 @@ reportUninitializedInstanceVariable = "information"
 reportUnnecessaryTypeIgnoreComment = "warning"
 reportUnusedCallResult = "none"
 
-
 [tool.ruff]
 target-version = "py39"
+line-length = 120
+
+[tool.ruff.lint]
 # See https://beta.ruff.rs/docs/rules/ for list of rules
 # Enable all rules
 select = ["ALL"]
@@ -157,11 +159,8 @@ ignore = [
     "COM", # Commas (sometimes takes issue with black formatting)
     "ERA", # Commented out code
 ]
-# Silence complaints when black doesn't format
-# lines that are slightly over 88 characters long
-line-length = 100
 
-[tool.ruff.isort]
+[tool.ruff.lint.isort]
 known-first-party = ["icespeak"]
 section-order = [
     "future",
@@ -172,7 +171,7 @@ section-order = [
     "local-folder",
 ]
 
-[tool.ruff.isort.sections]
+[tool.ruff.lint.isort.sections]
 # Have typing libraries above other imports
 typehints = ["typing", "typing_extensions", "types", "collections.abc"]
 

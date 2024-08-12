@@ -2,20 +2,17 @@
 # See https://pre-commit.com/hooks.html for more hooks
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.4.0
+    rev: v4.6.0
     hooks:
       - id: check-yaml
       - id: check-added-large-files
       - id: check-merge-conflict
       - id: debug-statements
-  # Code formatting
-  - repo: https://github.com/psf/black
-    rev: "23.7.0"
-    hooks:
-      - id: black
-        language_version: python3
   # Code linting & import sorting
   - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: "v0.0.291"
+    rev: "v0.5.7"
     hooks:
+      # linter
       - id: ruff
+      # formatter
+      - id: ruff-format

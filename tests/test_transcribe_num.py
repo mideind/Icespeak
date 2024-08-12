@@ -36,19 +36,19 @@ from icespeak.transcribe.num import (
     years_to_text,
 )
 
-oktilljón = 10**48
-septilljón = 10**42
-sextilljón = 10**36
-kvintilljón = 10**30
-kvaðrilljarður = 10**27
-kvaðrilljón = 10**24
-trilljarður = 10**21
-trilljón = 10**18
-billjarður = 10**15
-billjón = 10**12
-milljarður = 10**9
-milljón = 10**6
-þúsund = 1000
+oktilljon = 10**48
+septilljon = 10**42
+sextilljon = 10**36
+kvintilljon = 10**30
+kvadrilljardur = 10**27
+kvadrilljon = 10**24
+trilljardur = 10**21
+trilljon = 10**18
+billjardur = 10**15
+billjon = 10**12
+milljardur = 10**9
+milljon = 10**6
+thusund = 1000
 
 _NEUT_1_to_100 = (
     # 1-19
@@ -79,32 +79,32 @@ def test_number_to_neutral() -> None:
                 "sjötíu og átta þúsund tvö hundruð fjörutíu og níu"
             ),
         ),
-        (241 * milljarður, "tvö hundruð fjörutíu og einn milljarður"),
-        (100 * milljón, "eitt hundrað milljónir"),
-        (milljarður + þúsund, "einn milljarður og eitt þúsund"),
-        (milljarður + 11, "einn milljarður og ellefu"),
-        (milljarður + 1 * milljón, "einn milljarður og ein milljón"),
-        (milljarður + 2 * milljón, "einn milljarður og tvær milljónir"),
-        (200 * milljarður, "tvö hundruð milljarðar"),
-        (3 * milljarður + 400 * þúsund, "þrír milljarðar og fjögur hundruð þúsund"),
+        (241 * milljardur, "tvö hundruð fjörutíu og einn milljarður"),
+        (100 * milljon, "eitt hundrað milljónir"),
+        (milljardur + thusund, "einn milljarður og eitt þúsund"),
+        (milljardur + 11, "einn milljarður og ellefu"),
+        (milljardur + 1 * milljon, "einn milljarður og ein milljón"),
+        (milljardur + 2 * milljon, "einn milljarður og tvær milljónir"),
+        (200 * milljardur, "tvö hundruð milljarðar"),
+        (3 * milljardur + 400 * thusund, "þrír milljarðar og fjögur hundruð þúsund"),
         (
-            10 * milljón * oktilljón,
+            10 * milljon * oktilljon,
             "tíu milljónir oktilljóna",
         ),
         (
-            oktilljón + milljarður,
+            oktilljon + milljardur,
             "ein oktilljón og einn milljarður",
         ),
         (
-            oktilljón + 2 * milljarður,
+            oktilljon + 2 * milljardur,
             "ein oktilljón og tveir milljarðar",
         ),
         (
-            oktilljón + 3 * milljarður,
+            oktilljon + 3 * milljardur,
             "ein oktilljón og þrír milljarðar",
         ),
         (
-            2 * oktilljón + 100 * billjón,
+            2 * oktilljon + 100 * billjon,
             "tvær oktilljónir og eitt hundrað billjónir",
         ),
         (
@@ -123,14 +123,14 @@ def test_number_to_text():
     # Shorten name for tests
     nt = number_to_text
     assert (
-        nt(milljarður + 200 * þúsund + 200)
+        nt(milljardur + 200 * thusund + 200)
         == "einn milljarður tvö hundruð þúsund og tvö hundruð"
     )
     assert nt(320) == "þrjú hundruð og tuttugu"
-    assert nt(320 * þúsund) == "þrjú hundruð og tuttugu þúsund"
-    assert nt(320 * þúsund + 1, gender="kk") == "þrjú hundruð og tuttugu þúsund og einn"
-    assert nt(320 * þúsund + 1, gender="kvk") == "þrjú hundruð og tuttugu þúsund og ein"
-    assert nt(320 * þúsund + 1, gender="hk") == "þrjú hundruð og tuttugu þúsund og eitt"
+    assert nt(320 * thusund) == "þrjú hundruð og tuttugu þúsund"
+    assert nt(320 * thusund + 1, gender="kk") == "þrjú hundruð og tuttugu þúsund og einn"
+    assert nt(320 * thusund + 1, gender="kvk") == "þrjú hundruð og tuttugu þúsund og ein"
+    assert nt(320 * thusund + 1, gender="hk") == "þrjú hundruð og tuttugu þúsund og eitt"
     assert nt(3202020202020) == (
         "þrjár billjónir tvö hundruð og tveir milljarðar "
         "tuttugu milljónir tvö hundruð og tvö þúsund og tuttugu"
@@ -257,11 +257,11 @@ def test_number_to_ordinal() -> None:
         == "tíu þúsund tvö hundruðustu og öðrum"
     )
     assert (
-        number_to_ordinal(milljón, case="þf", gender="kvk", number="et")
+        number_to_ordinal(milljon, case="þf", gender="kvk", number="et")
         == "milljónustu"
     )
     assert (
-        number_to_ordinal(milljarður + 2, case="þf", gender="kvk", number="et")
+        number_to_ordinal(milljardur + 2, case="þf", gender="kvk", number="et")
         == "milljörðustu og aðra"
     )
 
