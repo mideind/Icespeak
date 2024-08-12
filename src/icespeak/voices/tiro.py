@@ -1,25 +1,26 @@
 """
 
-    Icespeak - Icelandic TTS library
+Icespeak - Icelandic TTS library
 
-    Copyright (C) 2023 Miðeind ehf.
+Copyright (C) 2024 Miðeind ehf.
 
-       This program is free software: you can redistribute it and/or modify
-       it under the terms of the GNU General Public License as published by
-       the Free Software Foundation, either version 3 of the License, or
-       (at your option) any later version.
-       This program is distributed in the hope that it will be useful,
-       but WITHOUT ANY WARRANTY; without even the implied warranty of
-       MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-       GNU General Public License for more details.
+   This program is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see http://www.gnu.org/licenses/.
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see http://www.gnu.org/licenses/.
 
 
-    Icelandic-language text to speech via Tiro's text to speech API.
+Icelandic-language text to speech via Tiro's text to speech API.
 
 """
+
 # TODO: Currently unused
 from __future__ import annotations
 
@@ -70,9 +71,7 @@ class TiroVoice(BaseVoice):
         pass
 
     @override
-    def text_to_speech(
-        self, text: str, options: TTSOptions, keys_override: Keys | None = None
-    ):
+    def text_to_speech(self, text: str, options: TTSOptions, keys_override: Keys | None = None):
         # TODO: Tiro's API supports a subset of SSML tags
         # See https://tts.tiro.is/#tag/speech/paths/~1v0~1speech/post
 
@@ -92,9 +91,7 @@ class TiroVoice(BaseVoice):
         try:
             r = requests.post(_TIRO_TTS_URL, json=jdict, timeout=10)
             if r.status_code != 200:
-                raise Exception(
-                    f"Received HTTP status code {r.status_code} from Tiro server"
-                )
+                raise Exception(f"Received HTTP status code {r.status_code} from Tiro server")
             data = r.content
         except Exception as e:
             _LOG.error("Error communicating with Tiro API at %s: %s", _TIRO_TTS_URL, e)

@@ -1,28 +1,29 @@
 """
 
-    Icespeak - Icelandic TTS library
+Icespeak - Icelandic TTS library
 
-    Copyright (C) 2023 Miðeind ehf.
+Copyright (C) 2024 Miðeind ehf.
 
-       This program is free software: you can redistribute it and/or modify
-       it under the terms of the GNU General Public License as published by
-       the Free Software Foundation, either version 3 of the License, or
-       (at your option) any later version.
-       This program is distributed in the hope that it will be useful,
-       but WITHOUT ANY WARRANTY; without even the implied warranty of
-       MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-       GNU General Public License for more details.
+   This program is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see http://www.gnu.org/licenses/.
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see http://www.gnu.org/licenses/.
 
 
-    This file contains functionality which simplifies composing text
-    with data that should be transcribed for TTS engines,
-    along with a parser which parses the composed text and
-    calls the appropriate transcription method from `./transcribe`.
+This file contains functionality which simplifies composing text
+with data that should be transcribed for TTS engines,
+along with a parser which parses the composed text and
+calls the appropriate transcription method from `./transcribe`.
 
 """
+
 from __future__ import annotations
 
 from typing import Any
@@ -58,9 +59,7 @@ def gssml(data: Any = None, *, type: str, **kwargs: str | float) -> str:
         gssml(43, type="number", gender="kk") -> '<greynir type="number" gender="kk">43</greynir>'
     """
     assert type, "Type keyword cannot be empty."
-    assert isinstance(
-        type, str
-    ), f"type keyword arg must be string in function gssml; data: {data}"
+    assert isinstance(type, str), f"type keyword arg must be string in function gssml; data: {data}"
     return (
         f'<{GSSML_TAG} type="{type}"'
         + "".join(f' {k}="{v}"' for k, v in kwargs.items())
@@ -93,9 +92,7 @@ class GreynirSSMLParser(HTMLParser):
         super().__init__()
 
         if not len(VOICES):
-            raise RuntimeError(
-                "No voices available. Please install the API key for at least one voice engine."
-            )
+            raise RuntimeError("No voices available. Please install the API key for at least one voice engine.")
         if voice not in VOICES:
             _LOG.warning(
                 "Voice %r not in supported voices, reverting to default: %r",
@@ -130,9 +127,7 @@ class GreynirSSMLParser(HTMLParser):
 
         self.feed(voice_string)
         self.close()
-        assert (
-            len(self._str_stack) == 1
-        ), "Error during parsing, are all markup tags correctly closed?"
+        assert len(self._str_stack) == 1, "Error during parsing, are all markup tags correctly closed?"
         out = self._str_stack[0]
         # Capitalize before returning
         return out[0].upper() + out[1:] if out else out
@@ -170,9 +165,7 @@ class GreynirSSMLParser(HTMLParser):
             if self._attr_stack:
                 dattrs = self._attr_stack.pop()  # Current tag attributes
                 t: str | None = dattrs.pop("type")
-                assert (
-                    t
-                ), f"Missing type attribute in <{GSSML_TAG}> tag around string: {s}"
+                assert t, f"Missing type attribute in <{GSSML_TAG}> tag around string: {s}"
                 # Fetch corresponding transcription method from handler
                 transf: TranscriptionMethod = getattr(self._handler, t)
                 assert ismethod(transf), f"{t} is not a transcription method."

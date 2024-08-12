@@ -1,23 +1,24 @@
 """
 
-    Icespeak - Icelandic TTS library
+Icespeak - Icelandic TTS library
 
-    Copyright (C) 2023 Miðeind ehf.
+Copyright (C) 2024 Miðeind ehf.
 
-       This program is free software: you can redistribute it and/or modify
-       it under the terms of the GNU General Public License as published by
-       the Free Software Foundation, either version 3 of the License, or
-       (at your option) any later version.
-       This program is distributed in the hope that it will be useful,
-       but WITHOUT ANY WARRANTY; without even the implied warranty of
-       MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-       GNU General Public License for more details.
+   This program is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see http://www.gnu.org/licenses/.
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see http://www.gnu.org/licenses/.
 
 
 """
+
 # pyright: reportPrivateUsage=false
 from __future__ import annotations
 
@@ -74,10 +75,7 @@ def test_number_to_neutral() -> None:
         (1100, "eitt þúsund og eitt hundrað"),
         (
             -42_178_249,
-            (
-                "mínus fjörutíu og tvær milljónir eitt hundrað "
-                "sjötíu og átta þúsund tvö hundruð fjörutíu og níu"
-            ),
+            ("mínus fjörutíu og tvær milljónir eitt hundrað " "sjötíu og átta þúsund tvö hundruð fjörutíu og níu"),
         ),
         (241 * milljardur, "tvö hundruð fjörutíu og einn milljarður"),
         (100 * milljon, "eitt hundrað milljónir"),
@@ -122,40 +120,26 @@ def test_number_to_neutral() -> None:
 def test_number_to_text():
     # Shorten name for tests
     nt = number_to_text
-    assert (
-        nt(milljardur + 200 * thusund + 200)
-        == "einn milljarður tvö hundruð þúsund og tvö hundruð"
-    )
+    assert nt(milljardur + 200 * thusund + 200) == "einn milljarður tvö hundruð þúsund og tvö hundruð"
     assert nt(320) == "þrjú hundruð og tuttugu"
     assert nt(320 * thusund) == "þrjú hundruð og tuttugu þúsund"
     assert nt(320 * thusund + 1, gender="kk") == "þrjú hundruð og tuttugu þúsund og einn"
     assert nt(320 * thusund + 1, gender="kvk") == "þrjú hundruð og tuttugu þúsund og ein"
     assert nt(320 * thusund + 1, gender="hk") == "þrjú hundruð og tuttugu þúsund og eitt"
     assert nt(3202020202020) == (
-        "þrjár billjónir tvö hundruð og tveir milljarðar "
-        "tuttugu milljónir tvö hundruð og tvö þúsund og tuttugu"
+        "þrjár billjónir tvö hundruð og tveir milljarðar " "tuttugu milljónir tvö hundruð og tvö þúsund og tuttugu"
     )
-    assert nt(320202020) == (
-        "þrjú hundruð og tuttugu milljónir tvö hundruð og tvö þúsund og tuttugu"
-    )
+    assert nt(320202020) == ("þrjú hundruð og tuttugu milljónir tvö hundruð og tvö þúsund og tuttugu")
 
     assert nt(101, gender="kk") == "hundrað og einn"
     assert nt(-102, gender="kvk") == "mínus hundrað og tvær"
     assert nt(-102, gender="kvk", one_hundred=True) == "mínus eitt hundrað og tvær"
     assert nt(5, gender="kk") == "fimm"
     assert nt(10001, gender="kvk") == "tíu þúsund og ein"
-    assert (
-        nt(113305, gender="kk") == "eitt hundrað og þrettán þúsund þrjú hundruð og fimm"
-    )
+    assert nt(113305, gender="kk") == "eitt hundrað og þrettán þúsund þrjú hundruð og fimm"
     assert nt(400567, gender="hk") == number_to_neutral(400567)
-    assert (
-        nt(-11220024, gender="kvk")
-        == "mínus ellefu milljónir tvö hundruð og tuttugu þúsund tuttugu og fjórar"
-    )
-    assert (
-        nt(19501180)
-        == "nítján milljónir fimm hundruð og eitt þúsund eitt hundrað og áttatíu"
-    )
+    assert nt(-11220024, gender="kvk") == "mínus ellefu milljónir tvö hundruð og tuttugu þúsund tuttugu og fjórar"
+    assert nt(19501180) == "nítján milljónir fimm hundruð og eitt þúsund eitt hundrað og áttatíu"
 
 
 def test_numbers_to_text():
@@ -210,10 +194,7 @@ def test_numbers_to_text():
     )
 
     for n, expected in address_test_cases:
-        assert (
-            numbers_to_text(f"Baugatangi {n}, Reykjavík")
-            == f"Baugatangi {expected}, Reykjavík"
-        )
+        assert numbers_to_text(f"Baugatangi {n}, Reykjavík") == f"Baugatangi {expected}, Reykjavík"
 
 
 def test_year_to_text() -> None:
@@ -226,17 +207,12 @@ def test_year_to_text() -> None:
 
 
 def test_years_to_text() -> None:
-    assert (
-        years_to_text("Ég fæddist 1994") == "Ég fæddist nítján hundruð níutíu og fjögur"
-    )
+    assert years_to_text("Ég fæddist 1994") == "Ég fæddist nítján hundruð níutíu og fjögur"
     assert (
         years_to_text("Árið 1461 var borgin Sarajevo stofnuð")
         == "Árið fjórtán hundruð sextíu og eitt var borgin Sarajevo stofnuð"
     )
-    assert (
-        years_to_text("17. júlí 1210 lést Sverker II")
-        == "17. júlí tólf hundruð og tíu lést Sverker II"
-    )
+    assert years_to_text("17. júlí 1210 lést Sverker II") == "17. júlí tólf hundruð og tíu lést Sverker II"
     assert (
         years_to_text("2021, 2007 og 1999")
         == "tvö þúsund tuttugu og eitt, tvö þúsund og sjö og nítján hundruð níutíu og níu"
@@ -248,65 +224,35 @@ def test_number_to_ordinal() -> None:
     assert number_to_ordinal(22, case="þgf", gender="kvk") == "tuttugustu og annarri"
     assert number_to_ordinal(302, gender="kvk") == "þrjú hundraðasta og önnur"
     assert number_to_ordinal(302, case="þgf", gender="hk") == "þrjú hundraðasta og öðru"
-    assert (
-        number_to_ordinal(-302, case="þgf", gender="hk")
-        == "mínus þrjú hundraðasta og öðru"
-    )
-    assert (
-        number_to_ordinal(10202, case="þgf", gender="hk", number="ft")
-        == "tíu þúsund tvö hundruðustu og öðrum"
-    )
-    assert (
-        number_to_ordinal(milljon, case="þf", gender="kvk", number="et")
-        == "milljónustu"
-    )
-    assert (
-        number_to_ordinal(milljardur + 2, case="þf", gender="kvk", number="et")
-        == "milljörðustu og aðra"
-    )
+    assert number_to_ordinal(-302, case="þgf", gender="hk") == "mínus þrjú hundraðasta og öðru"
+    assert number_to_ordinal(10202, case="þgf", gender="hk", number="ft") == "tíu þúsund tvö hundruðustu og öðrum"
+    assert number_to_ordinal(milljon, case="þf", gender="kvk", number="et") == "milljónustu"
+    assert number_to_ordinal(milljardur + 2, case="þf", gender="kvk", number="et") == "milljörðustu og aðra"
 
 
 def test_numbers_to_ordinal() -> None:
-    assert (
-        numbers_to_ordinal("Ég lenti í 41. sæti.", case="þgf")
-        == "Ég lenti í fertugasta og fyrsta sæti."
-    )
-    assert (
-        numbers_to_ordinal("Ég lenti í -41. sæti.", case="þgf")
-        == "Ég lenti í mínus fertugasta og fyrsta sæti."
-    )
+    assert numbers_to_ordinal("Ég lenti í 41. sæti.", case="þgf") == "Ég lenti í fertugasta og fyrsta sæti."
+    assert numbers_to_ordinal("Ég lenti í -41. sæti.", case="þgf") == "Ég lenti í mínus fertugasta og fyrsta sæti."
     assert numbers_to_ordinal("-4. sæti.", case="þgf") == "mínus fjórða sæti."
+    assert numbers_to_ordinal("2. í röðinni var hæstur.") == "annar í röðinni var hæstur."
     assert (
-        numbers_to_ordinal("2. í röðinni var hæstur.") == "annar í röðinni var hæstur."
-    )
-    assert (
-        numbers_to_ordinal("1. konan lenti í 2. sæti.", regex=r"1\.", gender="kvk")
-        == "fyrsta konan lenti í 2. sæti."
+        numbers_to_ordinal("1. konan lenti í 2. sæti.", regex=r"1\.", gender="kvk") == "fyrsta konan lenti í 2. sæti."
     )
     assert (
         numbers_to_ordinal("fyrsta konan lenti í 2. sæti.", gender="hk", case="þgf")
         == "fyrsta konan lenti í öðru sæti."
     )
+    assert numbers_to_ordinal("Ég var 10201. í röðinni.") == "Ég var tíu þúsund tvö hundraðasti og fyrsti í röðinni."
     assert (
-        numbers_to_ordinal("Ég var 10201. í röðinni.")
-        == "Ég var tíu þúsund tvö hundraðasti og fyrsti í röðinni."
-    )
-    assert (
-        numbers_to_ordinal(
-            "Björn sækist eftir 1. - 4. sæti í Norðvesturkjördæmi", case="þgf"
-        ).replace("-", "til")
+        numbers_to_ordinal("Björn sækist eftir 1. - 4. sæti í Norðvesturkjördæmi", case="þgf").replace("-", "til")
         == "Björn sækist eftir fyrsta til fjórða sæti í Norðvesturkjördæmi"
     )
     assert (
-        numbers_to_ordinal(
-            "Björn sækist eftir 1.-4. sæti í Norðvesturkjördæmi", case="þgf"
-        ).replace("-", " til ")
+        numbers_to_ordinal("Björn sækist eftir 1.-4. sæti í Norðvesturkjördæmi", case="þgf").replace("-", " til ")
         == "Björn sækist eftir fyrsta til fjórða sæti í Norðvesturkjördæmi"
     )
     assert (
-        numbers_to_ordinal("1.-4. sæti í Norðvesturkjördæmi", case="þgf").replace(
-            "-", " til "
-        )
+        numbers_to_ordinal("1.-4. sæti í Norðvesturkjördæmi", case="þgf").replace("-", " til ")
         == "fyrsta til fjórða sæti í Norðvesturkjördæmi"
     )
 
@@ -314,20 +260,12 @@ def test_numbers_to_ordinal() -> None:
 def test_float_to_text() -> None:
     assert float_to_text(-0.12) == "mínus núll komma tólf"
     assert float_to_text(-0.1012) == "mínus núll komma eitt núll eitt tvö"
-    assert (
-        float_to_text(-0.1012, gender="kk") == "mínus núll komma einn núll einn tveir"
-    )
+    assert float_to_text(-0.1012, gender="kk") == "mínus núll komma einn núll einn tveir"
     assert float_to_text(-21.12, gender="kk") == "mínus tuttugu og einn komma tólf"
-    assert (
-        float_to_text(-21.123, gender="kk")
-        == "mínus tuttugu og einn komma einn tveir þrír"
-    )
+    assert float_to_text(-21.123, gender="kk") == "mínus tuttugu og einn komma einn tveir þrír"
     assert float_to_text(1.03, gender="kvk") == "ein komma núll þrjár"
     assert float_to_text(2.0, gender="kvk", case="þgf") == "tveimur"
-    assert (
-        float_to_text(2.0, gender="kvk", case="þgf", comma_null=True)
-        == "tveimur komma núll"
-    )
+    assert float_to_text(2.0, gender="kvk", case="þgf", comma_null=True) == "tveimur komma núll"
     assert (
         float_to_text("-10.100,21")
         == float_to_text("-10100,21")
@@ -337,28 +275,15 @@ def test_float_to_text() -> None:
 
 
 def test_floats_to_text() -> None:
-    assert (
-        floats_to_text("2,13 millilítrar af vökva.", gender="kk")
-        == "tveir komma þrettán millilítrar af vökva."
-    )
+    assert floats_to_text("2,13 millilítrar af vökva.", gender="kk") == "tveir komma þrettán millilítrar af vökva."
     assert floats_to_text("0,04 prósent.") == "núll komma núll fjögur prósent."
     assert floats_to_text("-0,04 prósent.") == "mínus núll komma núll fjögur prósent."
+    assert floats_to_text("101,0021 prósent.") == "hundrað og eitt komma núll núll tuttugu og eitt prósent."
+    assert floats_to_text("10.100,21 prósent.") == "tíu þúsund og eitt hundrað komma tuttugu og eitt prósent."
     assert (
-        floats_to_text("101,0021 prósent.")
-        == "hundrað og eitt komma núll núll tuttugu og eitt prósent."
+        floats_to_text("Um -10.100,21 prósent.") == "Um mínus tíu þúsund og eitt hundrað komma tuttugu og eitt prósent."
     )
-    assert (
-        floats_to_text("10.100,21 prósent.")
-        == "tíu þúsund og eitt hundrað komma tuttugu og eitt prósent."
-    )
-    assert (
-        floats_to_text("Um -10.100,21 prósent.")
-        == "Um mínus tíu þúsund og eitt hundrað komma tuttugu og eitt prósent."
-    )
-    assert (
-        floats_to_text("-10.100,21 prósent.")
-        == "mínus tíu þúsund og eitt hundrað komma tuttugu og eitt prósent."
-    )
+    assert floats_to_text("-10.100,21 prósent.") == "mínus tíu þúsund og eitt hundrað komma tuttugu og eitt prósent."
     assert floats_to_text("2.000.000,00.", comma_null=False) == "tvær milljónir."
 
 
@@ -366,24 +291,12 @@ def test_digits_to_text() -> None:
     assert digits_to_text("5885522") == "fimm átta átta fimm fimm tveir tveir"
     assert digits_to_text("112") == "einn einn tveir"
     assert digits_to_text("123-0679") == "einn tveir þrír-núll sex sjö níu"
-    assert (
-        digits_to_text("Síminn minn er 12342")
-        == "Síminn minn er einn tveir þrír fjórir tveir"
-    )
+    assert digits_to_text("Síminn minn er 12342") == "Síminn minn er einn tveir þrír fjórir tveir"
     assert digits_to_text("581 2345") == "fimm átta einn tveir þrír fjórir fimm"
     assert (
         digits_to_text("5812346, það er síminn hjá þeim.")
         == "fimm átta einn tveir þrír fjórir sex, það er síminn hjá þeim."
     )
-    assert (
-        digits_to_text("010270-2039")
-        == "núll einn núll tveir sjö núll-tveir núll þrír níu"
-    )
-    assert (
-        digits_to_text("192 0-1-127", regex=r"\d\d\d")
-        == "einn níu tveir 0-1-einn tveir sjö"
-    )
-    assert (
-        digits_to_text("Hringdu í 1-800-BULL", regex=r"\d+-\d+")
-        == "Hringdu í einn átta núll núll-BULL"
-    )
+    assert digits_to_text("010270-2039") == "núll einn núll tveir sjö núll-tveir núll þrír níu"
+    assert digits_to_text("192 0-1-127", regex=r"\d\d\d") == "einn níu tveir 0-1-einn tveir sjö"
+    assert digits_to_text("Hringdu í 1-800-BULL", regex=r"\d+-\d+") == "Hringdu í einn átta núll núll-BULL"

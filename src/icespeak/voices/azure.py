@@ -1,25 +1,26 @@
 """
 
-    Icespeak - Icelandic TTS library
+Icespeak - Icelandic TTS library
 
-    Copyright (C) 2023 Miðeind ehf.
+Copyright (C) 2024 Miðeind ehf.
 
-       This program is free software: you can redistribute it and/or modify
-       it under the terms of the GNU General Public License as published by
-       the Free Software Foundation, either version 3 of the License, or
-       (at your option) any later version.
-       This program is distributed in the hope that it will be useful,
-       but WITHOUT ANY WARRANTY; without even the implied warranty of
-       MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-       GNU General Public License for more details.
+   This program is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see http://www.gnu.org/licenses/.
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see http://www.gnu.org/licenses/.
 
 
-    Icelandic-language text to speech via the Azure Speech API.
+Icelandic-language text to speech via the Azure Speech API.
 
 """
+
 from __future__ import annotations
 
 from typing_extensions import override
@@ -168,9 +169,7 @@ class AzureVoice(BaseVoice):
             # See issues regarding compatibility with OpenSSL version >=3:
             # https://github.com/Azure-Samples/cognitive-services-speech-sdk/issues/1747
             # https://github.com/Azure-Samples/cognitive-services-speech-sdk/issues/1986
-            _LOG.warning(
-                "OpenSSL version not compatible with Azure Cognitive Services, TTS might not work."
-            )
+            _LOG.warning("OpenSSL version not compatible with Azure Cognitive Services, TTS might not work.")
 
         if API_KEYS.azure is None:
             raise RuntimeError("Azure API keys missing.")
@@ -179,9 +178,7 @@ class AzureVoice(BaseVoice):
         AzureVoice.AZURE_REGION = API_KEYS.azure.region.get_secret_value()
 
     @override
-    def text_to_speech(
-        self, text: str, options: TTSOptions, keys_override: Keys | None = None
-    ):
+    def text_to_speech(self, text: str, options: TTSOptions, keys_override: Keys | None = None):
         if keys_override and keys_override.azure:
             _LOG.debug("Using overridden Azure keys")
             subscription = keys_override.azure.key.get_secret_value()
@@ -200,14 +197,10 @@ class AzureVoice(BaseVoice):
 
         outfile = SETTINGS.get_empty_file(options.audio_format)
         try:
-            audio_config = speechsdk.audio.AudioOutputConfig(
-                filename=str(outfile)
-            )  # pyright: ignore[reportGeneralTypeIssues]
+            audio_config = speechsdk.audio.AudioOutputConfig(filename=str(outfile))  # pyright: ignore[reportGeneralTypeIssues]
 
             # Init synthesizer
-            synthesizer = speechsdk.SpeechSynthesizer(
-                speech_config=speech_conf, audio_config=audio_config
-            )
+            synthesizer = speechsdk.SpeechSynthesizer(speech_config=speech_conf, audio_config=audio_config)
 
             result: speechsdk.SpeechSynthesisResult
             # Azure Speech API supports SSML but the notation is a bit different from Amazon Polly's
@@ -238,9 +231,7 @@ class AzureVoice(BaseVoice):
                 return outfile
 
             cancellation_details = result.cancellation_details
-            raise RuntimeError(
-                f"TTS with Azure failed: {cancellation_details.error_details}"
-            )
+            raise RuntimeError(f"TTS with Azure failed: {cancellation_details.error_details}")
         except Exception:
             _LOG.exception("Error communicating with Azure Speech API.")
             raise

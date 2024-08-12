@@ -1,23 +1,24 @@
 """
 
-    Icespeak - Icelandic TTS library
+Icespeak - Icelandic TTS library
 
-    Copyright (C) 2023 Miðeind ehf.
+Copyright (C) 2024 Miðeind ehf.
 
-       This program is free software: you can redistribute it and/or modify
-       it under the terms of the GNU General Public License as published by
-       the Free Software Foundation, either version 3 of the License, or
-       (at your option) any later version.
-       This program is distributed in the hope that it will be useful,
-       but WITHOUT ANY WARRANTY; without even the implied warranty of
-       MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-       GNU General Public License for more details.
+   This program is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see http://www.gnu.org/licenses/.
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see http://www.gnu.org/licenses/.
 
 
 """
+
 from __future__ import annotations
 
 from typing import Callable
@@ -270,9 +271,7 @@ def test_dt_parser_transcribe() -> None:
     n = DT.parser_transcribe("framkvæmdastjóri Samtaka atvinnulífsins (SA)")
     assert "framkvæmdastjóri Samtaka atvinnulífsins" in n
     assert "SA" not in n
-    n = DT.parser_transcribe(
-        "innanríkisráðherra í stjórn Sigmundar Davíðs Gunnlaugssonar"
-    )
+    n = DT.parser_transcribe("innanríkisráðherra í stjórn Sigmundar Davíðs Gunnlaugssonar")
     assert n == "innanríkisráðherra í stjórn Sigmundar Davíðs Gunnlaugssonar"
     n = DT.parser_transcribe("fyrsti ráðherra Íslands")
     assert n == "fyrsti ráðherra Íslands"
@@ -329,8 +328,7 @@ def test_dt_parser_transcribe() -> None:
     assert "tvö hundruð níutíu og eitt prósent" in n
     assert "tvö til þrjú prósent"
     n = DT.parser_transcribe(
-        "sagðist hún vona að á næstu 10-20 árum "
-        + "yrði farið að nýta tæknina 9,2-5,3 prósent meira."
+        "sagðist hún vona að á næstu 10-20 árum " + "yrði farið að nýta tæknina 9,2-5,3 prósent meira."
     )
     assert "tíu til tuttugu árum" in n
     assert "níu komma tvö til fimm komma þrjú prósent" in n
@@ -422,10 +420,7 @@ def test_dt_parser_transcribe() -> None:
 def test_dt_token_transcribe_basic() -> None:
     t = _fix_ws("""Frétt skrifuð þann 27. ágúst 2023 kl. 20:20.""")
     n = DT.token_transcribe(t)
-    assert (
-        "tuttugasta og sjöunda ágúst tvö þúsund tuttugu og þrjú klukkan tuttugu tuttugu"
-        in n
-    )
+    assert "tuttugasta og sjöunda ágúst tvö þúsund tuttugu og þrjú klukkan tuttugu tuttugu" in n
     t = _fix_ws("Fréttin var síðast uppfærð 3/12/2022 kl. 10:42.")
     n = DT.parser_transcribe(t)
     assert "þriðja desember tvö þúsund tuttugu og tvö" in n
@@ -484,8 +479,7 @@ def test_dt_token_transcribe_basic() -> None:
 def test_dt_token_transcribe_experimental():
     t_opts = TranscriptionOptions(numbers=True, ordinals=True)
     n = DT.token_transcribe(
-        "sagðist hún vona að á næstu 10-20 árum "
-        + "yrði farið að nýta tæknina 9,2-5,3 prósent meira.",
+        "sagðist hún vona að á næstu 10-20 árum " + "yrði farið að nýta tæknina 9,2-5,3 prósent meira.",
         options=t_opts,
     )
     assert "tíu bandstrik tuttugu árum" in n

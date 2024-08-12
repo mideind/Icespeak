@@ -1,23 +1,24 @@
 """
 
-    Icespeak - Icelandic TTS library
+Icespeak - Icelandic TTS library
 
-    Copyright (C) 2023 Miðeind ehf.
+Copyright (C) 2024 Miðeind ehf.
 
-       This program is free software: you can redistribute it and/or modify
-       it under the terms of the GNU General Public License as published by
-       the Free Software Foundation, either version 3 of the License, or
-       (at your option) any later version.
-       This program is distributed in the hope that it will be useful,
-       but WITHOUT ANY WARRANTY; without even the implied warranty of
-       MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-       GNU General Public License for more details.
+   This program is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see http://www.gnu.org/licenses/.
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see http://www.gnu.org/licenses/.
 
 
 """
+
 from __future__ import annotations
 
 import pytest
@@ -44,9 +45,7 @@ def test_greynirssmlparser():
     gp = GreynirSSMLParser()
     n = gp.transcribe(f"Ég vel töluna {gssml(244, type='number', gender='kk')}")
     assert "tvö hundruð fjörutíu og fjórir" in n
-    n = gp.transcribe(
-        f"{gssml(type='vbreak')} {gssml(3, type='number', gender='kk', case='þf')}"
-    )
+    n = gp.transcribe(f"{gssml(type='vbreak')} {gssml(3, type='number', gender='kk', case='þf')}")
     assert "<break />" in n
     assert "þrjá" in n
 
@@ -73,9 +72,7 @@ def test_greynirssmlparser():
     for t, v in DT.__dict__.items():
         if t not in example_data:
             continue
-        assert isinstance(
-            v, (staticmethod, classmethod)
-        ), "not valid transcription method name"
+        assert isinstance(v, (staticmethod, classmethod)), "not valid transcription method name"
         d = example_data[t]
         if d is None:
             # No data argument to gssml
