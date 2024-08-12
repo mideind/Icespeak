@@ -33,8 +33,6 @@ jobs:
           echo '${{ secrets.AZURE_TTS_KEY }}' > keys/AzureSpeechServerKey.json
           # AWS Polly API key
           echo '${{ secrets.AWS_POLLY_KEY }}' > keys/AWSPollyServerKey.json
-          # Google TTS key
-          echo '${{ secrets.GOOGLE_TTS_KEY }}' > keys/GoogleServiceAccount.json
       - name: Test with pytest
         run: |
           pytest --run-slow -vvvrP --log-level=DEBUG --capture=tee-sys
@@ -60,8 +58,6 @@ jobs:
           echo '${{ secrets.AZURE_TTS_KEY }}' > keys/AzureSpeechServerKey.json
           # AWS Polly API key
           echo '${{ secrets.AWS_POLLY_KEY }}' > keys/AWSPollyServerKey.json
-          # Google TTS key
-          echo '${{ secrets.GOOGLE_TTS_KEY }}' > keys/GoogleServiceAccount.json
       - name: Test with pytest
         run: |
-          pytest --run-all -vvvrP --log-level=DEBUG --capture=tee-sys
+          pytest --run-all -vvvrP --log-level=INFO --capture=tee-sys
