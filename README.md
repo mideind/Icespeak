@@ -12,7 +12,7 @@ _Icespeak_ is a Python 3.9+ library that makes Icelandic-language speech synthes
 
 ## Local installation
 
-> _Note: The Azure TTS package currently only supports the very out-dated OpenSSL version 1.\*_
+> _Note: The Azure TTS package currently only supports OpenSSL version 3.0.\*_
 
 Clone the repository and cd into the folder.
 Then create and activate a virtual environment:

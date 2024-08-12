@@ -176,15 +176,18 @@ class Keys(BaseModel):
     def __hash__(self):
         return hash((self.azure, self.aws, self.google, self.tiro))
 
-    def __eq__(self, other):
-        if isinstance(other, Keys):
-            return (self.azure, self.aws, self.google, self.tiro) == (
-                other.azure,
-                other.aws,
-                other.google,
-                other.tiro,
-            )
-        return False
+    def __eq__(self, other: object):
+        return isinstance(other, Keys) and (
+            self.azure,
+            self.aws,
+            self.google,
+            self.tiro,
+        ) == (
+            other.azure,
+            other.aws,
+            other.google,
+            other.tiro,
+        )
 
 
 API_KEYS = Keys()
