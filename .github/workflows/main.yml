@@ -60,4 +60,4 @@ jobs:
           echo '${{ secrets.AWS_POLLY_KEY }}' > keys/AWSPollyServerKey.json
       - name: Test with pytest
         run: |
-          pytest --run-all -vvvrP --log-level=INFO --capture=tee-sys
+          pytest --run-all --log-level=INFO --capture=tee-sys
