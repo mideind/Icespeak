@@ -1,27 +1,28 @@
 """
 
-    Icespeak - Icelandic TTS library
+Icespeak - Icelandic TTS library
 
-    Copyright (C) 2023 Miðeind ehf.
+Copyright (C) 2024 Miðeind ehf.
 
-       This program is free software: you can redistribute it and/or modify
-       it under the terms of the GNU General Public License as published by
-       the Free Software Foundation, either version 3 of the License, or
-       (at your option) any later version.
-       This program is distributed in the hope that it will be useful,
-       but WITHOUT ANY WARRANTY; without even the implied warranty of
-       MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-       GNU General Public License for more details.
+   This program is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see http://www.gnu.org/licenses/.
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see http://www.gnu.org/licenses/.
 
 
-    This file contains phonetic transcription functionality
-    turning data/text into text specifically intended
-    for Icelandic speech synthesis engines.
+This file contains phonetic transcription functionality
+turning data/text into text specifically intended
+for Icelandic speech synthesis engines.
 
 """
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Callable, Union, cast
@@ -98,19 +99,12 @@ class TranscriptionOptions(BaseModel):
     )
     measurements: bool = Field(
         default=True,
-        description="Whether to transcribe measurements "
-        + "(number with unit of measurement).",
+        description="Whether to transcribe measurements " + "(number with unit of measurement).",
     )
-    percentages: bool = Field(
-        default=True, description="Whether to transcribe percentages."
-    )
+    percentages: bool = Field(default=True, description="Whether to transcribe percentages.")
     # These are experimental, turned off by default
-    numbers: bool = Field(
-        default=False, description="Whether to transcribe (cardinal) numbers."
-    )
-    ordinals: bool = Field(
-        default=False, description="Whether to transcribe ordinal numbers."
-    )
+    numbers: bool = Field(default=False, description="Whether to transcribe (cardinal) numbers.")
+    ordinals: bool = Field(default=False, description="Whether to transcribe ordinal numbers.")
     # TODO: Add slower option which parses text
 
 
@@ -403,8 +397,7 @@ _CURRENCY_NAMES: Mapping[str, Mapping[NumberType, str]] = {
 
 # Matches e.g. "klukkan 14:30", "kl. 2:23:31", "02:15"
 _TIME_REGEX = re.compile(
-    r"((?P<klukkan>(kl\.|klukkan)) )?(?P<hour>\d{1,2}):"
-    + r"(?P<minute>\d\d)(:(?P<second>\d\d))?",
+    r"((?P<klukkan>(kl\.|klukkan)) )?(?P<hour>\d{1,2}):" + r"(?P<minute>\d\d)(:(?P<second>\d\d))?",
     flags=re.IGNORECASE,
 )
 _MONTH_ABBREVS = (
@@ -455,9 +448,7 @@ _DATE_REGEX = re.compile(
 )
 
 
-def _date_to_text(
-    *, year: int | None, month: int, day: int | None, case: CaseType = "nf"
-) -> str:
+def _date_to_text(*, year: int | None, month: int, day: int | None, case: CaseType = "nf") -> str:
     out = ""
     if day:
         out += number_to_ordinal(day, gender="kk", case=case, number="et") + " "
@@ -523,15 +514,11 @@ def _split_substring_types(t: str) -> Iterable[str]:
 # 2-5 uppercase letters side-by-side not
 # followed by another uppercase letter
 # (e.g. matches "EUIPO" or "MSc", but not "TESTING")
-_ABBREV_RE = re.compile(
-    rf"([{ALPHABET + ALPHABET.lower()}]\." + rf"|\b[{ALPHABET}]{{2,5}}(?![{ALPHABET}]))"
-)
+_ABBREV_RE = re.compile(rf"([{ALPHABET + ALPHABET.lower()}]\." + rf"|\b[{ALPHABET}]{{2,5}}(?![{ALPHABET}]))")
 
 # Terms common in sentences which refer to results from sports
 _SPORTS_LEMMAS: frozenset[str] = frozenset(("leikur", "vinna", "tapa", "sigra"))
-_IGNORED_TOKENS = frozenset(
-    (TOK.WORD, TOK.PERSON, TOK.ENTITY, TOK.TIMESTAMP, TOK.UNKNOWN)
-)
+_IGNORED_TOKENS = frozenset((TOK.WORD, TOK.PERSON, TOK.ENTITY, TOK.TIMESTAMP, TOK.UNKNOWN))
 # These should not be interpreted as abbreviations
 # unless they include a period
 _IGNORED_ABBREVS = frozenset(("mið", "fim", "bandar", "mao", "próf", "tom", "mar"))
@@ -581,10 +568,7 @@ def _bool_args(*bool_args: str) -> Callable[[TranscriptionMethod], Transcription
         def _bool_translate(cls: DefaultTranscriber, *args: str, **kwargs: str):
             # Convert keyword arguments in bool_args from
             # str to boolean before calling decorated function
-            newkwargs = {
-                key: (str(val) == "True" if key in bool_args else val)
-                for key, val in kwargs.items()
-            }
+            newkwargs = {key: (str(val) == "True" if key in bool_args else val) for key, val in kwargs.items()}
             return f(cls, *args, **newkwargs)
 
         return _bool_translate
@@ -901,16 +885,10 @@ class DefaultTranscriber:
         f: Callable[[str], str]
         if literal:
             # Literal spelling (spell spaces and punctuation)
-            f = lambda c: cls._CHAR_PRONUNCIATION.get(
-                c.lower(), _PUNCTUATION_NAMES.get(c, c)
-            )
+            f = lambda c: cls._CHAR_PRONUNCIATION.get(c.lower(), _PUNCTUATION_NAMES.get(c, c))
         else:
             # Non-literal spelling
-            f = (
-                lambda c: cls._CHAR_PRONUNCIATION.get(c.lower(), c)
-                if not c.isspace()
-                else ""
-            )
+            f = lambda c: cls._CHAR_PRONUNCIATION.get(c.lower(), c) if not c.isspace() else ""
         t = tuple(map(f, txt))
         return (
             cls.vbreak(time="10ms")
@@ -967,10 +945,7 @@ class DefaultTranscriber:
     @_transcribe_method
     def numalpha(cls, txt: str) -> str:
         """Voicify a alphanumeric string, spelling each character."""
-        return " ".join(
-            cls.digits(x) if x.isdecimal() else cls.spell(x)
-            for x in _split_substring_types(txt)
-        )
+        return " ".join(cls.digits(x) if x.isdecimal() else cls.spell(x) for x in _split_substring_types(txt))
 
     @classmethod
     @_transcribe_method
@@ -1198,11 +1173,7 @@ class DefaultTranscriber:
 
         def _numwletter(tok: Tok, term: SimpleTree | None) -> str:
             num = "".join(filter(lambda c: c.isdecimal(), tok.txt))
-            return (
-                cls.number(num, case="nf", gender="hk")
-                + " "
-                + cls.spell(tok.txt[len(num) + 1 :])
-            )
+            return cls.number(num, case="nf", gender="hk") + " " + cls.spell(tok.txt[len(num) + 1 :])
 
         # Map certain terminals directly to transcription functions
         handler_map: Mapping[int, Callable[[Tok, SimpleTree | None], str]] = {
@@ -1242,9 +1213,7 @@ class DefaultTranscriber:
             s_parts: list[str] = []
             # list of (token, terminal node) pairs.
             # Terminal nodes can be None if the sentence wasn't parseable
-            tk_term_list = tuple(
-                zip(s.tokens, s.terminal_nodes or (None for _ in s.tokens))
-            )
+            tk_term_list = tuple(zip(s.tokens, s.terminal_nodes or (None for _ in s.tokens)))
             for tok, term in tk_term_list:
                 txt = tok.txt
 
@@ -1337,9 +1306,7 @@ class DefaultTranscriber:
                 parts[i] = roman_numeral_to_ordinal(parts[i], gender=gender)
         return " ".join(parts)
 
-    VBREAK_STRENGTHS = frozenset(
-        ("none", "x-weak", "weak", "medium", "strong", "x-strong")
-    )
+    VBREAK_STRENGTHS = frozenset(("none", "x-weak", "weak", "medium", "strong", "x-strong"))
 
     @classmethod
     def vbreak(cls, time: str | None = None, strength: str | None = None) -> str:
@@ -1347,9 +1314,7 @@ class DefaultTranscriber:
         if time:
             return f'<break time="{time}" />'
         if strength:
-            assert (
-                strength in cls.VBREAK_STRENGTHS
-            ), f"Break strength {strength} is invalid."
+            assert strength in cls.VBREAK_STRENGTHS, f"Break strength {strength} is invalid."
             return f'<break strength="{strength}" />'
         return "<break />"
 
@@ -1367,9 +1332,7 @@ class DefaultTranscriber:
 
     @classmethod
     @_transcribe_method
-    def token_transcribe(
-        cls, text: str, *, options: TranscriptionOptions | None = None
-    ) -> str:
+    def token_transcribe(cls, text: str, *, options: TranscriptionOptions | None = None) -> str:
         """
         Quick transcription of Icelandic text for TTS.
         Utilizes the tokenizer library.
@@ -1525,9 +1488,7 @@ class DefaultTranscriber:
 
             elif token.kind == TOK.NUMWLETTER:
                 num, letter = cast(PunctuationTuple, token.val)
-                token.txt = (
-                    cls.number(num, case="nf", gender="hk") + " " + cls.spell(letter)
-                )
+                token.txt = cls.number(num, case="nf", gender="hk") + " " + cls.spell(letter)
 
             elif token.kind == TOK.SSN:
                 token.txt = cls.digits(token.txt)

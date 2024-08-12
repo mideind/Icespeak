@@ -1,26 +1,27 @@
 """
 
-    Icespeak - Icelandic TTS library
+Icespeak - Icelandic TTS library
 
-    Copyright (C) 2023 Miðeind ehf.
+Copyright (C) 2024 Miðeind ehf.
 
-       This program is free software: you can redistribute it and/or modify
-       it under the terms of the GNU General Public License as published by
-       the Free Software Foundation, either version 3 of the License, or
-       (at your option) any later version.
-       This program is distributed in the hope that it will be useful,
-       but WITHOUT ANY WARRANTY; without even the implied warranty of
-       MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-       GNU General Public License for more details.
+   This program is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see http://www.gnu.org/licenses/.
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see http://www.gnu.org/licenses/.
 
 
-    This file contains wrappers for the entire text-to-speech pipeline
-    (phonetic transcription -> TTS with a specific voice/service).
+This file contains wrappers for the entire text-to-speech pipeline
+(phonetic transcription -> TTS with a specific voice/service).
 
 """
+
 from __future__ import annotations
 
 from collections.abc import Mapping
@@ -70,8 +71,7 @@ def _setup_voices() -> tuple[VoicesT, ServicesT]:
             # Info about each voice
             if voice in voices:
                 _LOG.warning(
-                    "Voice named %r already exists! "
-                    + "Skipping the one defined in module %s.",
+                    "Voice named %r already exists! " + "Skipping the one defined in module %s.",
                     voice,
                     service.name,
                 )
@@ -121,9 +121,7 @@ if SETTINGS.AUDIO_CACHE_CLEAN:
             audiofile.unlink(missing_ok=True)
 
     # Small daemon thread which deletes files sent to the expired queue
-    _cleanup_thread = threading.Thread(
-        target=_cleanup, name="audio_cleanup", daemon=True
-    )
+    _cleanup_thread = threading.Thread(target=_cleanup, name="audio_cleanup", daemon=True)
     _cleanup_thread.start()
 
     def _evict_all():
@@ -169,16 +167,11 @@ def tts_to_file(
     """
     if _LOG.isEnabledFor(DEBUG):
         _LOG.debug(
-            "tts_to_file, text: %r, TTS options: %s, "
-            + "transcribe: %r, transcription options: %s",
+            "tts_to_file, text: %r, TTS options: %s, " + "transcribe: %r, transcription options: %s",
             text,
-            tts_options.model_dump(exclude_defaults=True) or "<default>"
-            if tts_options
-            else "None",
+            tts_options.model_dump(exclude_defaults=True) or "<default>" if tts_options else "None",
             transcribe,
-            transcription_options.model_dump(exclude_defaults=True) or "<default>"
-            if transcription_options
-            else "None",
+            transcription_options.model_dump(exclude_defaults=True) or "<default>" if transcription_options else "None",
         )
     tts_options = tts_options or TTSOptions()
     try:
@@ -187,9 +180,7 @@ def tts_to_file(
         raise ValueError(f"Voice {tts_options.voice!r} not available.") from e
 
     if tts_options.audio_format not in service.audio_formats:
-        raise ValueError(
-            f"Service {service.name} doesn't support audio format {tts_options.audio_format}."
-        )
+        raise ValueError(f"Service {service.name} doesn't support audio format {tts_options.audio_format}.")
 
     if transcribe:
         transcription_options = transcription_options or TranscriptionOptions()

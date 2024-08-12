@@ -1,24 +1,24 @@
 """
 
-    Icespeak - Icelandic TTS library
+Icespeak - Icelandic TTS library
 
-    Copyright (C) 2023 Miðeind ehf.
+Copyright (C) 2024 Miðeind ehf.
 
-       This program is free software: you can redistribute it and/or modify
-       it under the terms of the GNU General Public License as published by
-       the Free Software Foundation, either version 3 of the License, or
-       (at your option) any later version.
-       This program is distributed in the hope that it will be useful,
-       but WITHOUT ANY WARRANTY; without even the implied warranty of
-       MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-       GNU General Public License for more details.
+   This program is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see http://www.gnu.org/licenses/.
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see http://www.gnu.org/licenses/.
 
 
-    Small program to test caching and cleanup of audio files.
-    Note: not run by pytest.
+Small program to test caching and cleanup of audio files.
+Note: not run by pytest.
 
 """
 
@@ -75,9 +75,7 @@ if __name__ == "__main__":
     nprint("Audio file:", file2)
     nprint("Files in audio dir:", len(list(AUDIO_DIR.iterdir())))
     assert file1 == file2, "This wasn't cached correctly!"
-    nprint(
-        f"Took {duration / 1e6:.3f} milliseconds. (Should be a lot faster than above.)"
-    )
+    nprint(f"Took {duration / 1e6:.3f} milliseconds. (Should be a lot faster than above.)")
 
     if CACHE_SIZE > 1:
         nprint("CACHE SIZE:", CACHE_SIZE)
@@ -103,12 +101,8 @@ if __name__ == "__main__":
         assert not file1.is_file(), f"Audio file {file1} wasn't evicted!"
         assert not file2.is_file(), f"Audio file {file2} wasn't evicted!"
     else:
-        assert (
-            file1.is_file()
-        ), f"Audio file {file1} shouldn't be evicted, it is most frequent!"
-        assert (
-            file2.is_file()
-        ), f"Audio file {file2} shouldn't be evicted, it is most frequent!"
+        assert file1.is_file(), f"Audio file {file1} shouldn't be evicted, it is most frequent!"
+        assert file2.is_file(), f"Audio file {file2} shouldn't be evicted, it is most frequent!"
 
     assert last_file.is_file(), f"Audio file {last_file} should exist!"
 

@@ -1,26 +1,27 @@
 """
 
-    Icespeak - Icelandic TTS library
+Icespeak - Icelandic TTS library
 
-    Copyright (C) 2023 Miðeind ehf.
+Copyright (C) 2024 Miðeind ehf.
 
-       This program is free software: you can redistribute it and/or modify
-       it under the terms of the GNU General Public License as published by
-       the Free Software Foundation, either version 3 of the License, or
-       (at your option) any later version.
-       This program is distributed in the hope that it will be useful,
-       but WITHOUT ANY WARRANTY; without even the implied warranty of
-       MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-       GNU General Public License for more details.
+   This program is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see http://www.gnu.org/licenses/.
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see http://www.gnu.org/licenses/.
 
 
-    This file contains various utility functions that convert
-    numbers to Icelandic text.
+This file contains various utility functions that convert
+numbers to Icelandic text.
 
 """
+
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
@@ -208,9 +209,7 @@ def number_to_neutral(n: int = 0, *, one_hundred: bool = False) -> str:
         n = 0
 
     # Fix e.g. "milljónir milljarðar" -> "milljónir milljarða"
-    number_string: str = minus + re.sub(
-        r"(\S*(jónir|jarð[au]r?)) (\S*(jarð|jón))[ia]r", r"\1 \3a", " ".join(text)
-    )
+    number_string: str = minus + re.sub(r"(\S*(jónir|jarð[au]r?)) (\S*(jarð|jón))[ia]r", r"\1 \3a", " ".join(text))
 
     return number_string
 
@@ -297,9 +296,7 @@ def float_to_text(
     first, second = str(f).split(".")
 
     # Number before decimal point
-    out_str += number_to_text(
-        int(first), case=case, gender=gender, one_hundred=one_hundred
-    )
+    out_str += number_to_text(int(first), case=case, gender=gender, one_hundred=one_hundred)
 
     if not comma_null and second == "0":
         # Skip "komma núll" if comma_null is False
@@ -357,9 +354,7 @@ def floats_to_text(
     def convert(m: re.Match[str]) -> str:
         match = m.group(0)
         n = float(match.replace(".", "").replace(",", "."))
-        return float_to_text(
-            n, case=case, gender=gender, comma_null=comma_null, one_hundred=one_hundred
-        )
+        return float_to_text(n, case=case, gender=gender, comma_null=comma_null, one_hundred=one_hundred)
 
     return re.sub(regex, convert, s)
 
@@ -397,9 +392,7 @@ def year_to_text(year: int | str) -> str:
     return " ".join(text) + suffix
 
 
-def years_to_text(
-    s: str, *, regex: str | None = None, allow_three_digits: bool = False
-) -> str:
+def years_to_text(s: str, *, regex: str | None = None, allow_three_digits: bool = False) -> str:
     """
     Converts numbers in string matching the regex
     to text as spoken Icelandic year.
@@ -546,24 +539,18 @@ def _num_to_ordinal(
         if number == "ft":
             word = re.sub(r"(\S*jón)\S*", r"\1ustu", word)
         else:
-            word = re.sub(
-                r"(\S*jón)\S*", r"\1" + _LARGE_ORDINAL_SUFFIX[gender][case], word
-            )
+            word = re.sub(r"(\S*jón)\S*", r"\1" + _LARGE_ORDINAL_SUFFIX[gender][case], word)
 
     elif "jarð" in word:
         if number == "ft" or (gender == "kvk" and case != "nf"):
             word = re.sub(r"(\S*)jarð\S*", r"\1jörðustu", word)
         else:
-            word = re.sub(
-                r"(\S*jarð)\S*", r"\1" + _LARGE_ORDINAL_SUFFIX[gender][case], word
-            )
+            word = re.sub(r"(\S*jarð)\S*", r"\1" + _LARGE_ORDINAL_SUFFIX[gender][case], word)
 
     return word
 
 
-def neutral_text_to_ordinal(
-    s: str, *, case: CaseType = "nf", gender: GenderType = "kk", number: str = "et"
-) -> str:
+def neutral_text_to_ordinal(s: str, *, case: CaseType = "nf", gender: GenderType = "kk", number: str = "et") -> str:
     """
     Takes Icelandic text representation of number
     and returns it as an ordinal in specified case (nf, þf, þgf, ef),
@@ -607,9 +594,7 @@ def number_to_ordinal(
     """
     if isinstance(n, str):
         n = int(n.rstrip("."))
-    return neutral_text_to_ordinal(
-        number_to_neutral(n), case=case, gender=gender, number=number
-    )
+    return neutral_text_to_ordinal(number_to_neutral(n), case=case, gender=gender, number=number)
 
 
 def numbers_to_ordinal(
@@ -665,10 +650,7 @@ def digits_to_text(s: str, *, regex: str = r"\b\d+") -> str:
 
     def convert(m: re.Match[str]) -> str:
         match = m.group(0).replace("-", "")
-        return "".join(
-            _DIGITS_TO_KK[letter] + " " if letter.isdecimal() else letter
-            for letter in match
-        ).rstrip()
+        return "".join(_DIGITS_TO_KK[letter] + " " if letter.isdecimal() else letter for letter in match).rstrip()
 
     return re.sub(regex, convert, s)
 
@@ -690,15 +672,10 @@ def _roman_numeral_to_int(n: str) -> int:
     Source: https://stackoverflow.com/a/52426119
     """
     nums = [ROMAN_NUMERALS[i] for i in n.upper() if i in ROMAN_NUMERALS]
-    return sum(
-        val if val >= nums[min(i + 1, len(n) - 1)] else -val
-        for i, val in enumerate(nums)
-    )
+    return sum(val if val >= nums[min(i + 1, len(n) - 1)] else -val for i, val in enumerate(nums))
 
 
-def roman_numeral_to_ordinal(
-    n: str, *, case: CaseType = "nf", gender: GenderType = "kk", number: str = "et"
-):
+def roman_numeral_to_ordinal(n: str, *, case: CaseType = "nf", gender: GenderType = "kk", number: str = "et"):
     """
     Change a roman numeral into a written Icelandic ordinal.
     Example:

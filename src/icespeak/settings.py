@@ -1,25 +1,26 @@
 """
 
-    Icespeak - Icelandic TTS library
+Icespeak - Icelandic TTS library
 
-    Copyright (C) 2023 Miðeind ehf.
+Copyright (C) 2024 Miðeind ehf.
 
-       This program is free software: you can redistribute it and/or modify
-       it under the terms of the GNU General Public License as published by
-       the Free Software Foundation, either version 3 of the License, or
-       (at your option) any later version.
-       This program is distributed in the hope that it will be useful,
-       but WITHOUT ANY WARRANTY; without even the implied warranty of
-       MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-       GNU General Public License for more details.
+   This program is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see http://www.gnu.org/licenses/.
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see http://www.gnu.org/licenses/.
 
 
-    Shared settings for the Icespeak package.
+Shared settings for the Icespeak package.
 
 """
+
 # We dont import annotations from __future__ here
 # due to pydantic
 from typing import Any, Optional
@@ -90,9 +91,7 @@ class Settings(BaseSettings):
         validate_assignment=True,
     )
 
-    DEFAULT_VOICE: str = Field(
-        default="Gudrun", description="Default TTS voice if none is requested."
-    )
+    DEFAULT_VOICE: str = Field(default="Gudrun", description="Default TTS voice if none is requested.")
     DEFAULT_VOICE_SPEED: float = Field(
         default=1.0,
         le=MAX_SPEED,
@@ -103,9 +102,7 @@ class Settings(BaseSettings):
         default=TextFormats.SSML,
         description="Default format to interpret input text as.",
     )
-    DEFAULT_AUDIO_FORMAT: AudioFormats = Field(
-        default=AudioFormats.MP3, description="Default audio output format."
-    )
+    DEFAULT_AUDIO_FORMAT: AudioFormats = Field(default=AudioFormats.MP3, description="Default audio output format.")
 
     AUDIO_DIR: Optional[Path] = Field(
         default=None,
@@ -114,16 +111,10 @@ class Settings(BaseSettings):
             "If not set, creates a directory in the platform's temporary directory."
         ),
     )
-    AUDIO_CACHE_SIZE: int = Field(
-        default=300, gt=0, description="Max number of audio files to cache."
-    )
-    AUDIO_CACHE_CLEAN: bool = Field(
-        default=True, description="If True, cleans up generated audio files upon exit."
-    )
+    AUDIO_CACHE_SIZE: int = Field(default=300, gt=0, description="Max number of audio files to cache.")
+    AUDIO_CACHE_CLEAN: bool = Field(default=True, description="If True, cleans up generated audio files upon exit.")
 
-    KEYS_DIR: Path = Field(
-        default=Path("keys"), description="Where to look for API keys."
-    )
+    KEYS_DIR: Path = Field(default=Path("keys"), description="Where to look for API keys.")
     AWSPOLLY_KEY_FILENAME: str = Field(
         default="AWSPollyServerKey.json",
         description="Name of the AWS Polly API key file.",
@@ -160,6 +151,7 @@ SETTINGS = Settings()
 
 class AWSPollyKey(BaseModel, frozen=True):
     "Format of an API key for AWS Polly."
+
     aws_access_key_id: SecretStr
     aws_secret_access_key: SecretStr
     region_name: SecretStr
@@ -167,6 +159,7 @@ class AWSPollyKey(BaseModel, frozen=True):
 
 class AzureKey(BaseModel, frozen=True):
     "Format of an API key for Azure."
+
     key: SecretStr
     region: SecretStr
 
@@ -176,9 +169,7 @@ class Keys(BaseModel):
 
     azure: Optional[AzureKey] = Field(default=None, description="Azure API key.")
     aws: Optional[AWSPollyKey] = Field(default=None, description="AWS Polly API key.")
-    google: Optional[dict[str, Any]] = Field(
-        default=None, description="Google API key."
-    )
+    google: Optional[dict[str, Any]] = Field(default=None, description="Google API key.")
     # TODO: Re-implement TTS with Tiro
     tiro: Literal[None] = Field(default=None)
 
@@ -200,33 +191,23 @@ API_KEYS = Keys()
 
 _kd = SETTINGS.KEYS_DIR
 if not (_kd.exists() and _kd.is_dir()):
-    _LOG.warning(
-        "Keys directory missing or incorrect, TTS will not work! Set to: %s", _kd
-    )
+    _LOG.warning("Keys directory missing or incorrect, TTS will not work! Set to: %s", _kd)
 else:
     # Load API keys, logging exceptions in level DEBUG so they aren't logged twice,
     # as exceptions are logged as warnings when voice modules are initialized
     try:
-        API_KEYS.aws = AWSPollyKey.model_validate_json(
-            (_kd / SETTINGS.AWSPOLLY_KEY_FILENAME).read_text().strip()
-        )
+        API_KEYS.aws = AWSPollyKey.model_validate_json((_kd / SETTINGS.AWSPOLLY_KEY_FILENAME).read_text().strip())
     except Exception as err:
         _LOG.debug(
             "Could not load AWS Polly API key, ASR with AWS Polly will not work. Error: %s",
             err,
         )
     try:
-        API_KEYS.azure = AzureKey.model_validate_json(
-            (_kd / SETTINGS.AZURE_KEY_FILENAME).read_text().strip()
-        )
+        API_KEYS.azure = AzureKey.model_validate_json((_kd / SETTINGS.AZURE_KEY_FILENAME).read_text().strip())
     except Exception as err:
-        _LOG.debug(
-            "Could not load Azure API key, ASR with Azure will not work. Error: %s", err
-        )
+        _LOG.debug("Could not load Azure API key, ASR with Azure will not work. Error: %s", err)
     try:
-        API_KEYS.google = json.loads(
-            (_kd / SETTINGS.GOOGLE_KEY_FILENAME).read_text().strip()
-        )
+        API_KEYS.google = json.loads((_kd / SETTINGS.GOOGLE_KEY_FILENAME).read_text().strip())
     except Exception as err:
         _LOG.debug(
             "Could not load Google API key, ASR with Google will not work. Error: %s",

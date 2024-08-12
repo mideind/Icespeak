@@ -1,30 +1,31 @@
 """
 
-    Icespeak - Icelandic TTS library
+Icespeak - Icelandic TTS library
 
-    Copyright (C) 2023 Miðeind ehf.
+Copyright (C) 2024 Miðeind ehf.
 
-       This program is free software: you can redistribute it and/or modify
-       it under the terms of the GNU General Public License as published by
-       the Free Software Foundation, either version 3 of the License, or
-       (at your option) any later version.
-       This program is distributed in the hope that it will be useful,
-       but WITHOUT ANY WARRANTY; without even the implied warranty of
-       MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-       GNU General Public License for more details.
+   This program is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see http://www.gnu.org/licenses/.
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see http://www.gnu.org/licenses/.
 
 
-    Friendly command line interface for Icelandic speech synthesis.
-    Returns 0 on success, 1 on error.
+Friendly command line interface for Icelandic speech synthesis.
+Returns 0 on success, 1 on error.
 
-    Run the following command for a list of options:
+Run the following command for a list of options:
 
-        tts --help
+    tts --help
 
 """
+
 # ruff: noqa: FBT001, FBT002
 # TODO: Transcribe-only option
 # TODO: Add separate progress bar for transcription phase
@@ -118,9 +119,7 @@ def _list_voices(run: bool):
         voice_table.add_column("Style")
         voice_table.add_column("Service")
         for voice, info in VOICES.items():
-            voice_table.add_row(
-                voice, info["lang"], info["style"], info.get("service", "N/A")
-            )
+            voice_table.add_row(voice, info["lang"], info["style"], info.get("service", "N/A"))
         print(voice_table)
         raise typer.Exit(0)
 
@@ -138,9 +137,7 @@ def _text_to_speech(
     speed: Annotated[
         float, typer.Option("--speed", "-s", min=0.5, max=2.0, help="TTS speed.")
     ] = SETTINGS.DEFAULT_VOICE_SPEED,
-    text_format: Annotated[
-        TextFormats, typer.Option(help="Input text format.")
-    ] = SETTINGS.DEFAULT_TEXT_FORMAT,
+    text_format: Annotated[TextFormats, typer.Option(help="Input text format.")] = SETTINGS.DEFAULT_TEXT_FORMAT,
     # Transcription options
     transcribe: Annotated[
         bool,
@@ -178,9 +175,7 @@ def _text_to_speech(
             help="Force writing to output file.",
         ),
     ] = False,
-    audio_format: Annotated[
-        AudioFormats, typer.Option(help="Output audio format.")
-    ] = SETTINGS.DEFAULT_AUDIO_FORMAT,
+    audio_format: Annotated[AudioFormats, typer.Option(help="Output audio format.")] = SETTINGS.DEFAULT_AUDIO_FORMAT,
     wav: Annotated[
         Optional[bool],
         typer.Option(
@@ -214,22 +209,16 @@ def _text_to_speech(
 
     if out and out.exists() and not force:
         # Outfile exists, no --force parameter specified
-        raise typer.BadParameter(
-            f"File {out} already exists! Specify --force to overwrite."
-        )
+        raise typer.BadParameter(f"File {out} already exists! Specify --force to overwrite.")
     if force and out and out.is_dir():
         raise typer.BadParameter(f"Cannot overwrite directory {out}.")
     if wav and audio_format != AudioFormats.PCM:
-        raise typer.BadParameter(
-            'When --wav is specified, --audio-format must be "pcm".'
-        )
+        raise typer.BadParameter('When --wav is specified, --audio-format must be "pcm".')
     if audio_format != SETTINGS.DEFAULT_AUDIO_FORMAT and not out:
         # When asking for specific audio format an output file must be specified
         # We're assuming that the user wants to keep the audio file,
         # because without --out icespeak simply removes the file.
-        raise typer.BadParameter(
-            "Specify --out file if specifying --audio-format or --wav."
-        )
+        raise typer.BadParameter("Specify --out file if specifying --audio-format or --wav.")
     if transcribe and VOICES[voice]["lang"] != "is-IS":
         transcribe = False
         print("Transcription disabled, as the voice isn't Icelandic.", file=sys.stderr)
