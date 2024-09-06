@@ -89,6 +89,7 @@ class Settings(BaseSettings):
         case_sensitive=False,
         # Run validators when attributes are modified
         validate_assignment=True,
+        extra="ignore",
     )
 
     DEFAULT_VOICE: str = Field(default="Gudrun", description="Default TTS voice if none is requested.")
