@@ -127,6 +127,10 @@ class Settings(BaseSettings):
         default="GoogleServiceAccount.json",
         description="Name of the Google API key file.",
     )
+    OPENAI_KEY_FILENAME: str = Field(
+        default="OpenAIServerKey.json",
+        description="Name of the OpenAI API key file.",
+    )
 
     def get_audio_dir(self) -> Path:
         """
@@ -164,6 +168,12 @@ class AzureKey(BaseModel, frozen=True):
     region: SecretStr
 
 
+class OpenAIKey(BaseModel, frozen=True):
+    "Format of an API key for OpenAI."
+
+    OPENAI_API_KEY: SecretStr
+
+
 class Keys(BaseModel):
     """Contains API keys for various services."""
 
@@ -172,9 +182,10 @@ class Keys(BaseModel):
     google: Optional[dict[str, Any]] = Field(default=None, description="Google API key.")
     # TODO: Re-implement TTS with Tiro
     tiro: Literal[None] = Field(default=None)
+    openai: Optional[OpenAIKey] = Field(default=None, description="OpenAI API key.")
 
     def __hash__(self):
-        return hash((self.azure, self.aws, self.google, self.tiro))
+        return hash((self.azure, self.aws, self.google, self.tiro, self.openai))
 
     def __eq__(self, other: object):
         return isinstance(other, Keys) and (
@@ -182,11 +193,13 @@ class Keys(BaseModel):
             self.aws,
             self.google,
             self.tiro,
+            self.openai,
         ) == (
             other.azure,
             other.aws,
             other.google,
             other.tiro,
+            other.openai,
         )
 
 
@@ -214,5 +227,12 @@ else:
     except Exception as err:
         _LOG.debug(
             "Could not load Google API key, ASR with Google will not work. Error: %s",
+            err,
+        )
+    try:
+        API_KEYS.openai = OpenAIKey.model_validate_json((_kd / SETTINGS.OPENAI_KEY_FILENAME).read_text().strip())
+    except Exception as err:
+        _LOG.debug(
+            "Could not load OpenAI API key, ASR with OpenAI will not work. Error: %s",
             err,
         )

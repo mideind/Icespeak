@@ -39,7 +39,7 @@ from .settings import SETTINGS, TRACE, Keys
 from .transcribe import TranscriptionOptions
 
 # TODO: Re implement Tiro
-from .voices import BaseVoice, TTSOptions, VoiceInfoT, aws_polly, azure  # , google
+from .voices import BaseVoice, TTSOptions, VoiceInfoT, aws_polly, azure, openai  # , google
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -58,6 +58,7 @@ def _setup_voices() -> tuple[VoicesT, ServicesT]:
     services = (
         aws_polly.AWSPollyVoice(),
         azure.AzureVoice(),
+        openai.OpenAIVoice(),
         # google.GoogleVoice(),
         # tiro.TiroVoice(),
     )
