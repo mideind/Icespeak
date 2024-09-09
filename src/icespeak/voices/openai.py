@@ -23,17 +23,19 @@ Icelandic-language text to speech via the Azure Speech API.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from typing_extensions import override
 
 from logging import getLogger
-from pathlib import Path
 
 from openai import OpenAI
 
 from icespeak.settings import API_KEYS, SETTINGS, Keys
 
 from . import BaseVoice, ModuleAudioFormatsT, ModuleVoicesT, TTSOptions
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 _LOG = getLogger(__name__)
 
