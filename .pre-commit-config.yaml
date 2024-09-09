@@ -10,7 +10,7 @@ repos:
       - id: debug-statements
   # Code linting & import sorting
   - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: "v0.5.7"
+    rev: "v0.6.4"
     hooks:
       # linter
       - id: ruff

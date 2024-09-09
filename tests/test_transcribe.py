@@ -246,7 +246,7 @@ _ws_re = re.compile(r"\s\s+")
 _fix_ws: Callable[[str], str] = lambda t: _ws_re.sub(" ", t.strip())
 
 
-@pytest.mark.slow()
+@pytest.mark.slow
 def test_dt_parser_transcribe() -> None:
     n = DT.parser_transcribe("þjálfari ÍR")
     assert "ÍR" not in n
