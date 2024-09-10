@@ -43,7 +43,7 @@ _LOG = getLogger(__name__)
 class VoiceInfoT(TypedDict):
     id: str
     lang: str
-    style: Literal["female", "male"]
+    style: Literal["female", "male", "neutral"]
     service: NotRequired[str]
 
 

@@ -42,6 +42,8 @@ dependencies = [
     # AWS Polly TTS
     "botocore>=1.21.40",
     "boto3>=1.18.40",
+    # OpenAI TTS
+    "openai>=1.44",
 ]
 
 [project.urls]

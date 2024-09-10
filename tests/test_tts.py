@@ -56,7 +56,7 @@ _MIN_AUDIO_SIZE = 1000
 
 
 @pytest.mark.skipif(API_KEYS.aws is None, reason="Missing AWS Polly API Key.")
-@pytest.mark.network()
+@pytest.mark.network
 def test_AWSPolly_speech_synthesis():
     tts_out = tts_to_file(
         _TEXT,
@@ -69,7 +69,7 @@ def test_AWSPolly_speech_synthesis():
 
 
 @pytest.mark.skipif(API_KEYS.aws is None, reason="Missing AWS Polly API Key.")
-@pytest.mark.network()
+@pytest.mark.network
 def test_AWSPolly_speech_synthesis_with_keys_override():
     tts_out = tts_to_file(
         _TEXT,
@@ -83,7 +83,7 @@ def test_AWSPolly_speech_synthesis_with_keys_override():
 
 
 @pytest.mark.skipif(API_KEYS.azure is None, reason="Missing Azure API Key.")
-@pytest.mark.network()
+@pytest.mark.network
 def test_Azure_speech_synthesis():
     # Test Azure Cognitive Services
     tts_out = tts_to_file(
@@ -97,7 +97,7 @@ def test_Azure_speech_synthesis():
 
 
 @pytest.mark.skipif(API_KEYS.azure is None, reason="Missing Azure API Key.")
-@pytest.mark.network()
+@pytest.mark.network
 def test_Azure_speech_synthesis_with_keys_override():
     # Test Azure Cognitive Services
     tts_out = tts_to_file(
@@ -112,7 +112,7 @@ def test_Azure_speech_synthesis_with_keys_override():
 
 
 @pytest.mark.skipif(API_KEYS.google is None, reason="Missing Google API Key.")
-@pytest.mark.network()
+@pytest.mark.network
 def test_Google_speech_synthesis():
     # Test Google Cloud
     tts_out = tts_to_file(
@@ -126,12 +126,26 @@ def test_Google_speech_synthesis():
 
 
 @pytest.mark.skipif(condition=True, reason="Missing Tiro API Key.")
-@pytest.mark.network()
+@pytest.mark.network
 def test_Tiro_speech_synthesis():
     # Test Tiro
     tts_out = tts_to_file(
         _TEXT,
         TTSOptions(text_format=TextFormats.TEXT, audio_format="mp3", voice="Alfur"),
+    )
+    path = tts_out.file
+    assert path.is_file(), "Expected audio file to exist"
+    assert path.stat().st_size > _MIN_AUDIO_SIZE, "Expected longer audio data"
+    path.unlink()
+
+
+@pytest.mark.skipif(API_KEYS.openai is None, reason="Missing OpenAI API Key.")
+@pytest.mark.network
+def test_OpenAI_speech_synthesis():
+    # Test OpenAI
+    tts_out = tts_to_file(
+        _TEXT,
+        TTSOptions(text_format=TextFormats.TEXT, audio_format="pcm", voice="echo"),
     )
     path = tts_out.file
     assert path.is_file(), "Expected audio file to exist"
