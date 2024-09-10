@@ -27,6 +27,7 @@ from typing import Any, Optional
 from typing_extensions import Literal
 
 import json
+import os
 import tempfile
 import uuid
 from enum import Enum
@@ -171,7 +172,7 @@ class AzureKey(BaseModel, frozen=True):
 class OpenAIKey(BaseModel, frozen=True):
     "Format of an API key for OpenAI."
 
-    OPENAI_API_KEY: SecretStr
+    api_key: SecretStr
 
 
 class Keys(BaseModel):
@@ -230,7 +231,11 @@ else:
             err,
         )
     try:
-        API_KEYS.openai = OpenAIKey.model_validate_json((_kd / SETTINGS.OPENAI_KEY_FILENAME).read_text().strip())
+        # First try to load the key from environment variable OPENAI_API_KEY
+        if os.getenv("OPENAI_API_KEY"):
+            API_KEYS.openai = OpenAIKey(api_key=SecretStr(str(os.getenv("OPENAI_API_KEY"))))
+        else:
+            API_KEYS.openai = OpenAIKey.model_validate_json((_kd / SETTINGS.OPENAI_KEY_FILENAME).read_text().strip())
     except Exception as err:
         _LOG.debug(
             "Could not load OpenAI API key, ASR with OpenAI will not work. Error: %s",

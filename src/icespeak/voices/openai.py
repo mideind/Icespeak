@@ -17,7 +17,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see http://www.gnu.org/licenses/.
 
 
-Icelandic-language text to speech via the Azure Speech API.
+Icelandic-language text to speech via the OpenAI Speech API.
 
 """
 
@@ -50,7 +50,7 @@ class OpenAIVoice(BaseVoice):
         "nova": {"id": "nova", "lang": "en-US", "style": "female"},
         "shimmer": {"id": "shimmer", "lang": "en-US", "style": "female"},
     }
-    _AUDIO_FORMATS: ModuleAudioFormatsT = frozenset(("opus", "aac", "flac", "wav", "pcm"))
+    _AUDIO_FORMATS: ModuleAudioFormatsT = frozenset(("mp3", "opus", "aac", "flac", "wav", "pcm"))
 
     def _create_client(self, openai_key: str) -> OpenAI:
         return OpenAI(api_key=openai_key)
@@ -76,13 +76,13 @@ class OpenAIVoice(BaseVoice):
 
         self._openai_client: Any = None
         if self._openai_client is None:
-            self._openai_client = self._create_client(API_KEYS.openai.OPENAI_API_KEY.get_secret_value())
+            self._openai_client = self._create_client(API_KEYS.openai.api_key.get_secret_value())
 
     @override
     def text_to_speech(self, text: str, options: TTSOptions, keys_override: Keys | None = None) -> Path:
         if keys_override and keys_override.openai:
             _LOG.debug("Using overridden OpenAI keys")
-            client = self._create_client(keys_override.openai.OPENAI_API_KEY.get_secret_value())
+            client = self._create_client(keys_override.openai.api_key.get_secret_value())
         else:
             _LOG.debug("Using default OpenAI keys")
             client = self._openai_client
