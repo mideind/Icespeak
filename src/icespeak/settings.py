@@ -232,8 +232,8 @@ else:
         )
     try:
         # First try to load the key from environment variable OPENAI_API_KEY
-        if os.getenv("OPENAI_API_KEY"):
-            API_KEYS.openai = OpenAIKey(api_key=SecretStr(str(os.getenv("OPENAI_API_KEY"))))
+        if key := os.getenv("OPENAI_API_KEY"):
+            API_KEYS.openai = OpenAIKey(api_key=SecretStr(key))
         else:
             API_KEYS.openai = OpenAIKey.model_validate_json((_kd / SETTINGS.OPENAI_KEY_FILENAME).read_text().strip())
     except Exception as err:
