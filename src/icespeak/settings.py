@@ -194,25 +194,21 @@ class Keys(BaseModel):
     google: Optional[dict[str, Any]] = Field(
         default=None, description="Google API key."
     )
-    # TODO: Re-implement TTS with Tiro
-    tiro: Literal[None] = Field(default=None)
     openai: Optional[OpenAIKey] = Field(default=None, description="OpenAI API key.")
 
     def __hash__(self):
-        return hash((self.azure, self.aws, self.google, self.tiro, self.openai))
+        return hash((self.azure, self.aws, self.google, self.openai))
 
     def __eq__(self, other: object):
         return isinstance(other, Keys) and (
             self.azure,
             self.aws,
             self.google,
-            self.tiro,
             self.openai,
         ) == (
             other.azure,
             other.aws,
             other.google,
-            other.tiro,
             other.openai,
         )
 
