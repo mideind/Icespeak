@@ -28,7 +28,7 @@ dependencies = [
     # "aiohttp[speedups]>=3.8.4",
     "requests>=2.31.0",
     "typing-extensions>=4.7.1",
-    "pydantic==2.4.0",
+    "pydantic==2.3.0",
     "pydantic-settings>=2.0.3",
     "cachetools>=5.5.0",
     # For parsing Icelandic text
