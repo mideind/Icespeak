@@ -24,7 +24,6 @@ Shared settings for the Icespeak package.
 # We dont import annotations from __future__ here
 # due to pydantic
 from typing import Any, Optional
-from typing_extensions import Literal
 
 import json
 import os
