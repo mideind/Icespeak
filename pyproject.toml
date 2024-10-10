@@ -30,9 +30,9 @@ dependencies = [
     "typing-extensions>=4.7.1",
     "pydantic==2.4.0",
     "pydantic-settings>=2.0.3",
-    "cachetools>=5.3.1",
+    "cachetools>=5.5.0",
     # For parsing Icelandic text
-    "islenska<1.0.0",
+    "islenska==1.0.3",
     "reynir<4.0.0",
     "tokenizer<4.0.0",
     # Azure TTS

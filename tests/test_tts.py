@@ -125,20 +125,6 @@ def test_Google_speech_synthesis():
     path.unlink()
 
 
-@pytest.mark.skipif(condition=True, reason="Missing Tiro API Key.")
-@pytest.mark.network
-def test_Tiro_speech_synthesis():
-    # Test Tiro
-    tts_out = tts_to_file(
-        _TEXT,
-        TTSOptions(text_format=TextFormats.TEXT, audio_format="mp3", voice="Alfur"),
-    )
-    path = tts_out.file
-    assert path.is_file(), "Expected audio file to exist"
-    assert path.stat().st_size > _MIN_AUDIO_SIZE, "Expected longer audio data"
-    path.unlink()
-
-
 @pytest.mark.skipif(API_KEYS.openai is None, reason="Missing OpenAI API Key.")
 @pytest.mark.network
 def test_OpenAI_speech_synthesis():
