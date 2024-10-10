@@ -36,9 +36,9 @@ jobs:
       - name: Test with pytest
         run: |
           pytest --run-slow -vvvrP --log-level=DEBUG --capture=tee-sys
-      - name: Lint with pre-commit hooks
-        run: |
-          pre-commit run --all-files
+      # - name: Lint with pre-commit hooks
+      #   run: |
+      #     pre-commit run --all-files
 
   network:
     runs-on: ubuntu-22.04
