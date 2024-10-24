@@ -1,7 +1,6 @@
 [project]
 name = "icespeak"
-# Versioning is automatic (w/setuptools-scm)
-dynamic = ["version"]
+version = "0.3.6"
 description = "Icespeak - Icelandic TTS library"
 authors = [{ name = "Miðeind ehf.", email = "mideind@mideind.is" }]
 readme = { file = "README.md", content-type = "text/markdown" }
@@ -19,11 +18,12 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Topic :: Text Processing :: Linguistic",
     "Topic :: Multimedia :: Sound/Audio :: Speech",
     "Typing :: Typed",
 ]
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 dependencies = [
     # "aiohttp[speedups]>=3.8.4",
     "requests>=2.31.0",
@@ -32,7 +32,7 @@ dependencies = [
     "pydantic-settings>=2.0.3",
     "cachetools>=5.5.0",
     # For parsing Icelandic text
-    "islenska==1.0.3",
+    "islenska<2.0.0",
     "reynir<4.0.0",
     "tokenizer<4.0.0",
     # Azure TTS
