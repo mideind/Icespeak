@@ -23,7 +23,7 @@ classifiers = [
     "Topic :: Multimedia :: Sound/Audio :: Speech",
     "Typing :: Typed",
 ]
-requires-python = ">=3.10"
+requires-python = ">=3.9"
 dependencies = [
     # "aiohttp[speedups]>=3.8.4",
     "requests>=2.32.3",
