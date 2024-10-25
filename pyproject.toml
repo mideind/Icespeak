@@ -26,8 +26,8 @@ classifiers = [
 requires-python = ">=3.10"
 dependencies = [
     # "aiohttp[speedups]>=3.8.4",
-    "requests>=2.31.0",
-    "typing-extensions>=4.7.1",
+    "requests>=2.32.3",
+    "typing-extensions>=4.12.2",
     "pydantic==2.3.0",
     "pydantic-settings>=2.0.3",
     "cachetools>=5.5.0",
@@ -36,14 +36,14 @@ dependencies = [
     "reynir<4.0.0",
     "tokenizer<4.0.0",
     # Azure TTS
-    "azure-cognitiveservices-speech>=1.38.0",
+    "azure-cognitiveservices-speech>=1.41.1",
     # Google TTS
     #"google-cloud-texttospeech>=2.14.0",
     # AWS Polly TTS
     "botocore>=1.21.40",
     "boto3>=1.18.40",
     # OpenAI TTS
-    "openai>=1.44",
+    "openai>=1.52.2",
 ]
 
 [project.urls]
