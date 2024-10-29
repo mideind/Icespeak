@@ -26,7 +26,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip wheel setuptools
-          pip install -e '.[dev]' --ignore-requires-python
+          python -m pip install -e '.[dev]'
       - name: Set up API keys
         run: |
           # Azure TTS key
@@ -35,7 +35,7 @@ jobs:
           echo '${{ secrets.AWS_POLLY_KEY }}' > keys/AWSPollyServerKey.json
       - name: Test with pytest
         run: |
-          pytest --run-slow -vvvrP --log-level=DEBUG --capture=tee-sys
+          python -m pytest --run-slow -vvvrP --log-level=DEBUG --capture=tee-sys
       # - name: Lint with pre-commit hooks
       #   run: |
       #     pre-commit run --all-files
@@ -51,7 +51,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip wheel setuptools
-          pip install -e '.[dev]' --ignore-requires-python
+          pip install -e '.[dev]'
       - name: Set up API keys
         run: |
           # Azure TTS key
