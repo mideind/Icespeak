@@ -25,6 +25,7 @@ from __future__ import annotations
 from unittest.mock import MagicMock, patch
 
 import pytest
+from pydantic import SecretStr
 
 from icespeak import TTSOptions, tts_to_file
 from icespeak.settings import (
@@ -144,12 +145,12 @@ def test_OpenAI_speech_synthesis():
 def test_keys_override_in_tts_to_file():
     """Test if keys_override is correctly passed into service.text_to_speech."""
     _TEXT = "Test"
-    SERVICES["mock_service"].audio_formats = ["mp3"]
+    SERVICES["mock_service"].audio_formats = ["mp3"] # type: ignore
     keys_override = Keys(
         aws=AWSPollyKey(
-            aws_access_key_id="test",
-            aws_secret_access_key="test",
-            region_name="test",
+            aws_access_key_id=SecretStr("test"),
+            aws_secret_access_key=SecretStr("test"),
+            region_name=SecretStr("test"),
         )
     )
     opts = TTSOptions(text_format=TextFormats.TEXT, audio_format="mp3", voice="Dora")
@@ -159,7 +160,7 @@ def test_keys_override_in_tts_to_file():
         transcribe=False,
         keys_override=keys_override,
     )
-    SERVICES["mock_service"].text_to_speech.assert_called_once_with(
+    SERVICES["mock_service"].text_to_speech.assert_called_once_with( # type: ignore
         _TEXT,
         opts,
         keys_override,

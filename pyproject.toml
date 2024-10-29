@@ -1,7 +1,6 @@
 [project]
 name = "icespeak"
-# Versioning is automatic (w/setuptools-scm)
-dynamic = ["version"]
+version = "0.3.7"
 description = "Icespeak - Icelandic TTS library"
 authors = [{ name = "Miðeind ehf.", email = "mideind@mideind.is" }]
 readme = { file = "README.md", content-type = "text/markdown" }
@@ -26,24 +25,24 @@ classifiers = [
 requires-python = ">=3.9"
 dependencies = [
     # "aiohttp[speedups]>=3.8.4",
-    "requests>=2.31.0",
-    "typing-extensions>=4.7.1",
+    "requests>=2.32.3",
+    "typing-extensions>=4.12.2",
     "pydantic==2.3.0",
     "pydantic-settings>=2.0.3",
     "cachetools>=5.5.0",
     # For parsing Icelandic text
-    "islenska==1.0.3",
+    "islenska<2.0.0",
     "reynir<4.0.0",
     "tokenizer<4.0.0",
     # Azure TTS
-    "azure-cognitiveservices-speech>=1.38.0",
+    "azure-cognitiveservices-speech>=1.41.1",
     # Google TTS
     #"google-cloud-texttospeech>=2.14.0",
     # AWS Polly TTS
     "botocore>=1.21.40",
     "boto3>=1.18.40",
     # OpenAI TTS
-    "openai>=1.44",
+    "openai>=1.52.2",
 ]
 
 [project.urls]
@@ -63,6 +62,7 @@ dev = [
     "ruff>=0.5.7",
     "pre-commit>=3.3.3",
     "mypy>=1.4.1",
+    "boto3-stubs>=1.35.48",
 ]
 
 # *** Configuration of tools ***
