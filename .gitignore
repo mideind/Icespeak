@@ -166,3 +166,5 @@ $RECYCLE.BIN/
 
 audio/*
 keys/*
+keys*/
+env.sh
