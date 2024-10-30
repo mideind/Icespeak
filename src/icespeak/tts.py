@@ -152,7 +152,7 @@ if SETTINGS.AUDIO_CACHE_CLEAN:
     atexit.register(_evict_all)
 
 
-@cached(_AUDIO_CACHE)
+# @cached(_AUDIO_CACHE)
 def tts_to_file(
     text: str,
     tts_options: TTSOptions | None = None,
