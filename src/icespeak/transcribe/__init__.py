@@ -803,7 +803,7 @@ class DefaultTranscriber:
 
             # The year is optional
             if mon and d:
-                m = int(mon) if mon.isdecimal() else _MONTH_ABBREVS.index(mon[:3]) + 1
+                m = int(mon) if mon.isdecimal() else _MONTH_ABBREVS.index(mon[:3].lower()) + 1
                 fmt_date = _date_to_text(
                     year=int(y) if y else None,
                     month=m,
@@ -1158,9 +1158,11 @@ class DefaultTranscriber:
             gender = "hk"
             n, cases, _ = cast(tuple[float, Any, Any], tok.val)
             case = "nf" if cases is None else cases[0]
-            if n.is_integer():
+            if isinstance(n, int):
                 val = cls.number(n, case=case, gender=gender)
             else:
+                if n.is_integer():
+                    val = cls.number(n, case=case, gender=gender)
                 val = cls.float(n, case=case, gender=gender)
             if cases is None:
                 # Uses "%" or "‰" instead of "prósent"

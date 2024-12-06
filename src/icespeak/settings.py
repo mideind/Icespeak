@@ -55,6 +55,7 @@ class AudioFormats(str, Enum):
     OGG_VORBIS = "ogg_vorbis"
     PCM = "pcm"
     OPUS = "opus"
+    WAV = "wav"
 
 
 MAX_SPEED = 2.0

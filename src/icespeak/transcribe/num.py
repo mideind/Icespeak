@@ -593,7 +593,15 @@ def number_to_ordinal(
     gender (kk, kvk, hk) and number (et, ft).
     """
     if isinstance(n, str):
-        n = int(n.rstrip("."))
+        # Remove #, dots, and commas from the string
+        n = n.strip("#").replace(".", "").replace(",", "")
+        if not n.isdecimal():
+            if all(c.isalpha() and c in ROMAN_NUMERALS.keys() for c in n.upper()):
+                return roman_numeral_to_ordinal(n, case=case, gender=gender, number=number)
+            else:
+                raise ValueError(f"Invalid number: {n}")
+        else:
+            n = int(n)
     return neutral_text_to_ordinal(number_to_neutral(n), case=case, gender=gender, number=number)
 
 
@@ -669,6 +677,7 @@ ROMAN_NUMERALS: Mapping[str, int] = {
 def _roman_numeral_to_int(n: str) -> int:
     """
     Helper function, changes a correct roman numeral to an integer.
+    Note that invalid roman numerals will not be caught by this function.
     Source: https://stackoverflow.com/a/52426119
     """
     nums = [ROMAN_NUMERALS[i] for i in n.upper() if i in ROMAN_NUMERALS]
