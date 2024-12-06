@@ -78,11 +78,13 @@ class PiperVoice(BaseVoice):
 
         try:
             outfile = SETTINGS.get_empty_file(options.audio_format)
+            audio_dir = SETTINGS.get_audio_dir()
             piper_args = {
                 "model": shlex.quote(f"{self.voices[options.voice]['lang']}-{self.voices[options.voice]['id']}"),
                 "voice": PiperVoice._VOICES[options.voice]["id"],
                 "input": shlex.quote(text),
                 "output_file": str(outfile),
+                "data_dir": str(audio_dir / "Piper"),
             }
             _LOG.debug("Synthesizing with Piper: %s", piper_args)
             # NOTE: Piper only allows logging to be set to DEBUG or INFO level. Now stderr is suppressed.
@@ -90,7 +92,16 @@ class PiperVoice(BaseVoice):
             if options.audio_format == "pcm":
                 with outfile.open("w") as f:
                     subprocess.run(  # noqa: S603
-                        [piper_path, "--model", piper_args["model"], "--output_raw", "--data-dir", "./piper_data"],
+                        [
+                            piper_path,
+                            "--model",
+                            piper_args["model"],
+                            "--output_raw",
+                            "--data-dir",
+                            piper_args["data_dir"],
+                            "--download_dir",
+                            piper_args["data_dir"],
+                        ],
                         input=piper_args["input"],
                         text=True,
                         check=True,
@@ -106,7 +117,9 @@ class PiperVoice(BaseVoice):
                         "--output_file",
                         piper_args["output_file"],
                         "--data-dir",
-                        "./piper_data",
+                        piper_args["data_dir"],
+                        "--download_dir",
+                        piper_args["data_dir"],
                     ],
                     input=piper_args["input"],
                     text=True,
