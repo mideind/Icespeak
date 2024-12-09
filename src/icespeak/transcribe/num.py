@@ -676,8 +676,8 @@ ROMAN_NUMERALS: Mapping[str, int] = {
 
 def _roman_numeral_to_int(n: str) -> int:
     """
-    Helper function, changes a correct roman numeral to an integer.
-    Note that invalid roman numerals will not be caught by this function.
+    Helper function, changes a correct Roman numeral to an integer.
+    Note that invalid Roman numerals will not be caught by this function.
     Source: https://stackoverflow.com/a/52426119
     """
     nums = [ROMAN_NUMERALS[i] for i in n.upper() if i in ROMAN_NUMERALS]
@@ -686,7 +686,7 @@ def _roman_numeral_to_int(n: str) -> int:
 
 def roman_numeral_to_ordinal(n: str, *, case: CaseType = "nf", gender: GenderType = "kk", number: str = "et"):
     """
-    Change a roman numeral into a written Icelandic ordinal.
+    Change a Roman numeral into a written Icelandic ordinal.
     Example:
         "III" -> "þriðji"
         "MMXXII" -> "tvö þúsund tuttugasti og annar"

@@ -36,34 +36,34 @@ from . import BaseVoice, ModuleAudioFormatsT, ModuleVoicesT, TTSOptions
 _LOG = getLogger(__name__)
 
 
-class PiperVoice(BaseVoice):
+class PiperTTSVoice(BaseVoice):
     _NAME: str = "Piper"
     _VOICES: ModuleVoicesT = {
         "bui": {"id": "bui-medium", "lang": "is_IS", "style": "male"},
-        "salka": {"id": "salka-medium", "lang": "is_IS", "style": "male"},
+        "salka": {"id": "salka-medium", "lang": "is_IS", "style": "female"},
         "steinn": {"id": "steinn-medium", "lang": "is_IS", "style": "male"},
-        "ugla": {"id": "ugla-medium", "lang": "is_IS", "style": "male"},
+        "ugla": {"id": "ugla-medium", "lang": "is_IS", "style": "female"},
     }
     _AUDIO_FORMATS: ModuleAudioFormatsT = frozenset({"pcm", "wav"})
 
     @property
     @override
     def name(self) -> str:
-        return PiperVoice._NAME
+        return PiperTTSVoice._NAME
 
     @property
     @override
     def voices(self) -> ModuleVoicesT:
-        return PiperVoice._VOICES
+        return PiperTTSVoice._VOICES
 
     @property
     @override
     def audio_formats(self) -> ModuleAudioFormatsT:
-        return PiperVoice._AUDIO_FORMATS
+        return PiperTTSVoice._AUDIO_FORMATS
 
     @override
     def load_api_keys(self) -> None:
-        _LOG.debug("Loading API keys for Piper unnecessarily. PiperVoice does not require API keys")
+        _LOG.warning("Loading API keys for Piper unnecessarily. PiperVoice does not require API keys")
 
     def _get_piper_executable(self) -> Path:
         piper_path = shutil.which("piper")
@@ -74,17 +74,20 @@ class PiperVoice(BaseVoice):
     @override
     def text_to_speech(self, text: str, options: TTSOptions, keys_override: Keys | None = None) -> Path:
         if keys_override:
-            _LOG.debug("Using key override for Piper. PiperVoice does not require API keys")
+            _LOG.warning("Using key override for Piper. PiperVoice does not require API keys")
 
         try:
             outfile = SETTINGS.get_empty_file(options.audio_format)
             audio_dir = SETTINGS.get_audio_dir()
+            voice = self.voices[options.voice]
+            model = f"{voice['lang']}-{voice['id']}"
+            data_dir = audio_dir / "Piper"
             piper_args = {
-                "model": shlex.quote(f"{self.voices[options.voice]['lang']}-{self.voices[options.voice]['id']}"),
-                "voice": PiperVoice._VOICES[options.voice]["id"],
+                "model": shlex.quote(str(model)),
+                "voice": voice["id"],
                 "input": shlex.quote(text),
                 "output_file": str(outfile),
-                "data_dir": str(audio_dir / "Piper"),
+                "data_dir": str(data_dir),
             }
             _LOG.debug("Synthesizing with Piper: %s", piper_args)
             # NOTE: Piper only allows logging to be set to DEBUG or INFO level. Now stderr is suppressed.
