@@ -94,7 +94,7 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    DEFAULT_VOICE: str = Field(default="Gudrun", description="Default TTS voice if none is requested.")
+    DEFAULT_VOICE: str = Field(default="bui", description="Default TTS voice if none is requested.")
     DEFAULT_VOICE_SPEED: float = Field(
         default=1.0,
         le=MAX_SPEED,
@@ -102,10 +102,10 @@ class Settings(BaseSettings):
         description="Default TTS voice speed.",
     )
     DEFAULT_TEXT_FORMAT: TextFormats = Field(
-        default=TextFormats.SSML,
+        default=TextFormats.TEXT,
         description="Default format to interpret input text as.",
     )
-    DEFAULT_AUDIO_FORMAT: AudioFormats = Field(default=AudioFormats.MP3, description="Default audio output format.")
+    DEFAULT_AUDIO_FORMAT: AudioFormats = Field(default=AudioFormats.WAV, description="Default audio output format.")
 
     AUDIO_DIR: Optional[Path] = Field(
         default=None,

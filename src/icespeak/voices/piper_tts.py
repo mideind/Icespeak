@@ -39,12 +39,16 @@ _LOG = getLogger(__name__)
 class PiperTTSVoice(BaseVoice):
     _NAME: str = "Piper"
     _VOICES: ModuleVoicesT = {
-        "bui": {"id": "bui-medium", "lang": "is_IS", "style": "male"},
-        "salka": {"id": "salka-medium", "lang": "is_IS", "style": "female"},
-        "steinn": {"id": "steinn-medium", "lang": "is_IS", "style": "male"},
-        "ugla": {"id": "ugla-medium", "lang": "is_IS", "style": "female"},
+        "bui": {"id": "bui-medium", "lang": "is-IS", "style": "male"},
+        "salka": {"id": "salka-medium", "lang": "is-IS", "style": "female"},
+        "steinn": {"id": "steinn-medium", "lang": "is-IS", "style": "male"},
+        "ugla": {"id": "ugla-medium", "lang": "is-IS", "style": "female"},
     }
     _AUDIO_FORMATS: ModuleAudioFormatsT = frozenset({"pcm", "wav"})
+
+    @override
+    def __init__(self) -> None:
+        self._avail = True
 
     @property
     @override
@@ -80,7 +84,7 @@ class PiperTTSVoice(BaseVoice):
             outfile = SETTINGS.get_empty_file(options.audio_format)
             audio_dir = SETTINGS.get_audio_dir()
             voice = self.voices[options.voice]
-            model = f"{voice['lang']}-{voice['id']}"
+            model = f"{voice['lang'].replace('-','_')}-{voice['id']}"
             data_dir = audio_dir / "Piper"
             piper_args = {
                 "model": shlex.quote(str(model)),
@@ -139,4 +143,4 @@ class PiperTTSVoice(BaseVoice):
         return outfile
 
 
-# TODO: Add option to use GPU. This requires onnxruntime-gpu, the --cuda flag and a functioning CUDA environment.
+# NOTE: Possible to add option to use GPU. This requires onnxruntime-gpu, the --cuda flag and a functioning CUDA environment.
