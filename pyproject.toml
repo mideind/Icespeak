@@ -36,7 +36,7 @@ dependencies = [
     "reynir<4.0.0",
     "tokenizer<4.0.0",
     # Azure TTS
-    "azure-cognitiveservices-speech>=1.38.0",
+    "azure-cognitiveservices-speech>=1.41.1",
     # Google TTS
     #"google-cloud-texttospeech>=2.14.0",
     # AWS Polly TTS
