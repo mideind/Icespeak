@@ -44,11 +44,17 @@ class OpenAIVoice(BaseVoice):
     _NAME: str = "OpenAI"
     _VOICES: ModuleVoicesT = {
         "alloy": {"id": "alloy", "lang": "en-US", "style": "neutral"},
+        "alloy_hd": {"id": "alloy_hd", "lang": "en-US", "style": "neutral"},
         "echo": {"id": "echo", "lang": "en-US", "style": "male"},
+        "echo_hd": {"id": "echo_hd", "lang": "en-US", "style": "male"},
         "fable": {"id": "fable", "lang": "en-GB", "style": "male"},
+        "fable_hd": {"id": "fable_hd", "lang": "en-GB", "style": "male"},
         "onyx": {"id": "onyx", "lang": "en-US", "style": "male"},
+        "onyx_hd": {"id": "onyx_hd", "lang": "en-US", "style": "male"},
         "nova": {"id": "nova", "lang": "en-US", "style": "female"},
+        "nova_hd": {"id": "nova_hd", "lang": "en-US", "style": "female"},
         "shimmer": {"id": "shimmer", "lang": "en-US", "style": "female"},
+        "shimmer_hd": {"id": "shimmer_hd", "lang": "en-US", "style": "female"},
     }
     _AUDIO_FORMATS: ModuleAudioFormatsT = frozenset(("mp3", "opus", "aac", "flac", "wav", "pcm"))
 
@@ -88,9 +94,15 @@ class OpenAIVoice(BaseVoice):
             client = self._openai_client
 
         try:
+            voice = OpenAIVoice._VOICES[options.voice]["id"]
+            if "_hd" in voice:
+                voice = voice.replace("_hd", "")
+                model = "tts-1-hd"
+            else:
+                model = "tts-1"
             openai_args = {
-                "model": "tts-1",  # TODO: add option of tts-1-hd model (slower, higher quality)
-                "voice": OpenAIVoice._VOICES[options.voice]["id"],
+                "model": model,
+                "voice": voice,
                 "input": text,
                 "response_format": options.audio_format,
             }
