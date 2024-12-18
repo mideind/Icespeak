@@ -30,6 +30,7 @@ from typing import TYPE_CHECKING, Any, Callable, Union, cast
 import itertools
 import re
 from functools import lru_cache
+from itertools import zip_longest
 from logging import getLogger
 from re import Match
 
@@ -1228,7 +1229,7 @@ class DefaultTranscriber:
             s_parts: list[str] = []
             # list of (token, terminal node) pairs.
             # Terminal nodes can be None if the sentence wasn't parseable
-            tk_term_list = tuple(zip(s.tokens, s.terminal_nodes or (None for _ in s.tokens)))
+            tk_term_list = list(zip_longest(s.tokens, s.terminal_nodes, fillvalue=None))
             for tok, term in tk_term_list:
                 txt = tok.txt
 
