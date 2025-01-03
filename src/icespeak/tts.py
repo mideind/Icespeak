@@ -37,14 +37,8 @@ from cachetools import LFUCache, cached
 
 from .settings import SETTINGS, TRACE, Keys
 from .transcribe import TranscriptionOptions
-from .voices import (
-    BaseVoice,
-    TTSOptions,
-    VoiceInfoT,
-    aws_polly,
-    azure,
-    openai,
-)
+
+from .voices import BaseVoice, TTSOptions, VoiceInfoT, aws_polly, azure, openai, piper_tts
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -64,7 +58,7 @@ def _setup_voices() -> tuple[VoicesT, ServicesT]:
         aws_polly.AWSPollyVoice(),
         azure.AzureVoice(),
         openai.OpenAIVoice(),
-        # google.GoogleVoice(),
+        piper_tts.PiperTTSVoice(),
     )
     voices: VoicesT = {}
     for service in services:
@@ -87,9 +81,6 @@ def _setup_voices() -> tuple[VoicesT, ServicesT]:
 
 
 VOICES, SERVICES = _setup_voices()
-
-assert VOICES, """No voices available. Make sure to provide an API key \
-for at least one speech synthesis engine in your ICESPEAK_KEYS_DIR directory."""
 
 
 _T = TypeVar("_T")

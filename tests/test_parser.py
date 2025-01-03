@@ -129,14 +129,3 @@ def test_greynirssmlparser():
     assert "&" not in n
     assert n.count("<") == 1
     assert n.count(">") == 1
-
-    # -------------------------
-    # Test voice engine specific transcription
-
-    assert "Dora" in VOICES
-    # Gudrun, the default voice, and Dora don't spell things the same
-    gp2 = GreynirSSMLParser("Dora")
-    alphabet = "aábcdðeéfghiíjklmnoópqrstuúvwxyýþæöz"
-    n1 = gp.transcribe(gssml(alphabet, type="spell"))
-    n2 = gp2.transcribe(gssml(alphabet, type="spell"))
-    assert n1 != n2

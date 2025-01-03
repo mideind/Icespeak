@@ -1,6 +1,6 @@
 [project]
 name = "icespeak"
-version = "0.3.7"
+version = "0.3.8"
 description = "Icespeak - Icelandic TTS library"
 authors = [{ name = "Miðeind ehf.", email = "mideind@mideind.is" }]
 readme = { file = "README.md", content-type = "text/markdown" }
@@ -17,7 +17,6 @@ classifiers = [
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12",
     "Topic :: Text Processing :: Linguistic",
     "Topic :: Multimedia :: Sound/Audio :: Speech",
     "Typing :: Typed",
@@ -36,13 +35,13 @@ dependencies = [
     "tokenizer<4.0.0",
     # Azure TTS
     "azure-cognitiveservices-speech>=1.41.1",
-    # Google TTS
-    #"google-cloud-texttospeech>=2.14.0",
     # AWS Polly TTS
     "botocore>=1.21.40",
     "boto3>=1.18.40",
     # OpenAI TTS
-    "openai>=1.52.2",
+    "openai>=1.44",
+    # Piper TTS
+    "piper-TTS>=1.2.0",
 ]
 
 [project.urls]

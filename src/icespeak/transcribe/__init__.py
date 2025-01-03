@@ -30,6 +30,7 @@ from typing import TYPE_CHECKING, Any, Callable, Union, cast
 import itertools
 import re
 from functools import lru_cache
+from itertools import zip_longest
 from logging import getLogger
 from re import Match
 
@@ -48,7 +49,7 @@ from tokenizer.definitions import (
     PunctuationTuple,
 )
 
-from icespeak.settings import TRACE
+from icespeak.settings import SETTINGS, TRACE, TextFormats
 
 from .num import (
     ROMAN_NUMERALS,
@@ -803,7 +804,7 @@ class DefaultTranscriber:
 
             # The year is optional
             if mon and d:
-                m = int(mon) if mon.isdecimal() else _MONTH_ABBREVS.index(mon[:3]) + 1
+                m = int(mon) if mon.isdecimal() else _MONTH_ABBREVS.index(mon[:3].lower()) + 1
                 fmt_date = _date_to_text(
                     year=int(y) if y else None,
                     month=m,
@@ -874,6 +875,7 @@ class DefaultTranscriber:
         cls,
         txt: str,
         *,
+        text_format: TextFormats = SETTINGS.DEFAULT_TEXT_FORMAT,
         pause_length: str | None = None,
         literal: bool = False,
     ) -> str:
@@ -890,15 +892,18 @@ class DefaultTranscriber:
             # Non-literal spelling
             f = lambda c: cls._CHAR_PRONUNCIATION.get(c.lower(), c) if not c.isspace() else ""
         t = tuple(map(f, txt))
-        return (
-            cls.vbreak(time="10ms")
-            + cls.vbreak(time=pause_length or "20ms").join(t)
-            + cls.vbreak(time="20ms" if len(t) > 1 else "10ms")
-        )
+        if text_format == "ssml":
+            return (
+                cls.vbreak(time="10ms")
+                + cls.vbreak(time=pause_length or "20ms").join(t)
+                + cls.vbreak(time="20ms" if len(t) > 1 else "10ms")
+            )
+        else:
+            return " ".join(t)
 
     @classmethod
     @_transcribe_method
-    def abbrev(cls, txt: str) -> str:
+    def abbrev(cls, txt: str, *, text_format: TextFormats = SETTINGS.DEFAULT_TEXT_FORMAT) -> str:
         """Expand an abbreviation."""
         meanings = tuple(
             filter(
@@ -908,7 +913,10 @@ class DefaultTranscriber:
         )
         if meanings:
             # Abbreviation has at least one known meaning, expand it
-            return cls.vbreak(time="10ms") + meanings[0].stofn + cls.vbreak(time="50ms")
+            if text_format == "ssml":
+                return cls.vbreak(time="10ms") + meanings[0].stofn + cls.vbreak(time="50ms")
+            else:
+                return meanings[0].stofn
 
         # Fallbacks:
         # - Spell out, if any letter is uppercase (e.g. "MSc")
@@ -1111,7 +1119,9 @@ class DefaultTranscriber:
     @_transcribe_method
     @_bool_args("full_text")
     @lru_cache(maxsize=50)  # Caching, as this method could be slow
-    def parser_transcribe(cls, txt: str, *, full_text: bool = False) -> str:
+    def parser_transcribe(
+        cls, txt: str, *, full_text: bool = False, text_format: TextFormats = SETTINGS.DEFAULT_TEXT_FORMAT
+    ) -> str:
         """
         Slow transcription of Icelandic text for TTS.
         Utilizes the parser from the GreynirPackage library.
@@ -1158,9 +1168,11 @@ class DefaultTranscriber:
             gender = "hk"
             n, cases, _ = cast(tuple[float, Any, Any], tok.val)
             case = "nf" if cases is None else cases[0]
-            if n.is_integer():
+            if isinstance(n, int):
                 val = cls.number(n, case=case, gender=gender)
             else:
+                if n.is_integer():
+                    val = cls.number(n, case=case, gender=gender)
                 val = cls.float(n, case=case, gender=gender)
             if cases is None:
                 # Uses "%" or "‰" instead of "prósent"
@@ -1173,7 +1185,11 @@ class DefaultTranscriber:
 
         def _numwletter(tok: Tok, term: SimpleTree | None) -> str:
             num = "".join(filter(lambda c: c.isdecimal(), tok.txt))
-            return cls.number(num, case="nf", gender="hk") + " " + cls.spell(tok.txt[len(num) + 1 :])
+            return (
+                cls.number(num, case="nf", gender="hk")
+                + " "
+                + cls.spell(tok.txt[len(num) + 1 :], text_format=text_format)
+            )
 
         # Map certain terminals directly to transcription functions
         handler_map: Mapping[int, Callable[[Tok, SimpleTree | None], str]] = {
@@ -1213,7 +1229,7 @@ class DefaultTranscriber:
             s_parts: list[str] = []
             # list of (token, terminal node) pairs.
             # Terminal nodes can be None if the sentence wasn't parseable
-            tk_term_list = tuple(zip(s.tokens, s.terminal_nodes or (None for _ in s.tokens)))
+            tk_term_list = list(zip_longest(s.tokens, s.terminal_nodes, fillvalue=None))
             for tok, term in tk_term_list:
                 txt = tok.txt
 
@@ -1233,7 +1249,7 @@ class DefaultTranscriber:
                     or any(not _ABBREV_RE.match(m.stofn) for m in tok.meanings)
                 ):
                     # Probably an abbreviation such as "t.d." or "MSc"
-                    s_parts.append(cls.abbrev(txt))
+                    s_parts.append(cls.abbrev(txt, text_format=text_format))
 
                 # Check whether this is a hyphen denoting a range
                 elif (

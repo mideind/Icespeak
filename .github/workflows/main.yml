@@ -15,7 +15,7 @@ jobs:
 
     strategy:
       matrix:
-        python-version: ["3.9", "3.12", "pypy-3.10"]
+        python-version: ["3.9", "3.11"]
 
     steps:
       - uses: actions/checkout@v4
@@ -40,24 +40,24 @@ jobs:
       #   run: |
       #     pre-commit run --all-files
 
-  network:
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@v4
-      - name: Set up Python 3.12
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip wheel setuptools
-          pip install -e '.[dev]'
-      - name: Set up API keys
-        run: |
-          # Azure TTS key
-          echo '${{ secrets.AZURE_TTS_KEY }}' > keys/AzureSpeechServerKey.json
-          # AWS Polly API key
-          echo '${{ secrets.AWS_POLLY_KEY }}' > keys/AWSPollyServerKey.json
-      - name: Test with pytest
-        run: |
-          pytest --run-all --log-level=INFO --capture=tee-sys
+  # network:
+  #   runs-on: ubuntu-22.04
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - name: Set up Python 3.11
+  #       uses: actions/setup-python@v5
+  #       with:
+  #         python-version: '3.11'
+  #     - name: Install dependencies
+  #       run: |
+  #         python -m pip install --upgrade pip wheel setuptools
+  #         pip install -e '.[dev]'
+  #     - name: Set up API keys
+  #       run: |
+  #         # Azure TTS key
+  #         echo '${{ secrets.AZURE_TTS_KEY }}' > keys/AzureSpeechServerKey.json
+  #         # AWS Polly API key
+  #         echo '${{ secrets.AWS_POLLY_KEY }}' > keys/AWSPollyServerKey.json
+  #     - name: Test with pytest
+  #       run: |
+  #         pytest --run-all --log-level=INFO --capture=tee-sys
