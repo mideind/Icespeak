@@ -24,7 +24,6 @@ Shared settings for the Icespeak package.
 # We dont import annotations from __future__ here
 # due to pydantic
 from typing import Any, Optional
-from typing_extensions import Literal
 
 import json
 import os
@@ -114,10 +113,16 @@ class Settings(BaseSettings):
             "If not set, creates a directory in the platform's temporary directory."
         ),
     )
-    AUDIO_CACHE_SIZE: int = Field(default=300, gt=0, description="Max number of audio files to cache.")
-    AUDIO_CACHE_CLEAN: bool = Field(default=True, description="If True, cleans up generated audio files upon exit.")
+    AUDIO_CACHE_SIZE: int = Field(
+        default=300, gt=-1, description="Max number of audio files to cache."
+    )
+    AUDIO_CACHE_CLEAN: bool = Field(
+        default=True, description="If True, cleans up generated audio files upon exit."
+    )
 
-    KEYS_DIR: Path = Field(default=Path("keys"), description="Where to look for API keys.")
+    KEYS_DIR: Path = Field(
+        default=Path("keys"), description="Where to look for API keys."
+    )
     AWSPOLLY_KEY_FILENAME: str = Field(
         default="AWSPollyServerKey.json",
         description="Name of the AWS Polly API key file.",
@@ -182,26 +187,24 @@ class Keys(BaseModel):
 
     azure: Optional[AzureKey] = Field(default=None, description="Azure API key.")
     aws: Optional[AWSPollyKey] = Field(default=None, description="AWS Polly API key.")
-    google: Optional[dict[str, Any]] = Field(default=None, description="Google API key.")
-    # TODO: Re-implement TTS with Tiro
-    tiro: Literal[None] = Field(default=None)
+    google: Optional[dict[str, Any]] = Field(
+        default=None, description="Google API key."
+    )
     openai: Optional[OpenAIKey] = Field(default=None, description="OpenAI API key.")
 
     def __hash__(self):
-        return hash((self.azure, self.aws, self.google, self.tiro, self.openai))
+        return hash((self.azure, self.aws, self.google, self.openai))
 
     def __eq__(self, other: object):
         return isinstance(other, Keys) and (
             self.azure,
             self.aws,
             self.google,
-            self.tiro,
             self.openai,
         ) == (
             other.azure,
             other.aws,
             other.google,
-            other.tiro,
             other.openai,
         )
 
@@ -210,36 +213,62 @@ API_KEYS = Keys()
 
 _kd = SETTINGS.KEYS_DIR
 if not (_kd.exists() and _kd.is_dir()):
-    _LOG.warning("Keys directory missing or incorrect, TTS will not work! Set to: %s", _kd)
-else:
-    # Load API keys, logging exceptions in level DEBUG so they aren't logged twice,
-    # as exceptions are logged as warnings when voice modules are initialized
-    try:
-        API_KEYS.aws = AWSPollyKey.model_validate_json((_kd / SETTINGS.AWSPOLLY_KEY_FILENAME).read_text().strip())
-    except Exception as err:
-        _LOG.debug(
-            "Could not load AWS Polly API key, ASR with AWS Polly will not work. Error: %s",
-            err,
+    _LOG.warning(
+        "Keys directory missing or incorrect: %s", _kd
+    )
+
+# Load API keys, logging exceptions in level DEBUG so they aren't logged twice,
+# as exceptions are logged as warnings when voice modules are initialized
+
+# Amazon Polly
+try:
+    if key := os.getenv("ICESPEAK_AWSPOLLY_API_KEY"):
+        API_KEYS.aws = AWSPollyKey.model_validate_json(key)
+    else:
+        API_KEYS.aws = AWSPollyKey.model_validate_json(
+            (_kd / SETTINGS.AWSPOLLY_KEY_FILENAME).read_text().strip()
         )
-    try:
-        API_KEYS.azure = AzureKey.model_validate_json((_kd / SETTINGS.AZURE_KEY_FILENAME).read_text().strip())
-    except Exception as err:
-        _LOG.debug("Could not load Azure API key, ASR with Azure will not work. Error: %s", err)
-    try:
-        API_KEYS.google = json.loads((_kd / SETTINGS.GOOGLE_KEY_FILENAME).read_text().strip())
-    except Exception as err:
-        _LOG.debug(
-            "Could not load Google API key, ASR with Google will not work. Error: %s",
-            err,
+except Exception as err:
+    _LOG.debug(
+        "Could not load AWS Polly API key, ASR with AWS Polly will not work. Error: %s",
+        err,
+    )
+# Azure
+try:
+    if key := os.getenv("ICESPEAK_AZURE_API_KEY"):
+        API_KEYS.azure = AzureKey.model_validate_json(key)
+    else:
+        API_KEYS.azure = AzureKey.model_validate_json(
+            (_kd / SETTINGS.AZURE_KEY_FILENAME).read_text().strip()
         )
-    try:
-        # First try to load the key from environment variable OPENAI_API_KEY
-        if key := os.getenv("OPENAI_API_KEY"):
-            API_KEYS.openai = OpenAIKey(api_key=SecretStr(key))
-        else:
-            API_KEYS.openai = OpenAIKey.model_validate_json((_kd / SETTINGS.OPENAI_KEY_FILENAME).read_text().strip())
-    except Exception as err:
-        _LOG.debug(
-            "Could not load OpenAI API key, ASR with OpenAI will not work. Error: %s",
-            err,
+except Exception as err:
+    _LOG.debug(
+        "Could not load Azure API key, ASR with Azure will not work. Error: %s", err
+    )
+# Google
+try:
+    if key := os.getenv("ICESPEAK_GOOGLE_API_KEY"):
+        API_KEYS.google = json.loads(key)
+    else:
+        API_KEYS.google = json.loads(
+            (_kd / SETTINGS.GOOGLE_KEY_FILENAME).read_text().strip()
         )
+except Exception as err:
+    _LOG.debug(
+        "Could not load Google API key, ASR with Google will not work. Error: %s",
+        err,
+    )
+# OpenAI
+try:
+    # First try to load the key from environment variable OPENAI_API_KEY
+    if key := os.getenv("ICESPEAK_OPENAI_API_KEY"):
+        API_KEYS.openai = OpenAIKey(api_key=SecretStr(key))
+    else:
+        API_KEYS.openai = OpenAIKey.model_validate_json(
+            (_kd / SETTINGS.OPENAI_KEY_FILENAME).read_text().strip()
+        )
+except Exception as err:
+    _LOG.debug(
+        "Could not load OpenAI API key, ASR with OpenAI will not work. Error: %s",
+        err,
+    )

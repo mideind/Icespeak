@@ -25,6 +25,7 @@ from __future__ import annotations
 from unittest.mock import MagicMock, patch
 
 import pytest
+from pydantic import SecretStr
 
 from icespeak import TTSOptions, tts_to_file
 from icespeak.settings import (
@@ -125,20 +126,6 @@ def test_Google_speech_synthesis():
     path.unlink()
 
 
-@pytest.mark.skipif(condition=True, reason="Missing Tiro API Key.")
-@pytest.mark.network
-def test_Tiro_speech_synthesis():
-    # Test Tiro
-    tts_out = tts_to_file(
-        _TEXT,
-        TTSOptions(text_format=TextFormats.TEXT, audio_format="mp3", voice="Alfur"),
-    )
-    path = tts_out.file
-    assert path.is_file(), "Expected audio file to exist"
-    assert path.stat().st_size > _MIN_AUDIO_SIZE, "Expected longer audio data"
-    path.unlink()
-
-
 @pytest.mark.skipif(API_KEYS.openai is None, reason="Missing OpenAI API Key.")
 @pytest.mark.network
 def test_OpenAI_speech_synthesis():
@@ -158,12 +145,12 @@ def test_OpenAI_speech_synthesis():
 def test_keys_override_in_tts_to_file():
     """Test if keys_override is correctly passed into service.text_to_speech."""
     _TEXT = "Test"
-    SERVICES["mock_service"].audio_formats = ["mp3"]
+    SERVICES["mock_service"].audio_formats = ["mp3"] # type: ignore
     keys_override = Keys(
         aws=AWSPollyKey(
-            aws_access_key_id="test",
-            aws_secret_access_key="test",
-            region_name="test",
+            aws_access_key_id=SecretStr("test"),
+            aws_secret_access_key=SecretStr("test"),
+            region_name=SecretStr("test"),
         )
     )
     opts = TTSOptions(text_format=TextFormats.TEXT, audio_format="mp3", voice="Dora")
@@ -173,7 +160,7 @@ def test_keys_override_in_tts_to_file():
         transcribe=False,
         keys_override=keys_override,
     )
-    SERVICES["mock_service"].text_to_speech.assert_called_once_with(
+    SERVICES["mock_service"].text_to_speech.assert_called_once_with( # type: ignore
         _TEXT,
         opts,
         keys_override,
