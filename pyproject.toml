@@ -32,7 +32,7 @@ dependencies = [
     "pydantic-settings>=2.0.3",
     "cachetools>=5.3.1",
     # For parsing Icelandic text
-    "islenska<1.0.0",
+    "islenska>=1.0.3",
     "reynir<4.0.0",
     "tokenizer<4.0.0",
     # Azure TTS
