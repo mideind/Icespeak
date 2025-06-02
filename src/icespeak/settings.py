@@ -109,20 +109,13 @@ class Settings(BaseSettings):
     AUDIO_DIR: Optional[Path] = Field(
         default=None,
         description=(
-            "Where to save output audio files. "
-            "If not set, creates a directory in the platform's temporary directory."
+            "Where to save output audio files. If not set, creates a directory in the platform's temporary directory."
         ),
     )
-    AUDIO_CACHE_SIZE: int = Field(
-        default=300, gt=-1, description="Max number of audio files to cache."
-    )
-    AUDIO_CACHE_CLEAN: bool = Field(
-        default=True, description="If True, cleans up generated audio files upon exit."
-    )
+    AUDIO_CACHE_SIZE: int = Field(default=300, gt=-1, description="Max number of audio files to cache.")
+    AUDIO_CACHE_CLEAN: bool = Field(default=True, description="If True, cleans up generated audio files upon exit.")
 
-    KEYS_DIR: Path = Field(
-        default=Path("keys"), description="Where to look for API keys."
-    )
+    KEYS_DIR: Path = Field(default=Path("keys"), description="Where to look for API keys.")
     AWSPOLLY_KEY_FILENAME: str = Field(
         default="AWSPollyServerKey.json",
         description="Name of the AWS Polly API key file.",
@@ -139,6 +132,11 @@ class Settings(BaseSettings):
         default="OpenAIServerKey.json",
         description="Name of the OpenAI API key file.",
     )
+
+    AWSPOLLY_API_KEY: Optional[str] = Field(default=None, description="AWS Polly API key as JSON string")
+    AZURE_API_KEY: Optional[str] = Field(default=None, description="Azure API key as JSON string")
+    GOOGLE_API_KEY: Optional[str] = Field(default=None, description="Google API key as JSON string")
+    OPENAI_API_KEY: Optional[str] = Field(default=None, description="OpenAI API key string")
 
     def get_audio_dir(self) -> Path:
         """
@@ -187,9 +185,7 @@ class Keys(BaseModel):
 
     azure: Optional[AzureKey] = Field(default=None, description="Azure API key.")
     aws: Optional[AWSPollyKey] = Field(default=None, description="AWS Polly API key.")
-    google: Optional[dict[str, Any]] = Field(
-        default=None, description="Google API key."
-    )
+    google: Optional[dict[str, Any]] = Field(default=None, description="Google API key.")
     openai: Optional[OpenAIKey] = Field(default=None, description="OpenAI API key.")
 
     def __hash__(self):
@@ -213,21 +209,17 @@ API_KEYS = Keys()
 
 _kd = SETTINGS.KEYS_DIR
 if not (_kd.exists() and _kd.is_dir()):
-    _LOG.warning(
-        "Keys directory missing or incorrect: %s", _kd
-    )
+    _LOG.warning("Keys directory missing or incorrect: %s", _kd)
 
 # Load API keys, logging exceptions in level DEBUG so they aren't logged twice,
 # as exceptions are logged as warnings when voice modules are initialized
 
 # Amazon Polly
 try:
-    if key := os.getenv("ICESPEAK_AWSPOLLY_API_KEY"):
-        API_KEYS.aws = AWSPollyKey.model_validate_json(key)
+    if SETTINGS.AWSPOLLY_API_KEY:
+        API_KEYS.aws = AWSPollyKey.model_validate_json(SETTINGS.AWSPOLLY_API_KEY)
     else:
-        API_KEYS.aws = AWSPollyKey.model_validate_json(
-            (_kd / SETTINGS.AWSPOLLY_KEY_FILENAME).read_text().strip()
-        )
+        API_KEYS.aws = AWSPollyKey.model_validate_json((_kd / SETTINGS.AWSPOLLY_KEY_FILENAME).read_text().strip())
 except Exception as err:
     _LOG.debug(
         "Could not load AWS Polly API key, ASR with AWS Polly will not work. Error: %s",
@@ -235,24 +227,18 @@ except Exception as err:
     )
 # Azure
 try:
-    if key := os.getenv("ICESPEAK_AZURE_API_KEY"):
-        API_KEYS.azure = AzureKey.model_validate_json(key)
+    if SETTINGS.AZURE_API_KEY:
+        API_KEYS.azure = AzureKey.model_validate_json(SETTINGS.AZURE_API_KEY)
     else:
-        API_KEYS.azure = AzureKey.model_validate_json(
-            (_kd / SETTINGS.AZURE_KEY_FILENAME).read_text().strip()
-        )
+        API_KEYS.azure = AzureKey.model_validate_json((_kd / SETTINGS.AZURE_KEY_FILENAME).read_text().strip())
 except Exception as err:
-    _LOG.debug(
-        "Could not load Azure API key, ASR with Azure will not work. Error: %s", err
-    )
+    _LOG.debug("Could not load Azure API key, ASR with Azure will not work. Error: %s", err)
 # Google
 try:
-    if key := os.getenv("ICESPEAK_GOOGLE_API_KEY"):
-        API_KEYS.google = json.loads(key)
+    if SETTINGS.GOOGLE_API_KEY:
+        API_KEYS.google = json.loads(SETTINGS.GOOGLE_API_KEY)
     else:
-        API_KEYS.google = json.loads(
-            (_kd / SETTINGS.GOOGLE_KEY_FILENAME).read_text().strip()
-        )
+        API_KEYS.google = json.loads((_kd / SETTINGS.GOOGLE_KEY_FILENAME).read_text().strip())
 except Exception as err:
     _LOG.debug(
         "Could not load Google API key, ASR with Google will not work. Error: %s",
@@ -260,13 +246,10 @@ except Exception as err:
     )
 # OpenAI
 try:
-    # First try to load the key from environment variable OPENAI_API_KEY
-    if key := os.getenv("ICESPEAK_OPENAI_API_KEY"):
-        API_KEYS.openai = OpenAIKey(api_key=SecretStr(key))
+    if SETTINGS.OPENAI_API_KEY:
+        API_KEYS.openai = OpenAIKey(api_key=SecretStr(SETTINGS.OPENAI_API_KEY))
     else:
-        API_KEYS.openai = OpenAIKey.model_validate_json(
-            (_kd / SETTINGS.OPENAI_KEY_FILENAME).read_text().strip()
-        )
+        API_KEYS.openai = OpenAIKey.model_validate_json((_kd / SETTINGS.OPENAI_KEY_FILENAME).read_text().strip())
 except Exception as err:
     _LOG.debug(
         "Could not load OpenAI API key, ASR with OpenAI will not work. Error: %s",
