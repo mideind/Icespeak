@@ -145,7 +145,7 @@ def test_OpenAI_speech_synthesis():
 def test_keys_override_in_tts_to_file():
     """Test if keys_override is correctly passed into service.text_to_speech."""
     _TEXT = "Test"
-    SERVICES["mock_service"].audio_formats = ["mp3"] # type: ignore
+    SERVICES["mock_service"].audio_formats = ["mp3"]  # type: ignore
     keys_override = Keys(
         aws=AWSPollyKey(
             aws_access_key_id=SecretStr("test"),
@@ -160,7 +160,7 @@ def test_keys_override_in_tts_to_file():
         transcribe=False,
         keys_override=keys_override,
     )
-    SERVICES["mock_service"].text_to_speech.assert_called_once_with( # type: ignore
+    SERVICES["mock_service"].text_to_speech.assert_called_once_with(  # type: ignore
         _TEXT,
         opts,
         keys_override,
