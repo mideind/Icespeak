@@ -158,6 +158,7 @@ ignore = [
     "COM",   # Commas (sometimes takes issue with black formatting)
     "ERA",   # Commented out code
     "TC006", # Quote in cast
+    "UP007", # require X | Y in type annotation - we support Python 3.9 and for some reason this rule is applied
 ]
 
 [tool.ruff.lint.isort]
