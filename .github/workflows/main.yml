@@ -26,17 +26,15 @@ jobs:
         # uv v6 automatically caches dependencies on GitHub-hosted runners
         # No manual caching needed for uv packages/wheels
 
-      - name: Set up API keys
-        run: |
-          # Azure TTS key
-          echo '${{ secrets.AZURE_TTS_KEY }}' > keys/AzureSpeechServerKey.json
-          # AWS Polly API key
-          echo '${{ secrets.AWS_POLLY_KEY }}' > keys/AWSPollyServerKey.json
-
       - name: Run tests
         run: |
           # --locked ensures we use exact versions from uv.lock without updating
           uv run --locked pytest --run-slow -vvvrP --log-level=DEBUG --capture=tee-sys
+        env:
+          ICESPEAK_AZURE_API_KEY: ${{ secrets.AZURE_TTS_KEY }}
+          ICESPEAK_AWSPOLLY_API_KEY: ${{ secrets.AWS_POLLY_KEY }}
+          ICESPEAK_GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          ICESPEAK_OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
 
   lint:
     runs-on: ubuntu-latest
