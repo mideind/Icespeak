@@ -21,8 +21,8 @@ Shared settings for the Icespeak package.
 
 """
 
-# We dont import annotations from __future__ here
-# due to pydantic
+from __future__ import annotations
+
 from typing import Any, Optional
 
 import json
