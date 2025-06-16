@@ -37,7 +37,7 @@ from cachetools import LFUCache
 
 from .settings import SETTINGS, TRACE, Keys
 from .transcribe import TranscriptionOptions
-from .voices import BaseVoice, TTSOptions, VoiceInfoT, aws_polly, azure, openai, piper_tts
+from .voices import BaseVoice, TTSOptions, VoiceInfoT, aws_polly, azure, openai
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -57,7 +57,6 @@ def _setup_voices() -> tuple[VoicesT, ServicesT]:
         aws_polly.AWSPollyVoice(),
         azure.AzureVoice(),
         openai.OpenAIVoice(),
-        piper_tts.PiperTTSVoice(),
     )
     voices: VoicesT = {}
     for service in services:
