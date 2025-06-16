@@ -23,7 +23,7 @@ Shared settings for the Icespeak package.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Optional
 
 import json
 import tempfile
@@ -105,7 +105,7 @@ class Settings(BaseSettings):
     )
     DEFAULT_AUDIO_FORMAT: AudioFormats = Field(default=AudioFormats.WAV, description="Default audio output format.")
 
-    AUDIO_DIR: Path | None = Field(
+    AUDIO_DIR: Optional[Path] = Field(
         default=None,
         description=(
             "Where to save output audio files. If not set, creates a directory in the platform's temporary directory."
@@ -132,10 +132,10 @@ class Settings(BaseSettings):
         description="Name of the OpenAI API key file.",
     )
 
-    AWSPOLLY_API_KEY: str | None = Field(default=None, description="AWS Polly API key as JSON string")
-    AZURE_API_KEY: str | None = Field(default=None, description="Azure API key as JSON string")
-    GOOGLE_API_KEY: str | None = Field(default=None, description="Google API key as JSON string")
-    OPENAI_API_KEY: str | None = Field(default=None, description="OpenAI API key string")
+    AWSPOLLY_API_KEY: Optional[str] = Field(default=None, description="AWS Polly API key as JSON string")
+    AZURE_API_KEY: Optional[str] = Field(default=None, description="Azure API key as JSON string")
+    GOOGLE_API_KEY: Optional[str] = Field(default=None, description="Google API key as JSON string")
+    OPENAI_API_KEY: Optional[str] = Field(default=None, description="OpenAI API key string")
 
     def get_audio_dir(self) -> Path:
         """
@@ -182,10 +182,10 @@ class OpenAIKey(BaseModel, frozen=True):
 class Keys(BaseModel):
     """Contains API keys for various services."""
 
-    azure: AzureKey | None = Field(default=None, description="Azure API key.")
-    aws: AWSPollyKey | None = Field(default=None, description="AWS Polly API key.")
-    google: dict[str, Any] | None = Field(default=None, description="Google API key.")
-    openai: OpenAIKey | None = Field(default=None, description="OpenAI API key.")
+    azure: Optional[AzureKey] = Field(default=None, description="Azure API key.")
+    aws: Optional[AWSPollyKey] = Field(default=None, description="AWS Polly API key.")
+    google: Optional[dict[str, Any]] = Field(default=None, description="Google API key.")
+    openai: Optional[OpenAIKey] = Field(default=None, description="OpenAI API key.")
 
     def __hash__(self):
         return hash((self.azure, self.aws, self.google, self.openai))
