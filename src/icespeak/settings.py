@@ -92,7 +92,7 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    DEFAULT_VOICE: str = Field(default="bui", description="Default TTS voice if none is requested.")
+    DEFAULT_VOICE: str = Field(default="Gunnar", description="Default TTS voice if none is requested.")
     DEFAULT_VOICE_SPEED: float = Field(
         default=1.0,
         le=MAX_SPEED,
