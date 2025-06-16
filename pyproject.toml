@@ -40,7 +40,7 @@ dependencies = [
     "boto3>=1.18.40",
     # OpenAI TTS
     "openai>=1.44",
-    # Piper TTS - Disabled 16.06.2025 as the library is barly maintained (only 3.10, 3.11)
+    # Piper TTS - Disabled 16.06.2025 as the library is barely maintained (only 3.10, 3.11)
     # "piper-TTS>=1.2.0",
 ]
 
