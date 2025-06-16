@@ -23,7 +23,8 @@ Shared settings for the Icespeak package.
 
 from __future__ import annotations
 
-from typing import Any, Optional, override
+from typing import Any, Optional
+from typing_extensions import override
 
 import json
 import tempfile
