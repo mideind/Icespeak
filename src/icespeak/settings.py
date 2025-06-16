@@ -23,7 +23,7 @@ Shared settings for the Icespeak package.
 
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any, Optional, override
 
 import json
 import tempfile
@@ -187,9 +187,11 @@ class Keys(BaseModel):
     google: Optional[dict[str, Any]] = Field(default=None, description="Google API key.")
     openai: Optional[OpenAIKey] = Field(default=None, description="OpenAI API key.")
 
+    @override
     def __hash__(self):
         return hash((self.azure, self.aws, self.google, self.openai))
 
+    @override
     def __eq__(self, other: object):
         return isinstance(other, Keys) and (
             self.azure,

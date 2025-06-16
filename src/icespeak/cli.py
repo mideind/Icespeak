@@ -113,7 +113,7 @@ def _check_voice(voice: str) -> str:
 def _list_voices(run: bool):
     """Print available voices in a table"""
     if run:
-        voice_table = Table()  # type: ignore
+        voice_table = Table()
         voice_table.add_column("Voice")
         voice_table.add_column("Language/Locale")
         voice_table.add_column("Style")
@@ -229,7 +229,7 @@ def _text_to_speech(
         SpinnerColumn(),
         TextColumn("[progress.description]{task.description}"),
         transient=True,
-    ) as progress:  # type: ignore
+    ) as progress:
         progress.add_task("Synthesizing text...", total=None)
         # Synthesize the text according to CLI options
         tts_out = tts_to_file(
