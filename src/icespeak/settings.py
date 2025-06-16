@@ -21,12 +21,12 @@ Shared settings for the Icespeak package.
 
 """
 
-# We dont import annotations from __future__ here
-# due to pydantic
+from __future__ import annotations
+
 from typing import Any, Optional
+from typing_extensions import override
 
 import json
-import os
 import tempfile
 import uuid
 from enum import Enum
@@ -93,7 +93,7 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    DEFAULT_VOICE: str = Field(default="bui", description="Default TTS voice if none is requested.")
+    DEFAULT_VOICE: str = Field(default="Gunnar", description="Default TTS voice if none is requested.")
     DEFAULT_VOICE_SPEED: float = Field(
         default=1.0,
         le=MAX_SPEED,
@@ -188,9 +188,11 @@ class Keys(BaseModel):
     google: Optional[dict[str, Any]] = Field(default=None, description="Google API key.")
     openai: Optional[OpenAIKey] = Field(default=None, description="OpenAI API key.")
 
+    @override
     def __hash__(self):
         return hash((self.azure, self.aws, self.google, self.openai))
 
+    @override
     def __eq__(self, other: object):
         return isinstance(other, Keys) and (
             self.azure,

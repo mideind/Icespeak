@@ -2,62 +2,64 @@ name: tests
 
 on:
   push:
-    branches:
-      - '*'
   pull_request:
-    branches:
-      - '*'
+    branches: [main]
 
 jobs:
-  build:
-
+  test:
     runs-on: ubuntu-latest
-
     strategy:
       matrix:
-        python-version: ["3.9", "3.11"]
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
+      fail-fast: false
 
     steps:
       - uses: actions/checkout@v4
+
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip wheel setuptools
-          python -m pip install -e '.[dev]'
-      - name: Set up API keys
-        run: |
-          # Azure TTS key
-          echo '${{ secrets.AZURE_TTS_KEY }}' > keys/AzureSpeechServerKey.json
-          # AWS Polly API key
-          echo '${{ secrets.AWS_POLLY_KEY }}' > keys/AWSPollyServerKey.json
-      - name: Test with pytest
-        run: |
-          python -m pytest --run-slow -vvvrP --log-level=DEBUG --capture=tee-sys
-      # - name: Lint with pre-commit hooks
-      #   run: |
-      #     pre-commit run --all-files
 
-  # network:
-  #   runs-on: ubuntu-22.04
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #     - name: Set up Python 3.11
-  #       uses: actions/setup-python@v5
-  #       with:
-  #         python-version: '3.11'
-  #     - name: Install dependencies
-  #       run: |
-  #         python -m pip install --upgrade pip wheel setuptools
-  #         pip install -e '.[dev]'
-  #     - name: Set up API keys
-  #       run: |
-  #         # Azure TTS key
-  #         echo '${{ secrets.AZURE_TTS_KEY }}' > keys/AzureSpeechServerKey.json
-  #         # AWS Polly API key
-  #         echo '${{ secrets.AWS_POLLY_KEY }}' > keys/AWSPollyServerKey.json
-  #     - name: Test with pytest
-  #       run: |
-  #         pytest --run-all --log-level=INFO --capture=tee-sys
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        # uv v6 automatically caches dependencies on GitHub-hosted runners
+        # No manual caching needed for uv packages/wheels
+
+      - name: Run tests
+        run: |
+          # --locked ensures we use exact versions from uv.lock without updating
+          uv run --locked pytest --run-slow -vvvrP --log-level=DEBUG --capture=tee-sys
+        env:
+          ICESPEAK_AZURE_API_KEY: ${{ secrets.AZURE_TTS_KEY }}
+          ICESPEAK_AWSPOLLY_API_KEY: ${{ secrets.AWS_POLLY_KEY }}
+          ICESPEAK_GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          ICESPEAK_OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+
+      - name: Check code with ruff
+        run: |
+          # --locked ensures we use exact versions from uv.lock without updating
+          uv run --locked ruff check .
+
+      - name: Check imports with ruff
+        run: |
+          # --locked ensures we use exact versions from uv.lock without updating
+          uv run --locked ruff check --select I .
+
+      - name: Check code formatting with ruff
+        run: |
+          # --locked ensures we use exact versions from uv.lock without updating
+          uv run --locked ruff format --check .

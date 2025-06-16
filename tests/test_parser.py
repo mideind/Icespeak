@@ -23,8 +23,8 @@ from __future__ import annotations
 
 import pytest
 
-from icespeak import VOICES, GreynirSSMLParser, gssml
 from icespeak import DefaultTranscriber as DT
+from icespeak import GreynirSSMLParser, gssml
 
 
 def test_gssml():

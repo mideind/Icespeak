@@ -42,16 +42,13 @@ python3 -m pip install -e '.[dev]'
 
 ## Usage
 
-Before using, place API keys for the relevant services in the `/keys` folder
-(or a folder specified by the `ICESPEAK_KEYS_DIR` environment variable).
-
-Alternately, you can set the following environment variables:
+Before using, set the following environment variables with your API keys (as JSON strings):
 
 ```sh
-export ICESPEAK_AWSPOLLY_API_KEY=your-aws-polly-api-key
-export ICESPEAK_AZURE_API_KEY=your-azure-api-key
-export ICESPEAK_GOOGLE_API_KEY=your-google-api-key
-export ICESPEAK_OPENAI_API_KEY=your-openai-api-key
+export ICESPEAK_AWSPOLLY_API_KEY='{"aws_access_key_id":"your-id","aws_secret_access_key":"your-secret","region_name":"us-east-1"}'
+export ICESPEAK_AZURE_API_KEY='{"key":"your-azure-key","region":"your-region"}'
+export ICESPEAK_GOOGLE_API_KEY='{"type":"service_account","project_id":"your-project",...}'
+export ICESPEAK_OPENAI_API_KEY='{"api_key":"your-openai-key"}'
 ```
 
 Output audio files are saved to the directory specified

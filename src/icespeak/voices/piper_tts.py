@@ -84,7 +84,7 @@ class PiperTTSVoice(BaseVoice):
             outfile = SETTINGS.get_empty_file(options.audio_format)
             audio_dir = SETTINGS.get_audio_dir()
             voice = self.voices[options.voice]
-            model = f"{voice['lang'].replace('-','_')}-{voice['id']}"
+            model = f"{voice['lang'].replace('-', '_')}-{voice['id']}"
             data_dir = audio_dir / "Piper"
             piper_args = {
                 "model": shlex.quote(str(model)),

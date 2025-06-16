@@ -33,12 +33,11 @@ import queue
 import threading
 from logging import DEBUG, getLogger
 
-from cachetools import LFUCache, cached
+from cachetools import LFUCache
 
 from .settings import SETTINGS, TRACE, Keys
 from .transcribe import TranscriptionOptions
-
-from .voices import BaseVoice, TTSOptions, VoiceInfoT, aws_polly, azure, openai, piper_tts
+from .voices import BaseVoice, TTSOptions, VoiceInfoT, aws_polly, azure, openai
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -58,7 +57,6 @@ def _setup_voices() -> tuple[VoicesT, ServicesT]:
         aws_polly.AWSPollyVoice(),
         azure.AzureVoice(),
         openai.OpenAIVoice(),
-        piper_tts.PiperTTSVoice(),
     )
     voices: VoicesT = {}
     for service in services:
@@ -70,8 +68,7 @@ def _setup_voices() -> tuple[VoicesT, ServicesT]:
             # Info about each voice
             if voice in voices:
                 _LOG.warning(
-                    "Voice named %r already exists! "
-                    + "Skipping the one defined in module %s.",
+                    "Voice named %r already exists! " + "Skipping the one defined in module %s.",
                     voice,
                     service.name,
                 )
@@ -118,9 +115,7 @@ if SETTINGS.AUDIO_CACHE_CLEAN:
             audiofile.unlink(missing_ok=True)
 
     # Small daemon thread which deletes files sent to the expired queue
-    _cleanup_thread = threading.Thread(
-        target=_cleanup, name="audio_cleanup", daemon=True
-    )
+    _cleanup_thread = threading.Thread(target=_cleanup, name="audio_cleanup", daemon=True)
     _cleanup_thread.start()
 
     def _evict_all():
@@ -166,14 +161,9 @@ def tts_to_file(
     """
     if _LOG.isEnabledFor(DEBUG):
         _LOG.debug(
-            "tts_to_file, text: %r, TTS options: %s, "
-            + "transcribe: %r, transcription options: %s",
+            "tts_to_file, text: %r, TTS options: %s, " + "transcribe: %r, transcription options: %s",
             text,
-            (
-                tts_options.model_dump(exclude_defaults=True) or "<default>"
-                if tts_options
-                else "None"
-            ),
+            (tts_options.model_dump(exclude_defaults=True) or "<default>" if tts_options else "None"),
             transcribe,
             (
                 transcription_options.model_dump(exclude_defaults=True) or "<default>"
@@ -188,9 +178,7 @@ def tts_to_file(
         raise ValueError(f"Voice {tts_options.voice!r} not available.") from e
 
     if tts_options.audio_format not in service.audio_formats:
-        raise ValueError(
-            f"Service {service.name} doesn't support audio format {tts_options.audio_format}."
-        )
+        raise ValueError(f"Service {service.name} doesn't support audio format {tts_options.audio_format}.")
 
     if transcribe:
         transcription_options = transcription_options or TranscriptionOptions()

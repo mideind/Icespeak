@@ -75,7 +75,7 @@ def test_number_to_neutral() -> None:
         (1100, "eitt þúsund og eitt hundrað"),
         (
             -42_178_249,
-            ("mínus fjörutíu og tvær milljónir eitt hundrað " "sjötíu og átta þúsund tvö hundruð fjörutíu og níu"),
+            ("mínus fjörutíu og tvær milljónir eitt hundrað sjötíu og átta þúsund tvö hundruð fjörutíu og níu"),
         ),
         (241 * milljardur, "tvö hundruð fjörutíu og einn milljarður"),
         (100 * milljon, "eitt hundrað milljónir"),
@@ -127,7 +127,7 @@ def test_number_to_text():
     assert nt(320 * thusund + 1, gender="kvk") == "þrjú hundruð og tuttugu þúsund og ein"
     assert nt(320 * thusund + 1, gender="hk") == "þrjú hundruð og tuttugu þúsund og eitt"
     assert nt(3202020202020) == (
-        "þrjár billjónir tvö hundruð og tveir milljarðar " "tuttugu milljónir tvö hundruð og tvö þúsund og tuttugu"
+        "þrjár billjónir tvö hundruð og tveir milljarðar tuttugu milljónir tvö hundruð og tvö þúsund og tuttugu"
     )
     assert nt(320202020) == ("þrjú hundruð og tuttugu milljónir tvö hundruð og tvö þúsund og tuttugu")
 

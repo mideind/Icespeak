@@ -196,7 +196,7 @@ class AzureVoice(BaseVoice):
 
         outfile = SETTINGS.get_empty_file(options.audio_format)
         try:
-            audio_config = speechsdk.audio.AudioOutputConfig(filename=str(outfile))  # pyright: ignore[reportArgumentType]
+            audio_config = speechsdk.audio.AudioOutputConfig(filename=str(outfile))
 
             # Init synthesizer
             synthesizer = speechsdk.SpeechSynthesizer(speech_config=speech_conf, audio_config=audio_config)

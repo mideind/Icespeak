@@ -42,9 +42,9 @@ if __name__ == "__main__":
         print("*" * 5, *values)
 
     def _ensure_num_files():
-        assert START_NUM_FILES == len(
-            list(AUDIO_DIR.iterdir())
-        ), "Number of files in audio dir before/after don't match!"
+        assert START_NUM_FILES == len(list(AUDIO_DIR.iterdir())), (
+            "Number of files in audio dir before/after don't match!"
+        )
 
     atexit.register(_ensure_num_files)
 
@@ -83,7 +83,7 @@ if __name__ == "__main__":
         for n in range(1, CACHE_SIZE + 1):
             print(".", end="")
             # Fill cache with uncacheable stuff, if CACHE_SIZE > 1
-            _ = icespeak.tts_to_file(f"Texti númer {n+1}.")
+            _ = icespeak.tts_to_file(f"Texti númer {n + 1}.")
         print()
         nprint("Cache filled.")
 
