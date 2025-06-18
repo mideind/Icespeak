@@ -115,24 +115,6 @@ class Settings(BaseSettings):
     AUDIO_CACHE_SIZE: int = Field(default=300, gt=-1, description="Max number of audio files to cache.")
     AUDIO_CACHE_CLEAN: bool = Field(default=True, description="If True, cleans up generated audio files upon exit.")
 
-    KEYS_DIR: Path = Field(default=Path("keys"), description="Where to look for API keys.")
-    AWSPOLLY_KEY_FILENAME: str = Field(
-        default="AWSPollyServerKey.json",
-        description="Name of the AWS Polly API key file.",
-    )
-    AZURE_KEY_FILENAME: str = Field(
-        default="AzureSpeechServerKey.json",
-        description="Name of the Azure API key file.",
-    )
-    GOOGLE_KEY_FILENAME: str = Field(
-        default="GoogleServiceAccount.json",
-        description="Name of the Google API key file.",
-    )
-    OPENAI_KEY_FILENAME: str = Field(
-        default="OpenAIServerKey.json",
-        description="Name of the OpenAI API key file.",
-    )
-
     AWSPOLLY_API_KEY: Optional[str] = Field(default=None, description="AWS Polly API key as JSON string")
     AZURE_API_KEY: Optional[str] = Field(default=None, description="Azure API key as JSON string")
     GOOGLE_API_KEY: Optional[str] = Field(default=None, description="Google API key as JSON string")
@@ -209,10 +191,6 @@ class Keys(BaseModel):
 
 API_KEYS = Keys()
 
-_kd = SETTINGS.KEYS_DIR
-if not (_kd.exists() and _kd.is_dir()):
-    _LOG.warning("Keys directory missing or incorrect: %s", _kd)
-
 # Load API keys, logging exceptions in level DEBUG so they aren't logged twice,
 # as exceptions are logged as warnings when voice modules are initialized
 
@@ -220,8 +198,6 @@ if not (_kd.exists() and _kd.is_dir()):
 try:
     if SETTINGS.AWSPOLLY_API_KEY:
         API_KEYS.aws = AWSPollyKey.model_validate_json(SETTINGS.AWSPOLLY_API_KEY)
-    else:
-        API_KEYS.aws = AWSPollyKey.model_validate_json((_kd / SETTINGS.AWSPOLLY_KEY_FILENAME).read_text().strip())
 except Exception as err:
     _LOG.debug(
         "Could not load AWS Polly API key, ASR with AWS Polly will not work. Error: %s",
@@ -231,16 +207,12 @@ except Exception as err:
 try:
     if SETTINGS.AZURE_API_KEY:
         API_KEYS.azure = AzureKey.model_validate_json(SETTINGS.AZURE_API_KEY)
-    else:
-        API_KEYS.azure = AzureKey.model_validate_json((_kd / SETTINGS.AZURE_KEY_FILENAME).read_text().strip())
 except Exception as err:
     _LOG.debug("Could not load Azure API key, ASR with Azure will not work. Error: %s", err)
 # Google
 try:
     if SETTINGS.GOOGLE_API_KEY:
         API_KEYS.google = json.loads(SETTINGS.GOOGLE_API_KEY)
-    else:
-        API_KEYS.google = json.loads((_kd / SETTINGS.GOOGLE_KEY_FILENAME).read_text().strip())
 except Exception as err:
     _LOG.debug(
         "Could not load Google API key, ASR with Google will not work. Error: %s",
@@ -250,8 +222,6 @@ except Exception as err:
 try:
     if SETTINGS.OPENAI_API_KEY:
         API_KEYS.openai = OpenAIKey(api_key=SecretStr(SETTINGS.OPENAI_API_KEY))
-    else:
-        API_KEYS.openai = OpenAIKey.model_validate_json((_kd / SETTINGS.OPENAI_KEY_FILENAME).read_text().strip())
 except Exception as err:
     _LOG.debug(
         "Could not load OpenAI API key, ASR with OpenAI will not work. Error: %s",
