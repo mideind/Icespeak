@@ -93,6 +93,11 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/7b/e1/ac4a0bd90d60d95fe3bc079db04c16938d7536c9b04587ae64f0d5e45617/boto3_stubs-1.38.22-py3-none-any.whl", hash = "sha256:af1dd47e087892878e78e2afb003e1c24b41ed7973876c0faf4da04d78c7f1f0", size = 68664, upload-time = "2025-05-22T19:27:09.004Z" },
 ]
 
+[package.optional-dependencies]
+polly = [
+    { name = "mypy-boto3-polly" },
+]
+
 [[package]]
 name = "botocore"
 version = "1.38.22"
@@ -444,10 +449,11 @@ cli = [
 
 [package.dev-dependencies]
 dev = [
-    { name = "boto3-stubs" },
+    { name = "boto3-stubs", extra = ["polly"] },
     { name = "coverage", extra = ["toml"] },
     { name = "mypy" },
     { name = "pre-commit" },
+    { name = "pyright" },
     { name = "pytest" },
     { name = "ruff" },
 ]
@@ -472,10 +478,11 @@ provides-extras = ["cli"]
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "boto3-stubs", specifier = ">=1.35.48" },
+    { name = "boto3-stubs", extras = ["polly"], specifier = ">=1.35.48" },
     { name = "coverage", extras = ["toml"], specifier = ">=7.3.1" },
     { name = "mypy", specifier = ">=1.4.1" },
     { name = "pre-commit", specifier = ">=3.3.3" },
+    { name = "pyright", specifier = ">=1.1.406" },
     { name = "pytest", specifier = ">=7.2.1" },
     { name = "ruff", specifier = ">=0.16.1" },
 ]
@@ -676,6 +683,18 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/c7/67/5a4268782eb77344cc613a4cf23540928e41f018a9a1ec4c6882baf20ab8/mypy-1.15.0-cp313-cp313-musllinux_1_2_x86_64.whl", hash = "sha256:baefc32840a9f00babd83251560e0ae1573e2f9d1b067719479bfb0e987c6357", size = 12494348, upload-time = "2025-02-05T03:48:52.361Z" },
     { url = "https://files.pythonhosted.org/packages/83/3e/57bb447f7bbbfaabf1712d96f9df142624a386d98fb026a761532526057e/mypy-1.15.0-cp313-cp313-win_amd64.whl", hash = "sha256:b9378e2c00146c44793c98b8d5a61039a048e31f429fb0eb546d93f4b000bedf", size = 9373648, upload-time = "2025-02-05T03:49:11.395Z" },
     { url = "https://files.pythonhosted.org/packages/09/4e/a7d65c7322c510de2c409ff3828b03354a7c43f5a8ed458a7a131b41c7b9/mypy-1.15.0-py3-none-any.whl", hash = "sha256:5469affef548bd1895d86d3bf10ce2b44e33d86923c29e4d675b3e323437ea3e", size = 2221777, upload-time = "2025-02-05T03:50:08.348Z" },
+]
+
+[[package]]
+name = "mypy-boto3-polly"
+version = "1.38.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "typing-extensions", marker = "python_full_version < '3.12'" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/b5/56/fde9c1fb2e9a2243edcdd3b576dddc245620bde3b016b734b9c643fb3e2c/mypy_boto3_polly-1.38.0.tar.gz", hash = "sha256:1bb9d095ab455f596296ecfee993e16595b448f58372594f70e0c7b192536b2f", size = 19023, upload-time = "2025-04-22T21:31:40.689Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/c1/e3/5e46605855ffc093a2d2815ef52efd9eef9349774a5f09fa507f281a959d/mypy_boto3_polly-1.38.0-py3-none-any.whl", hash = "sha256:7a25ef96333b84538772ff3742cb567f6282d356cbf249abe0e652c4578df935", size = 25544, upload-time = "2025-04-22T21:31:38.427Z" },
 ]
 
 [[package]]
@@ -889,6 +908,19 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/7c/2d/c3338d48ea6cc0feb8446d8e6937e1408088a72a39937982cc6111d17f84/pygments-2.19.1.tar.gz", hash = "sha256:61c16d2a8576dc0649d9f39e089b5f02bcd27fba10d8fb4dcc28173f7a45151f", size = 4968581, upload-time = "2025-01-06T17:26:30.443Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/8a/0b/9fcc47d19c48b59121088dd6da2488a49d5f72dacf8262e2790a1d2c7d15/pygments-2.19.1-py3-none-any.whl", hash = "sha256:9ea1544ad55cecf4b8242fab6dd35a93bbce657034b0611ee383099054ab6d8c", size = 1225293, upload-time = "2025-01-06T17:26:25.553Z" },
+]
+
+[[package]]
+name = "pyright"
+version = "1.1.411"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "nodeenv" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/7e/ab/265f7dc69d28113ebba19092e57b075f41543b2ed048429c5f56e2b88eac/pyright-1.1.411.tar.gz", hash = "sha256:d885a0551f2e763b089a02702174e7f4ba77548cddabc972ab86d1f7f1b0f998", size = 4112861, upload-time = "2026-06-25T02:14:06.37Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/0a/49/385be530a6a5b78d1cbcd5c2e38debc8959a2fc6bdb716f4e581002979fc/pyright-1.1.411-py3-none-any.whl", hash = "sha256:dc7c72a8e2700c55baa127554040e067041ea53ccfd50bf96308cc4291c7d5d9", size = 6181526, upload-time = "2026-06-25T02:14:04.691Z" },
 ]
 
 [[package]]

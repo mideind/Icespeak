@@ -2,7 +2,7 @@
 
 Icespeak - Icelandic TTS library
 
-Copyright (C) 2024 Miðeind ehf.
+Copyright (C) 2025 Miðeind ehf.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@ Icelandic-language text to speech via the OpenAI Speech API.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Literal
 from typing_extensions import override
 
 from logging import getLogger
@@ -35,9 +35,22 @@ from icespeak.settings import API_KEYS, SETTINGS, Keys
 from . import BaseVoice, ModuleAudioFormatsT, ModuleVoicesT, TTSOptions
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping
+
     from pathlib import Path
 
 _LOG = getLogger(__name__)
+
+# Maps the audio formats we expose to the ones the OpenAI speech API names
+_ResponseFormatT = Literal["mp3", "opus", "aac", "flac", "wav", "pcm"]
+_fmt2openai: Mapping[str, _ResponseFormatT] = {
+    "mp3": "mp3",
+    "opus": "opus",
+    "aac": "aac",
+    "flac": "flac",
+    "wav": "wav",
+    "pcm": "pcm",
+}
 
 
 class OpenAIVoice(BaseVoice):
@@ -56,7 +69,7 @@ class OpenAIVoice(BaseVoice):
         "shimmer": {"id": "shimmer", "lang": "en-US", "style": "female"},
         "shimmer_hd": {"id": "shimmer_hd", "lang": "en-US", "style": "female"},
     }
-    _AUDIO_FORMATS: ModuleAudioFormatsT = frozenset(("mp3", "opus", "aac", "flac", "wav", "pcm"))
+    _AUDIO_FORMATS: ModuleAudioFormatsT = frozenset(_fmt2openai)
 
     def _create_client(self, openai_key: str) -> OpenAI:
         return OpenAI(api_key=openai_key)
@@ -80,9 +93,7 @@ class OpenAIVoice(BaseVoice):
     def load_api_keys(self) -> None:
         assert API_KEYS.openai, "OpenAI API key missing"
 
-        self._openai_client: Any = None
-        if self._openai_client is None:
-            self._openai_client = self._create_client(API_KEYS.openai.api_key.get_secret_value())
+        self._openai_client: OpenAI = self._create_client(API_KEYS.openai.api_key.get_secret_value())
 
     @override
     def text_to_speech(self, text: str, options: TTSOptions, keys_override: Keys | None = None) -> Path:
@@ -100,14 +111,18 @@ class OpenAIVoice(BaseVoice):
                 model = "tts-1-hd"
             else:
                 model = "tts-1"
-            openai_args = {
-                "model": model,
-                "voice": voice,
-                "input": text,
-                "response_format": options.audio_format,
-            }
-            _LOG.debug("Synthesizing with OpenAI: %s", openai_args)
-            with client.audio.speech.with_streaming_response.create(**openai_args) as response:
+            _LOG.debug(
+                "Synthesizing with OpenAI: model=%s, voice=%s, response_format=%s",
+                model,
+                voice,
+                options.audio_format,
+            )
+            with client.audio.speech.with_streaming_response.create(
+                model=model,
+                voice=voice,
+                input=text,
+                response_format=_fmt2openai[options.audio_format],
+            ) as response:
                 outfile = SETTINGS.get_empty_file(options.audio_format)
                 response.stream_to_file(outfile)
         except Exception:

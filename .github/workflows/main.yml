@@ -63,3 +63,8 @@ jobs:
         run: |
           # --locked ensures we use exact versions from uv.lock without updating
           uv run --locked ruff format --check .
+
+      - name: Check types with pyright
+        run: |
+          # --all-extras so that the CLI dependencies are type checked too
+          uv run --locked --all-extras pyright src/icespeak

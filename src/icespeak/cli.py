@@ -2,7 +2,7 @@
 
 Icespeak - Icelandic TTS library
 
-Copyright (C) 2024 Miðeind ehf.
+Copyright (C) 2025 Miðeind ehf.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -119,7 +119,7 @@ def _list_voices(run: bool):
         voice_table.add_column("Style")
         voice_table.add_column("Service")
         for voice, info in VOICES.items():
-            voice_table.add_row(voice, info["lang"], info["style"], info.get("service", "N/A"))
+            voice_table.add_row(voice, info["lang"], info["style"], info["service"])
         print(voice_table)
         raise typer.Exit(0)
 

@@ -2,7 +2,7 @@
 
 Icespeak - Icelandic TTS library
 
-Copyright (C) 2024 Miðeind ehf.
+Copyright (C) 2025 Miðeind ehf.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -22,7 +22,8 @@ along with this program.  If not, see http://www.gnu.org/licenses/.
 from __future__ import annotations
 
 from collections.abc import Collection, Mapping
-from typing import TYPE_CHECKING, TypedDict
+from typing import TYPE_CHECKING, Literal
+from typing_extensions import ReadOnly, TypedDict
 
 from abc import ABC, abstractmethod
 from logging import getLogger
@@ -33,19 +34,36 @@ from icespeak.settings import MAX_SPEED, MIN_SPEED, SETTINGS, Keys, TextFormats
 from icespeak.transcribe import DefaultTranscriber
 
 if TYPE_CHECKING:
-    from typing import Literal
-    from typing_extensions import NotRequired
-
     from pathlib import Path
 
 _LOG = getLogger(__name__)
 
 
+VoiceStyleT = Literal["female", "male", "neutral"]
+
+
 class VoiceInfoT(TypedDict):
-    id: str
-    lang: str
-    style: Literal["female", "male", "neutral"]
-    service: NotRequired[str]
+    """
+    Info about a voice, as declared by an individual TTS service module.
+
+    The fields are `ReadOnly` so that a service module can describe its
+    voices with the narrower types its own API demands -- e.g. AWS Polly
+    identifies voices and languages by string literal -- and still have
+    that table be a valid `VoiceInfoT` mapping.
+    """
+
+    id: ReadOnly[str]
+    lang: ReadOnly[str]
+    style: ReadOnly[VoiceStyleT]
+
+
+class RegisteredVoiceInfoT(VoiceInfoT):
+    """
+    Info about a voice which has been registered in the global voice
+    registry, which records the service that provides it.
+    """
+
+    service: ReadOnly[str]
 
 
 ModuleVoicesT = Mapping[str, VoiceInfoT]
@@ -74,11 +92,19 @@ class TTSOptions(BaseModel):
 
 
 class BaseVoice(ABC):
-    """Base class for TTS voice implementations"""
+    """
+    Base class for TTS voice implementations.
+
+    Implementations conventionally hold their service name, voice table
+    and supported audio formats in `_NAME`, `_VOICES` and `_AUDIO_FORMATS`,
+    and expose them through the abstract properties below. `_VOICES` is
+    deliberately not declared here, so that an implementation can type its
+    own table more precisely than `ModuleVoicesT` where its API calls for
+    it; the `voices` property is the contract.
+    """
 
     Transcriber: type[DefaultTranscriber] = DefaultTranscriber
     _NAME: str
-    _VOICES: ModuleVoicesT
     _AUDIO_FORMATS: ModuleAudioFormatsT
 
     def __init__(self) -> None:

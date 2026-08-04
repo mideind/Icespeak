@@ -37,6 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `nova_hd`, `shimmer_hd`), which synthesize using the `tts-1-hd` model.
 - Documentation for the `speak` command line tool in the README.
 - A release workflow that publishes to PyPI via Trusted Publishing on tag push.
+- CI now type checks the source with pyright, which is clean.
 
 ### Fixed
 
@@ -47,6 +48,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Pull request CI now actually runs; the workflow was filtering on a `main`
   branch that does not exist in this repository.
 - Tests no longer fail outright when no TTS API keys are configured.
+- Typing fixes throughout, most notably a correct `PollyClient` annotation in
+  the AWS Polly voice, which was previously annotated with the `boto3.client`
+  *function* rather than a type.
+- `VoiceInfoT` is split into `VoiceInfoT`, which is what a service module
+  declares, and `RegisteredVoiceInfoT`, which additionally carries the
+  `service` name and is what the global `VOICES` registry contains. The
+  `service` key was previously optional even though it is always populated.
+  Its fields are now `ReadOnly`, which lets a service module describe its
+  voices with the narrower types its own API demands: the AWS Polly voice
+  table now carries Polly's `VoiceIdType` and `LanguageCodeType` literals.
+- Each service module now maps the audio formats Icespeak exposes to the
+  names its API uses, the way the Azure voice already did. The arguments
+  sent to AWS Polly and OpenAI are unchanged.
 
 ## [0.3.7] - 2024-10-29
 

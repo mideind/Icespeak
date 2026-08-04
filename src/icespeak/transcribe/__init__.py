@@ -2,7 +2,7 @@
 
 Icespeak - Icelandic TTS library
 
-Copyright (C) 2024 Miðeind ehf.
+Copyright (C) 2025 Miðeind ehf.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -31,7 +31,6 @@ from typing import TYPE_CHECKING, Any, cast
 import itertools
 import re
 from functools import lru_cache
-from itertools import zip_longest
 from logging import getLogger
 from re import Match
 
@@ -1228,10 +1227,13 @@ class DefaultTranscriber:
         parts: list[str] = []
         for s in p_result["sentences"]:
             s_parts: list[str] = []
-            # list of (token, terminal node) pairs.
-            # Terminal nodes can be None if the sentence wasn't parseable
-            tk_term_list = list(zip_longest(s.tokens, s.terminal_nodes, fillvalue=None))
-            for tok, term in tk_term_list:
+            # Pair each token with its terminal node. A sentence that wasn't
+            # parseable has no terminal nodes at all, and there are never more
+            # of them than there are tokens, so a token can outlive its node
+            # but never the other way around.
+            terminal_nodes = s.terminal_nodes
+            for i, tok in enumerate(s.tokens):
+                term = terminal_nodes[i] if i < len(terminal_nodes) else None
                 txt = tok.txt
 
                 if tok.kind in handler_map:
