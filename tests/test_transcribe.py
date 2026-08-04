@@ -21,7 +21,7 @@ along with this program.  If not, see http://www.gnu.org/licenses/.
 
 from __future__ import annotations
 
-from typing import Callable
+from typing import TYPE_CHECKING
 
 import datetime
 import re
@@ -31,6 +31,10 @@ import pytest
 
 from icespeak import DefaultTranscriber as DT
 from icespeak import TranscriptionOptions
+from icespeak.transcribe import ALPHABET
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 def test_dt_time() -> None:
@@ -73,8 +77,6 @@ def test_dt_date() -> None:
 
 
 def test_dt_spell() -> None:
-    from icespeak.transcribe import ALPHABET
-
     for a in (ALPHABET + ALPHABET.lower(), "ÁÍS", "BSÍ", "LSH", "SÍBS"):
         n1 = DT.spell(a.upper())
         n2 = DT.spell(a.lower())

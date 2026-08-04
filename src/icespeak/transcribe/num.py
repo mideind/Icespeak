@@ -25,7 +25,7 @@ numbers to Icelandic text.
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
-from typing_extensions import Literal
+from typing import Literal
 
 import re
 

@@ -25,7 +25,8 @@ for Icelandic speech synthesis engines.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Callable, Union, cast
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Any, cast
 
 import itertools
 import re
@@ -525,7 +526,7 @@ _IGNORED_TOKENS = frozenset((TOK.WORD, TOK.PERSON, TOK.ENTITY, TOK.TIMESTAMP, TO
 _IGNORED_ABBREVS = frozenset(("mið", "fim", "bandar", "mao", "próf", "tom", "mar"))
 _HYPHEN_SYMBOLS = frozenset(HYPHENS)
 
-_StrBool = Union[str, bool]
+_StrBool = str | bool
 TranscriptionMethod = Callable[..., str]
 
 
@@ -1297,14 +1298,16 @@ class DefaultTranscriber:
                 # Contains period (e.g. 'Jak.' or 'Ólafsd.')
                 abbrs = next(
                     filter(
-                        lambda m: m.ordfl == gender  # Correct gender
-                        # Icelandic abbrev
-                        and m.fl != "erl"
-                        # Uppercase first letter
-                        and m.stofn[0].isupper()
-                        # Expanded meaning must be longer
-                        # (otherwise we just spell it, e.g. 'Th.' = 'Th.')
-                        and len(m.stofn) > len(p),
+                        lambda m: (
+                            m.ordfl == gender  # Correct gender
+                            # Icelandic abbrev
+                            and m.fl != "erl"
+                            # Uppercase first letter
+                            and m.stofn[0].isupper()
+                            # Expanded meaning must be longer
+                            # (otherwise we just spell it, e.g. 'Th.' = 'Th.')
+                            and len(m.stofn) > len(p)
+                        ),
                         Abbreviations.get_meaning(p) or [],
                     ),
                     None,
@@ -1353,7 +1356,7 @@ class DefaultTranscriber:
         Quick transcription of Icelandic text for TTS.
         Utilizes the tokenizer library.
         """
-        opt: TranscriptionOptions = options if options else TranscriptionOptions()
+        opt: TranscriptionOptions = options or TranscriptionOptions()
         tokens: list[Tok] = list(tokenize(text))
         for token in tokens:
             # Check if abbreviation

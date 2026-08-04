@@ -1,5 +1,5 @@
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
-[![Python 3.9](https://img.shields.io/badge/python-3.9-blue.svg)](https://www.python.org/downloads/release/python-390/)
+[![Python 3.10](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![Release](https://shields.io/github/v/release/mideind/Icespeak?display_name=tag)]()
 [![PyPI](https://img.shields.io/pypi/v/icespeak?logo=pypi)](https://pypi.org/project/icespeak/)
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
@@ -8,7 +8,19 @@
 
 # Icespeak
 
-_Icespeak_ is a Python 3.9+ library that makes Icelandic-language speech synthesis easy.
+_Icespeak_ is a Python 3.10+ library that makes Icelandic-language speech synthesis easy.
+
+## Installation
+
+```sh
+python3 -m pip install icespeak
+```
+
+To also install the `speak` command line tool:
+
+```sh
+python3 -m pip install 'icespeak[cli]'
+```
 
 ## Local installation
 
@@ -28,16 +40,23 @@ Install minimal set of dependencies to use the library:
 python3 -m pip install .
 ```
 
-In order to use the CLI interface, `tts`, install with:
+In order to use the CLI interface, `speak`, install with:
 
 ```sh
 python3 -m pip install '.[cli]'
 ```
 
-Alternatively, to install in editable mode with extra dev dependencies:
+Alternatively, to install in editable mode with the development dependencies:
 
 ```sh
-python3 -m pip install -e '.[dev]'
+python3 -m pip install -e '.[cli]' --group dev
+```
+
+This project uses [uv](https://docs.astral.sh/uv/) for dependency management,
+so the above is equivalent to simply running:
+
+```sh
+uv sync --all-extras
 ```
 
 ## Usage
@@ -66,6 +85,7 @@ Simple example of TTS, which includes phonetic transcription:
 
 ```py
 from icespeak import tts_to_file, TTSOptions
+
 text = """\
 Þetta er texti fyrir talgervingu. \
 Í honum er ýmislegt sem mætti vera hljóðritað, \
@@ -76,17 +96,32 @@ eða prósentur eins og 48,3%, o.fl.\
 tts_out = tts_to_file(
     text,
     TTSOptions(
-        text_format="text", # Set to 'ssml' if SSML tags in text should be interpreted
-        audio_format="mp3", # Output audio will be in mp3 format
-        voice="Gudrun" # Azure TTS voice
+        text_format="text",  # Set to 'ssml' if SSML tags in text should be interpreted
+        audio_format="mp3",  # Output audio will be in mp3 format
+        voice="Gudrun",  # Azure TTS voice
     ),
-    transcribe=True # Default is True
+    transcribe=True,  # Default is True
 )
-print(tts_out.file) # pathlib.Path instance pointing to file on local file system
-print(tts_out.text) # text that was sent to the TTS service (after the phonetic transcription)
+print(tts_out.file)  # pathlib.Path instance pointing to file on local file system
+print(tts_out.text)  # text that was sent to the TTS service (after the phonetic transcription)
 ```
 
-Results are cached, so subsequent calls with the same arguments should be fast.
+### Command line tool
+
+Installing with the `cli` extra provides the `speak` command:
+
+```sh
+# Synthesize and play the given text
+speak "Góðan daginn og til hamingju með lífið."
+
+# Read the text from a file, pick a voice, and save the audio instead of playing it
+speak --file input.txt --voice Gudrun --no-play --out output.mp3 --audio-format mp3
+
+# List the voices available with the API keys you have configured
+speak --list-voices
+```
+
+Run `speak --help` for the full list of options.
 
 ## License
 

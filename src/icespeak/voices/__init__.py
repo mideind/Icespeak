@@ -33,7 +33,8 @@ from icespeak.settings import MAX_SPEED, MIN_SPEED, SETTINGS, Keys, TextFormats
 from icespeak.transcribe import DefaultTranscriber
 
 if TYPE_CHECKING:
-    from typing_extensions import Literal, NotRequired
+    from typing import Literal
+    from typing_extensions import NotRequired
 
     from pathlib import Path
 
