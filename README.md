@@ -61,14 +61,16 @@ uv sync --all-extras
 
 ## Usage
 
-Before using, set the following environment variables with your API keys (as JSON strings):
+Before using, set the environment variable for each service you want to use.
+Most of them take a JSON string, but the OpenAI key is passed as-is:
 
 ```sh
 export ICESPEAK_AWSPOLLY_API_KEY='{"aws_access_key_id":"your-id","aws_secret_access_key":"your-secret","region_name":"us-east-1"}'
 export ICESPEAK_AZURE_API_KEY='{"key":"your-azure-key","region":"your-region"}'
-export ICESPEAK_GOOGLE_API_KEY='{"type":"service_account","project_id":"your-project",...}'
-export ICESPEAK_OPENAI_API_KEY='{"api_key":"your-openai-key"}'
+export ICESPEAK_OPENAI_API_KEY='your-openai-key'
 ```
+
+These can also be placed in a `.env` file in the working directory.
 
 Output audio files are saved to the directory specified
 by the `ICESPEAK_AUDIO_DIR` environment variable.

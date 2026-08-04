@@ -48,6 +48,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Pull request CI now actually runs; the workflow was filtering on a `main`
   branch that does not exist in this repository.
 - Tests no longer fail outright when no TTS API keys are configured.
+- The README documented `ICESPEAK_OPENAI_API_KEY` as a JSON string, but it is
+  read as the raw key. It also documented `ICESPEAK_GOOGLE_API_KEY`, although
+  there is no longer a Google voice module. Both corrected.
+- Removed `test_Google_speech_synthesis`, which requested a voice that no
+  longer exists and would have failed had a Google API key been configured.
 - Typing fixes throughout, most notably a correct `PollyClient` annotation in
   the AWS Polly voice, which was previously annotated with the `boto3.client`
   *function* rather than a type.

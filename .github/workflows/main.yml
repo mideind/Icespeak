@@ -33,7 +33,6 @@ jobs:
         env:
           ICESPEAK_AZURE_API_KEY: ${{ secrets.AZURE_TTS_KEY }}
           ICESPEAK_AWSPOLLY_API_KEY: ${{ secrets.AWS_POLLY_KEY }}
-          ICESPEAK_GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
           ICESPEAK_OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
 
   lint:
