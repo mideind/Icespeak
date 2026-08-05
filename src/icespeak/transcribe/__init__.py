@@ -2,7 +2,7 @@
 
 Icespeak - Icelandic TTS library
 
-Copyright (C) 2024 Miðeind ehf.
+Copyright (C) 2025 Miðeind ehf.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -25,12 +25,12 @@ for Icelandic speech synthesis engines.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Callable, Union, cast
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Any, cast
 
 import itertools
 import re
 from functools import lru_cache
-from itertools import zip_longest
 from logging import getLogger
 from re import Match
 
@@ -525,7 +525,7 @@ _IGNORED_TOKENS = frozenset((TOK.WORD, TOK.PERSON, TOK.ENTITY, TOK.TIMESTAMP, TO
 _IGNORED_ABBREVS = frozenset(("mið", "fim", "bandar", "mao", "próf", "tom", "mar"))
 _HYPHEN_SYMBOLS = frozenset(HYPHENS)
 
-_StrBool = Union[str, bool]
+_StrBool = str | bool
 TranscriptionMethod = Callable[..., str]
 
 
@@ -1227,10 +1227,13 @@ class DefaultTranscriber:
         parts: list[str] = []
         for s in p_result["sentences"]:
             s_parts: list[str] = []
-            # list of (token, terminal node) pairs.
-            # Terminal nodes can be None if the sentence wasn't parseable
-            tk_term_list = list(zip_longest(s.tokens, s.terminal_nodes, fillvalue=None))
-            for tok, term in tk_term_list:
+            # Pair each token with its terminal node. A sentence that wasn't
+            # parseable has no terminal nodes at all, and there are never more
+            # of them than there are tokens, so a token can outlive its node
+            # but never the other way around.
+            terminal_nodes = s.terminal_nodes
+            for i, tok in enumerate(s.tokens):
+                term = terminal_nodes[i] if i < len(terminal_nodes) else None
                 txt = tok.txt
 
                 if tok.kind in handler_map:
@@ -1297,14 +1300,16 @@ class DefaultTranscriber:
                 # Contains period (e.g. 'Jak.' or 'Ólafsd.')
                 abbrs = next(
                     filter(
-                        lambda m: m.ordfl == gender  # Correct gender
-                        # Icelandic abbrev
-                        and m.fl != "erl"
-                        # Uppercase first letter
-                        and m.stofn[0].isupper()
-                        # Expanded meaning must be longer
-                        # (otherwise we just spell it, e.g. 'Th.' = 'Th.')
-                        and len(m.stofn) > len(p),
+                        lambda m: (
+                            m.ordfl == gender  # Correct gender
+                            # Icelandic abbrev
+                            and m.fl != "erl"
+                            # Uppercase first letter
+                            and m.stofn[0].isupper()
+                            # Expanded meaning must be longer
+                            # (otherwise we just spell it, e.g. 'Th.' = 'Th.')
+                            and len(m.stofn) > len(p)
+                        ),
                         Abbreviations.get_meaning(p) or [],
                     ),
                     None,
@@ -1353,7 +1358,7 @@ class DefaultTranscriber:
         Quick transcription of Icelandic text for TTS.
         Utilizes the tokenizer library.
         """
-        opt: TranscriptionOptions = options if options else TranscriptionOptions()
+        opt: TranscriptionOptions = options or TranscriptionOptions()
         tokens: list[Tok] = list(tokenize(text))
         for token in tokens:
             # Check if abbreviation

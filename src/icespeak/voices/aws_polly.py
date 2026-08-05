@@ -2,7 +2,7 @@
 
 Icespeak - Icelandic TTS library
 
-Copyright (C) 2024 Miðeind ehf.
+Copyright (C) 2025 Miðeind ehf.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -23,8 +23,8 @@ Icelandic-language text to speech via Amazon Polly.
 
 from __future__ import annotations
 
-from typing import Any
-from typing_extensions import override
+from typing import TYPE_CHECKING
+from typing_extensions import ReadOnly, TypedDict, override
 
 from logging import getLogger
 from threading import Lock
@@ -33,22 +33,53 @@ import boto3
 
 from icespeak.settings import API_KEYS, SETTINGS, AWSPollyKey, Keys
 
-from . import BaseVoice, ModuleAudioFormatsT, ModuleVoicesT, TTSOptions
+from . import BaseVoice, ModuleAudioFormatsT, ModuleVoicesT, TTSOptions, VoiceStyleT
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping
+
+    # Provided by the `boto3-stubs[polly]` development dependency
+    from mypy_boto3_polly.client import PollyClient
+    from mypy_boto3_polly.literals import (
+        LanguageCodeType,
+        OutputFormatType,
+        VoiceIdType,
+    )
 
 _LOG = getLogger(__name__)
 
 
+class _PollyVoiceInfoT(TypedDict):
+    """
+    Voice info as Polly describes it: the voice and language identifiers
+    are the string literals that `synthesize_speech` accepts, rather than
+    bare strings. Structurally a `VoiceInfoT`.
+    """
+
+    id: ReadOnly[VoiceIdType]
+    lang: ReadOnly[LanguageCodeType]
+    style: ReadOnly[VoiceStyleT]
+
+
+# Maps the audio formats we expose to the ones Polly names
+_fmt2polly: Mapping[str, OutputFormatType] = {
+    "mp3": "mp3",
+    "pcm": "pcm",
+    "ogg_vorbis": "ogg_vorbis",
+}
+
+
 class AWSPollyVoice(BaseVoice):
     _NAME: str = "AWS Polly"
-    _VOICES: ModuleVoicesT = {
+    _VOICES: Mapping[str, _PollyVoiceInfoT] = {
         "Karl": {"id": "Karl", "lang": "is-IS", "style": "male"},
         "Dora": {"id": "Dora", "lang": "is-IS", "style": "female"},
     }
-    _AUDIO_FORMATS: ModuleAudioFormatsT = frozenset(("mp3", "pcm", "ogg_vorbis"))
+    _AUDIO_FORMATS: ModuleAudioFormatsT = frozenset(_fmt2polly)
 
     _lock = Lock()
 
-    def _create_client(self, aws_key: AWSPollyKey) -> boto3.client:
+    def _create_client(self, aws_key: AWSPollyKey) -> PollyClient:
         return boto3.client(
             "polly",
             region_name=aws_key.region_name.get_secret_value(),
@@ -75,10 +106,8 @@ class AWSPollyVoice(BaseVoice):
     def load_api_keys(self):
         assert API_KEYS.aws, "AWS Polly API key missing."
 
-        self._aws_client: Any = None
         with AWSPollyVoice._lock:
-            if self._aws_client is None:
-                self._aws_client = self._create_client(API_KEYS.aws)
+            self._aws_client: PollyClient = self._create_client(API_KEYS.aws)
 
     @override
     def text_to_speech(self, text: str, options: TTSOptions, keys_override: Keys | None = None):
@@ -98,17 +127,23 @@ class AWSPollyVoice(BaseVoice):
             if not text.startswith("<speak>"):
                 text = f"<speak>{text}</speak>"
 
+        voice_info = AWSPollyVoice._VOICES[options.voice]
         try:
-            aws_args = {
-                "Text": text,
-                "TextType": options.text_format,
-                "VoiceId": AWSPollyVoice._VOICES[options.voice]["id"],
-                "LanguageCode": AWSPollyVoice._VOICES[options.voice]["lang"],
-                "SampleRate": "16000",
-                "OutputFormat": options.audio_format,
-            }
-            _LOG.debug("Synthesizing with AWS Polly: %s", aws_args)
-            response: dict[str, Any] = client.synthesize_speech(**aws_args)
+            _LOG.debug(
+                "Synthesizing with AWS Polly: VoiceId=%s, LanguageCode=%s, TextType=%s, OutputFormat=%s",
+                voice_info["id"],
+                voice_info["lang"],
+                options.text_format,
+                options.audio_format,
+            )
+            response = client.synthesize_speech(
+                Text=text,
+                TextType=options.text_format.value,
+                VoiceId=voice_info["id"],
+                LanguageCode=voice_info["lang"],
+                SampleRate="16000",
+                OutputFormat=_fmt2polly[options.audio_format],
+            )
         except Exception:
             _LOG.exception("Error synthesizing speech.")
             raise

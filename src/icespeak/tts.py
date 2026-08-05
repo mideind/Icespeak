@@ -2,7 +2,7 @@
 
 Icespeak - Icelandic TTS library
 
-Copyright (C) 2024 Miðeind ehf.
+Copyright (C) 2025 Miðeind ehf.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -37,13 +37,13 @@ from cachetools import LFUCache
 
 from .settings import SETTINGS, TRACE, Keys
 from .transcribe import TranscriptionOptions
-from .voices import BaseVoice, TTSOptions, VoiceInfoT, aws_polly, azure, openai
+from .voices import BaseVoice, RegisteredVoiceInfoT, TTSOptions, aws_polly, azure, openai
 
 if TYPE_CHECKING:
     from pathlib import Path
 
 _LOG = getLogger(__name__)
-VoicesT = Mapping[str, VoiceInfoT]
+VoicesT = Mapping[str, RegisteredVoiceInfoT]
 ServicesT = Mapping[str, BaseVoice]
 
 
@@ -58,7 +58,7 @@ def _setup_voices() -> tuple[VoicesT, ServicesT]:
         azure.AzureVoice(),
         openai.OpenAIVoice(),
     )
-    voices: VoicesT = {}
+    voices: dict[str, RegisteredVoiceInfoT] = {}
     for service in services:
         _LOG.debug("Loading voices from service: %s", service)
         if not service.available:

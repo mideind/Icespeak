@@ -2,17 +2,18 @@
 # See https://pre-commit.com/hooks.html for more hooks
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.6.0
+    rev: v6.0.0
     hooks:
       - id: check-yaml
+      - id: check-toml
       - id: check-added-large-files
       - id: check-merge-conflict
       - id: debug-statements
   # Code linting & import sorting
-  - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: "v0.6.4"
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: "v0.16.1"
     hooks:
       # linter
-      - id: ruff
+      - id: ruff-check
       # formatter
       - id: ruff-format

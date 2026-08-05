@@ -2,7 +2,7 @@
 
 Icespeak - Icelandic TTS library
 
-Copyright (C) 2024 Miðeind ehf.
+Copyright (C) 2025 Miðeind ehf.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -25,6 +25,7 @@ import pytest
 
 from icespeak import DefaultTranscriber as DT
 from icespeak import GreynirSSMLParser, gssml
+from icespeak.tts import VOICES
 
 
 def test_gssml():
@@ -41,6 +42,7 @@ def test_gssml():
         gssml("something", no_type_arg="hello")  # type: ignore
 
 
+@pytest.mark.skipif(not VOICES, reason="No TTS voices available, requires at least one API key.")
 def test_greynirssmlparser():
     gp = GreynirSSMLParser()
     n = gp.transcribe(f"Ég vel töluna {gssml(244, type='number', gender='kk')}")

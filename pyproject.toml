@@ -1,27 +1,28 @@
 [project]
 name = "icespeak"
-version = "0.3.8"
+version = "0.4.0"
 description = "Icespeak - Icelandic TTS library"
 authors = [{ name = "Miðeind ehf.", email = "mideind@mideind.is" }]
 readme = { file = "README.md", content-type = "text/markdown" }
-license = { file = "LICENSE.txt" }
+license = "GPL-3.0-or-later"
+license-files = ["LICENSE.txt"]
 # For classifier list see: https://pypi.org/pypi?%3Aaction=list_classifiers
 classifiers = [
     "Development Status :: 5 - Production/Stable",
-    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
     "Operating System :: Unix",
     "Operating System :: POSIX",
     "Operating System :: Microsoft :: Windows",
     "Natural Language :: Icelandic",
     "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Topic :: Text Processing :: Linguistic",
     "Topic :: Multimedia :: Sound/Audio :: Speech",
     "Typing :: Typed",
 ]
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 dependencies = [
     # "aiohttp[speedups]>=3.8.4",
     "requests>=2.32.3",
@@ -51,17 +52,20 @@ Repository = "https://github.com/mideind/icespeak"
 speak = "icespeak.cli:main"
 
 [project.optional-dependencies]
-# Needed for CLI interface
-cli = ["typer[all]==0.9.0"]
+# Needed for CLI interface (typer pulls in rich and shellingham itself)
+cli = ["typer>=0.15.0"]
 
 [dependency-groups]
 dev = [
     "pytest>=7.2.1",
     "coverage[toml]>=7.3.1",
-    "ruff>=0.5.7",
+    # Keep in sync with the ruff rev in .pre-commit-config.yaml
+    "ruff>=0.16.1",
     "pre-commit>=3.3.3",
     "mypy>=1.4.1",
-    "boto3-stubs>=1.35.48",
+    "pyright>=1.1.406",
+    # The polly extra provides the PollyClient type used in voices/aws_polly.py
+    "boto3-stubs[polly]>=1.35.48",
 ]
 # *** Configuration of tools ***
 
@@ -115,7 +119,6 @@ reportPropertyTypeMismatch = "warning"
 reportUnknownMemberType = "information"
 reportUnknownArgumentType = "information"
 reportMissingTypeStubs = "information"
-reportShadowedImports = "warning"
 reportUninitializedInstanceVariable = "information"
 reportUnnecessaryTypeIgnoreComment = "warning"
 reportUnusedCallResult = "none"
@@ -156,9 +159,9 @@ ignore = [
     "RET",
     # Keep these ignored (either disagreeable or cause issues)
     "COM",   # Commas (sometimes takes issue with black formatting)
+    "CPY",   # Require a copyright notice at the top of every file
     "ERA",   # Commented out code
     "TC006", # Quote in cast
-    "UP007", # require X | Y in type annotation - we support Python 3.9 and for some reason this rule is applied
     "E731",  # Do not assign a lambda expression, use a def
 ]
 
@@ -180,5 +183,6 @@ typehints = ["typing", "typing_extensions", "types", "collections.abc"]
 # *** Build system configuration ***
 
 [build-system]
-requires = ["setuptools>=64"]
+# setuptools>=77 is required for PEP 639 SPDX license expressions
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"

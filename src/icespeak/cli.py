@@ -2,7 +2,7 @@
 
 Icespeak - Icelandic TTS library
 
-Copyright (C) 2024 Miðeind ehf.
+Copyright (C) 2025 Miðeind ehf.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -22,14 +22,14 @@ Returns 0 on success, 1 on error.
 
 Run the following command for a list of options:
 
-    tts --help
+    speak --help
 
 """
 
 # ruff: noqa: FBT001, FBT002
 # TODO: Transcribe-only option
 # TODO: Add separate progress bar for transcription phase
-from typing import Annotated, Optional
+from typing import Annotated
 
 import shutil
 import subprocess
@@ -69,7 +69,7 @@ def _write_wav(
         wav.writeframes(data)
 
 
-def play_audio_file(path: Path, player: Optional[str] = None) -> None:
+def play_audio_file(path: Path, player: str | None = None) -> None:
     """Play audio file at path via command line player. This only works
     on systems with afplay (macOS), mpv, mpg123 or cmdmp3 installed."""
 
@@ -119,7 +119,7 @@ def _list_voices(run: bool):
         voice_table.add_column("Style")
         voice_table.add_column("Service")
         for voice, info in VOICES.items():
-            voice_table.add_row(voice, info["lang"], info["style"], info.get("service", "N/A"))
+            voice_table.add_row(voice, info["lang"], info["style"], info["service"])
         print(voice_table)
         raise typer.Exit(0)
 
@@ -127,7 +127,7 @@ def _list_voices(run: bool):
 def _text_to_speech(
     text: Annotated[str, typer.Argument(help="Input text.")] = DEFAULT_TEXT,
     file: Annotated[
-        Optional[Path],
+        Path | None,
         typer.Option("--file", "-f", help="Read input text from file instead."),
     ] = None,
     # TTS options
@@ -155,14 +155,14 @@ def _text_to_speech(
         ),
     ] = True,
     player: Annotated[
-        Optional[str],
+        str | None,
         typer.Option(
             help="Audio player application.",
         ),
     ] = None,
     # Output file options
     out: Annotated[
-        Optional[Path],
+        Path | None,
         typer.Option(
             "--out",
             "-o",
@@ -177,7 +177,7 @@ def _text_to_speech(
     ] = False,
     audio_format: Annotated[AudioFormats, typer.Option(help="Output audio format.")] = SETTINGS.DEFAULT_AUDIO_FORMAT,
     wav: Annotated[
-        Optional[bool],
+        bool | None,
         typer.Option(
             "--wav",
             help="Write PCM output audio in WAV format.",
@@ -185,7 +185,7 @@ def _text_to_speech(
     ] = False,
     # Util
     list_voices: Annotated[
-        Optional[bool],
+        bool | None,
         typer.Option(
             "--list-voices",
             callback=_list_voices,

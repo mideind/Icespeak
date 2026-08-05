@@ -2,7 +2,7 @@
 
 Icespeak - Icelandic TTS library
 
-Copyright (C) 2024 Miðeind ehf.
+Copyright (C) 2025 Miðeind ehf.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@ calls the appropriate transcription method from `./transcribe`.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from typing_extensions import override
 
 from collections import deque
@@ -35,8 +35,10 @@ from inspect import ismethod
 from logging import getLogger
 
 from .settings import SETTINGS, TRACE
-from .transcribe import DefaultTranscriber, TranscriptionMethod
 from .tts import SERVICES, VOICES
+
+if TYPE_CHECKING:
+    from .transcribe import DefaultTranscriber, TranscriptionMethod
 
 _LOG = getLogger(__name__)
 GSSML_TAG = "greynir"
@@ -102,9 +104,7 @@ class GreynirSSMLParser(HTMLParser):
             voice = SETTINGS.DEFAULT_VOICE
 
         # Fetch transcriber for this voice
-        service = VOICES[voice].get("service")
-        self._handler: type[DefaultTranscriber]
-        self._handler = SERVICES[service].Transcriber if service else DefaultTranscriber
+        self._handler: type[DefaultTranscriber] = SERVICES[VOICES[voice]["service"]].Transcriber
 
         self._str_stack: deque[str] = deque()
         self._attr_stack: deque[dict[str, str | None]] = deque()

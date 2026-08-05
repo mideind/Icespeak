@@ -2,7 +2,7 @@
 
 Icespeak - Icelandic TTS library
 
-Copyright (C) 2024 Miðeind ehf.
+Copyright (C) 2025 Miðeind ehf.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -105,20 +105,6 @@ def test_Azure_speech_synthesis_with_keys_override():
         _TEXT,
         TTSOptions(text_format=TextFormats.TEXT, audio_format="mp3", voice="Gudrun"),
         keys_override=API_KEYS,
-    )
-    path = tts_out.file
-    assert path.is_file(), "Expected audio file to exist"
-    assert path.stat().st_size > _MIN_AUDIO_SIZE, "Expected longer audio data"
-    path.unlink()
-
-
-@pytest.mark.skipif(API_KEYS.google is None, reason="Missing Google API Key.")
-@pytest.mark.network
-def test_Google_speech_synthesis():
-    # Test Google Cloud
-    tts_out = tts_to_file(
-        _TEXT,
-        TTSOptions(text_format=TextFormats.TEXT, audio_format="mp3", voice="Anna"),
     )
     path = tts_out.file
     assert path.is_file(), "Expected audio file to exist"

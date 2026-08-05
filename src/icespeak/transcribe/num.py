@@ -2,7 +2,7 @@
 
 Icespeak - Icelandic TTS library
 
-Copyright (C) 2024 Miðeind ehf.
+Copyright (C) 2025 Miðeind ehf.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@ numbers to Icelandic text.
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
-from typing_extensions import Literal
+from typing import Literal
 
 import re
 

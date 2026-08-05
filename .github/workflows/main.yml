@@ -3,14 +3,14 @@ name: tests
 on:
   push:
   pull_request:
-    branches: [main]
+    branches: [master]
 
 jobs:
   test:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
       fail-fast: false
 
     steps:
@@ -33,7 +33,6 @@ jobs:
         env:
           ICESPEAK_AZURE_API_KEY: ${{ secrets.AZURE_TTS_KEY }}
           ICESPEAK_AWSPOLLY_API_KEY: ${{ secrets.AWS_POLLY_KEY }}
-          ICESPEAK_GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
           ICESPEAK_OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
 
   lint:
@@ -63,3 +62,8 @@ jobs:
         run: |
           # --locked ensures we use exact versions from uv.lock without updating
           uv run --locked ruff format --check .
+
+      - name: Check types with pyright
+        run: |
+          # --all-extras so that the CLI dependencies are type checked too
+          uv run --locked --all-extras pyright src/icespeak

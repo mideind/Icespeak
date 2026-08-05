@@ -2,7 +2,7 @@
 
 Icespeak - Icelandic TTS library
 
-Copyright (C) 2024 Miðeind ehf.
+Copyright (C) 2025 Miðeind ehf.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@ Shared settings for the Icespeak package.
 
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any
 from typing_extensions import override
 
 import json
@@ -106,7 +106,7 @@ class Settings(BaseSettings):
     )
     DEFAULT_AUDIO_FORMAT: AudioFormats = Field(default=AudioFormats.WAV, description="Default audio output format.")
 
-    AUDIO_DIR: Optional[Path] = Field(
+    AUDIO_DIR: Path | None = Field(
         default=None,
         description=(
             "Where to save output audio files. If not set, creates a directory in the platform's temporary directory."
@@ -133,10 +133,10 @@ class Settings(BaseSettings):
         description="Name of the OpenAI API key file.",
     )
 
-    AWSPOLLY_API_KEY: Optional[str] = Field(default=None, description="AWS Polly API key as JSON string")
-    AZURE_API_KEY: Optional[str] = Field(default=None, description="Azure API key as JSON string")
-    GOOGLE_API_KEY: Optional[str] = Field(default=None, description="Google API key as JSON string")
-    OPENAI_API_KEY: Optional[str] = Field(default=None, description="OpenAI API key string")
+    AWSPOLLY_API_KEY: str | None = Field(default=None, description="AWS Polly API key as JSON string")
+    AZURE_API_KEY: str | None = Field(default=None, description="Azure API key as JSON string")
+    GOOGLE_API_KEY: str | None = Field(default=None, description="Google API key as JSON string")
+    OPENAI_API_KEY: str | None = Field(default=None, description="OpenAI API key string")
 
     def get_audio_dir(self) -> Path:
         """
@@ -183,10 +183,10 @@ class OpenAIKey(BaseModel, frozen=True):
 class Keys(BaseModel):
     """Contains API keys for various services."""
 
-    azure: Optional[AzureKey] = Field(default=None, description="Azure API key.")
-    aws: Optional[AWSPollyKey] = Field(default=None, description="AWS Polly API key.")
-    google: Optional[dict[str, Any]] = Field(default=None, description="Google API key.")
-    openai: Optional[OpenAIKey] = Field(default=None, description="OpenAI API key.")
+    azure: AzureKey | None = Field(default=None, description="Azure API key.")
+    aws: AWSPollyKey | None = Field(default=None, description="AWS Polly API key.")
+    google: dict[str, Any] | None = Field(default=None, description="Google API key.")
+    openai: OpenAIKey | None = Field(default=None, description="OpenAI API key.")
 
     @override
     def __hash__(self):
@@ -211,7 +211,9 @@ API_KEYS = Keys()
 
 _kd = SETTINGS.KEYS_DIR
 if not (_kd.exists() and _kd.is_dir()):
-    _LOG.warning("Keys directory missing or incorrect: %s", _kd)
+    # The keys directory is only a fallback for the `ICESPEAK_*_API_KEY`
+    # environment variables, so its absence is normal and not worth a warning.
+    _LOG.debug("Keys directory missing or incorrect: %s", _kd)
 
 # Load API keys, logging exceptions in level DEBUG so they aren't logged twice,
 # as exceptions are logged as warnings when voice modules are initialized
