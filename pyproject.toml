@@ -30,10 +30,13 @@ dependencies = [
     "pydantic>=2.8.0,<3.0.0",
     "pydantic-settings>=2.0.3",
     "cachetools>=5.5.0",
-    # For parsing Icelandic text
-    "islenska<2.0.0",
-    "reynir<4.0.0",
-    "tokenizer<4.0.0",
+    # For parsing Icelandic text. All three are imported directly, so each
+    # needs a lower bound of its own -- reynir <3.8.0 declares `tokenizer>=3.4.5`
+    # with no upper bound, which lets a resolver pair it with a tokenizer that
+    # has dropped symbols reynir imports.
+    "islenska>=1.3.2,<2.0.0",
+    "reynir>=3.8.0,<4.0.0",
+    "tokenizer>=3.6.3,<4.0.0",
     # Azure TTS
     "azure-cognitiveservices-speech>=1.41.1",
     # AWS Polly TTS

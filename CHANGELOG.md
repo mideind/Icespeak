@@ -5,6 +5,20 @@ All notable changes to Icespeak are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- The `islenska`, `reynir` and `tokenizer` dependencies now declare lower
+  bounds as well as upper ones. All three are imported directly, and
+  `reynir` before 3.8.0 declares `tokenizer>=3.4.5` with no upper bound,
+  which lets a resolver pair it with a `tokenizer` that has dropped symbols
+  `reynir` imports.
+- Refreshed `uv.lock`, which had fallen well behind the versions a fresh
+  install resolves. Notably `reynir` 3.5.7 to 3.8.0, `tokenizer` 3.4.5 to
+  3.6.4, `islenska` 1.0.3 to 1.3.2 and `cachetools` 5.5.2 to 7.1.7, so CI
+  now tests roughly what users actually get.
+
 ## [0.4.0] - 2026-08-04
 
 ### Removed
